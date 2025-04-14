@@ -11,7 +11,7 @@ git clone https://github.com/yourusername/random_allocation.git
 cd random_allocation
 
 # Create and activate the conda environment
-conda env create -f environment.yml
+conda env create -f config/environment.yml
 conda activate random_allocation
 
 # Install the package in development mode
@@ -47,7 +47,7 @@ config_dict = {
     MAX_ALPHA: 60
 }
 
-methods_list = [LOCAL, POISSON_PLD, SHUFFLE, ALLOCATION_RDP, ALLOCATION_RDP_INV, ALLOCATION_ANALYTIC, ALLOCATION_DECOMPOSITION]
+methods_list = [LOCAL, POISSON_PLD, SHUFFLE, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_DECOMPOSITION]
 
 experiment_data = calc_params(params_dict, config_dict, methods_list)
 plot_combined_data(experiment_data, log_x_axis=True, log_y_axis=True)
