@@ -3,7 +3,7 @@ import inspect
 import time
 import numpy as np
 
-from definitions import EPSILON, DELTA, VARIABLES, methods_dict, names_dict
+from comparisons.definitions import EPSILON, DELTA, VARIABLES, methods_dict, names_dict
 
 def get_features_for_methods(method_keys: List[str], feature_name: str) -> Dict[str, Any]:
     """

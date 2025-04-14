@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from ..other_methods.local import local_epsilon, local_delta
-from ..other_methods.poisson import poisson_epsilon_pld, poisson_delta_pld, poisson_epsilon_rdp, poisson_delta_rdp
-from ..other_methods.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
-from ..random_allocation import allocation_epsilon_analytic, allocation_delta_analytic
-from ..random_allocation import allocation_epsilon_rdp, allocation_delta_rdp
-from ..random_allocation import allocation_epsilon_rdp_loose, allocation_delta_rdp_loose
-from ..random_allocation import allocation_epsilon_decomposition, allocation_delta_decomposition
+from other_schemes.local import local_epsilon, local_delta
+from other_schemes.poisson import poisson_epsilon_pld, poisson_delta_pld, poisson_epsilon_rdp, poisson_delta_rdp
+from other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
+from random_allocation_scheme import allocation_epsilon_analytic, allocation_delta_analytic
+from random_allocation_scheme import allocation_epsilon_rdp, allocation_delta_rdp
+from random_allocation_scheme import allocation_epsilon_rdp_loose, allocation_delta_rdp_loose
+from random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
 
 #======================= Variables =======================
 EPSILON = 'epsilon'
@@ -49,7 +49,6 @@ POISSON_PLD                 = f'{POISSON} ({PLD})'
 POISSON_RDP                 = f'{POISSON} ({RDP})'
 ALLOCATION_ANALYTIC         = f'{ALLOCATION} (Our - {ANALYTIC})'
 ALLOCATION_RDP              = f'{ALLOCATION} (Our - {RDP})'
-ALLOCATION_RDP_INV          = f'{ALLOCATION} (Our - {RDP} - Inv)'
 ALLOCATION_LOOSE_RDP        = f'{ALLOCATION} (DCO25 - {RDP})'
 ALLOCATION_DECOMPOSITION    = f'{ALLOCATION} (Our - {DECOMPOSITION})'
 

@@ -31,10 +31,12 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache/
 
 # Jupyter Notebook
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
+*.ipynb
 
 # Environment
 .env
@@ -44,16 +46,36 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+conda-env/
+*.conda
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*.sublime-workspace
+*.sublime-project
 
 # OS
 .DS_Store
 Thumbs.db
 
 # Project specific
-random_allocation.egg-info/ 
+random_allocation.egg-info/
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local 
