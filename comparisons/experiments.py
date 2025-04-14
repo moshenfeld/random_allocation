@@ -7,6 +7,7 @@ import os
 import matplotlib.pyplot as plt
 from functools import cache, lru_cache
 from dataclasses import dataclass
+from enum import Enum
 
 from comparisons.definitions import *
 from comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
@@ -18,6 +19,10 @@ import random_allocation_scheme.loose_RDP as loose_RDP
 import random_allocation_scheme.RDP as RDP
 import random_allocation_scheme.decomposition as decomposition
 import comparisons.definitions as definitions
+
+class PlotType(Enum):
+    COMPARISON = 1
+    COMBINED = 2
 
 def match_function_args(params_dict: Dict[str, Any],
                         config_dict: Dict[str, Any],
@@ -135,7 +140,7 @@ def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_na
 
 def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
     """
-    Save experiment plot as a PNG file.
+    Save the experiment plot to a file.
     
     Args:
         data: The experiment data dictionary
@@ -145,27 +150,14 @@ def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_na
     # Create plots directory if it doesn't exist
     os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
-    # Create and save the plot
-    plt.figure(figsize=(10, 6))
-    for method in methods:
-        plt.plot(data['x data'], data['y data'][method], label=method)
-        if method + '- std' in data['y data']:
-            plt.fill_between(data['x data'],
-                           data['y data'][method] - data['y data'][method + '- std'],
-                           data['y data'][method] + data['y data'][method + '- std'],
-                           alpha=0.2)
-    
-    plt.xlabel(data['x name'])
-    plt.ylabel(data['y name'])
-    plt.title(data['title'])
-    plt.legend()
-    plt.grid(True)
+    # Create and save the plot using plot_comparison
+    plot_comparison(data)
     plt.savefig(f'{experiment_name}_plot.png')
     plt.close()
 
 def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
                   methods: List[str], visualization_config: Dict[str, Any],
-                  experiment_name: str, plot_func: Callable,
+                  experiment_name: str, plot_type: PlotType,
                   save_data: bool = True, save_plots: bool = True) -> None:
     """
     Run an experiment and handle its results.
@@ -176,7 +168,7 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
         methods: List of methods to use in the experiment
         visualization_config: Additional keyword arguments for the plot function
         experiment_name: Name of the experiment for the output file
-        plot_func: Function to use for plotting (plot_combined_data or plot_comparison)
+        plot_type: Type of plot to create (COMPARISON or COMBINED)
         save_data: Whether to save data to CSV files
         save_plots: Whether to save plots to files
     """
@@ -187,22 +179,40 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
     examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
     data_file = os.path.join(examples_dir, 'data', f'{experiment_name}.csv')
     
-    # If save_data is True and the data file exists, read it
-    if save_data and os.path.exists(data_file):
-        print(f"Reading data from {data_file}")
-        data = pd.read_csv(data_file)
-    else:
-        # Execute the experiment
+    # Data logic:
+    # If save_data is True: always recalculate and save
+    # If save_data is False: try to read existing data, if not exists - recalculate but don't save
+    if save_data:
         print(f"Computing data for {experiment_name}")
         data = calc_experiment_data(params_dict, config_dict, methods)
-        
-        if save_data:
-            save_experiment_data(data, methods, os.path.join(examples_dir, 'data', experiment_name))
+        save_experiment_data(data, methods, os.path.join(examples_dir, 'data', experiment_name))
+    else:
+        if os.path.exists(data_file):
+            print(f"Reading data from {data_file}")
+            data = pd.read_csv(data_file)
+        else:
+            print(f"Computing data for {experiment_name}")
+            data = calc_experiment_data(params_dict, config_dict, methods)
+    
+    # Plot logic:
+    # If save_plots is True: only save the plot, don't display it
+    # If save_plots is False: only display the plot, don't save it
+    if visualization_config is None:
+        visualization_config = {}
+    
+    # Create the appropriate plot based on plot_type
+    if plot_type == PlotType.COMPARISON:
+        fig = plot_comparison(data, **visualization_config)
+    else:  # PlotType.COMBINED
+        fig = plot_combined_data(data, **visualization_config)
     
     if save_plots:
-        save_experiment_plot(data, methods, os.path.join(examples_dir, 'plots', experiment_name))
+        # Save the plot
+        os.makedirs(os.path.join(examples_dir, 'plots'), exist_ok=True)
+        fig.savefig(os.path.join(examples_dir, 'plots', f'{experiment_name}_plot.png'))
+        plt.close(fig)
     else:
-        if visualization_config is None:
-            visualization_config = {}
-        plot_func(data, **visualization_config)
+        # Display the plot and table
+        plt.show()
         plot_as_table(data)
+        plt.close(fig)
