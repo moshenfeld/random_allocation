@@ -1,8 +1,8 @@
 from functools import cache
 import numpy as np
 
-from random_allocation.other_methods.local import local_epsilon, bin_search
-from random_allocation.other_methods.poisson import poisson_epsilon_pld
+from other_methods.local import local_epsilon, bin_search
+from other_methods.poisson import poisson_epsilon_pld
 
 @cache
 def sampling_prob_from_sigma(sigma: float,
