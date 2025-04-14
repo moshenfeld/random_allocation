@@ -1,9 +1,9 @@
+import numpy as np
 from functools import cache
 import math
-import numpy as np
 
 from .RDP import log_factorial_range, log_factorial
-from other_schemes.local import bin_search
+from random_allocation.other_schemes.local import bin_search
 
 
 @cache

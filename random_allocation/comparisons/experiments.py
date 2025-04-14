@@ -8,17 +8,13 @@ import matplotlib.pyplot as plt
 from functools import cache, lru_cache
 from dataclasses import dataclass
 from enum import Enum
+import pickle
 
-from comparisons.definitions import *
-from comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
-import other_schemes.poisson as poisson
-import other_schemes.shuffle as shuffle
-import other_schemes.local as local
-import random_allocation_scheme.analytic as analytic
-import random_allocation_scheme.loose_RDP as loose_RDP
-import random_allocation_scheme.RDP as RDP
-import random_allocation_scheme.decomposition as decomposition
-import comparisons.definitions as definitions
+from random_allocation.comparisons.definitions import *
+from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
+from random_allocation.other_schemes import poisson, shuffle, local
+from random_allocation.random_allocation_scheme import analytic, loose_RDP, RDP, decomposition
+import random_allocation.comparisons.definitions as definitions
 
 class PlotType(Enum):
     COMPARISON = 1

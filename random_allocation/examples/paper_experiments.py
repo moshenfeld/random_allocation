@@ -1,8 +1,7 @@
 import numpy as np
-
-from comparisons.definitions import *
-from comparisons.experiments import run_experiment
-from comparisons.visualization import plot_combined_data, plot_comparison
+from random_allocation.comparisons.definitions import *
+from random_allocation.comparisons.experiments import run_experiment
+from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison
 
 # Configuration
 SAVE_DATA = True  # Set to True to save data to CSV files

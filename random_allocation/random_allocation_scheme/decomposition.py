@@ -1,8 +1,8 @@
 from functools import cache
 import numpy as np
 
-from other_schemes.poisson import poisson_delta_pld, poisson_epsilon_pld
-from other_schemes.local import local_epsilon, local_delta
+from random_allocation.other_schemes.poisson import poisson_delta_pld, poisson_epsilon_pld
+from random_allocation.other_schemes.local import local_epsilon, local_delta
 
 @cache
 def allocation_delta_decomposition(sigma: float,

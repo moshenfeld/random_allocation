@@ -3,13 +3,13 @@ from typing import Callable, Dict, Any, List
 import numpy as np
 import pandas as pd
 
-from other_schemes.local import local_epsilon, local_delta
-from other_schemes.poisson import poisson_epsilon_pld, poisson_delta_pld, poisson_epsilon_rdp, poisson_delta_rdp
-from other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
-from random_allocation_scheme import allocation_epsilon_analytic, allocation_delta_analytic
-from random_allocation_scheme import allocation_epsilon_rdp, allocation_delta_rdp
-from random_allocation_scheme import allocation_epsilon_rdp_loose, allocation_delta_rdp_loose
-from random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
+from random_allocation.other_schemes.local import local_epsilon, local_delta
+from random_allocation.other_schemes.poisson import poisson_epsilon_pld, poisson_delta_pld, poisson_epsilon_rdp, poisson_delta_rdp
+from random_allocation.other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
+from random_allocation.random_allocation_scheme import allocation_epsilon_analytic, allocation_delta_analytic
+from random_allocation.random_allocation_scheme import allocation_epsilon_rdp, allocation_delta_rdp
+from random_allocation.random_allocation_scheme import allocation_epsilon_rdp_loose, allocation_delta_rdp_loose
+from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
 
 #======================= Variables =======================
 EPSILON = 'epsilon'

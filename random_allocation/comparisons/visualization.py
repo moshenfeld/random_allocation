@@ -2,8 +2,8 @@ from typing import Dict, Any, List, Callable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
-from comparisons.definitions import ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION, EPSILON, names_dict, colors_dict, get_features_for_methods
+from matplotlib.ticker import FuncFormatter
+from random_allocation.comparisons.definitions import ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION, EPSILON, names_dict, colors_dict, get_features_for_methods
 
 def plot_comparison(data, log_x_axis = False, log_y_axis = False, format_x=lambda x, _: f'{x:.2f}', format_y=lambda x, _: f'{x:.2f}', figsize=(16, 9)):
     """

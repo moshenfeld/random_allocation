@@ -3,7 +3,7 @@ from numba import jit
 from typing import List, Tuple
 import math
 import numpy as np
-from other_schemes.local import bin_search
+from random_allocation.other_schemes.local import bin_search
 
 @cache
 def generate_partitions(n: int, max_size: int) -> List[List[Tuple[int, ...]]]:

@@ -1,57 +1,81 @@
 # Random Allocation for Differential Privacy
 
-This package implements random allocation mechanisms for differential privacy, providing various methods for privacy analysis including RDP, analytic, and decomposition approaches.
+This package provides tools for analyzing and comparing different random allocation schemes in the context of differential privacy.
 
 ## Installation
 
-### Using conda (recommended)
+You can install the package using pip:
+
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/random_allocation.git
-cd random_allocation
-
-# Create and activate the conda environment
-conda env create -f config/environment.yml
-conda activate random_allocation
-
-# Install the package in development mode
-pip install -e .
-```
-
-### Using pip
-```bash
-pip install random_allocation
+pip install random-allocation
 ```
 
 ## Usage
 
+Here's a simple example of how to use the package to run experiments:
+
 ```python
-from random_allocation.comparisons.definitions import *
-from random_allocation.comparisons.experiments import calc_params
-from random_allocation.comparisons.visualization import plot_combined_data
+from random_allocation import run_experiment, PlotType
+from random_allocation import ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION
 
-# Example usage
+# Define experiment parameters
 params_dict = {
-    'x_var': SIGMA,
-    'y_var': EPSILON,
-    SIGMA: np.exp(np.linspace(np.log(0.2), np.log(5), 20)),
-    DELTA: 1e-10,
-    NUM_STEPS: 100_000,
-    NUM_SELECTED: 1,
-    NUM_EPOCHS: 1
+    'x_var': 'sigma',
+    'y_var': 'epsilon',
+    'sigma': [0.1, 0.2, 0.3, 0.4, 0.5],
+    'n': 1000,
+    'k': 10,
+    'delta': 1e-5
 }
 
+# Define configuration
 config_dict = {
-    DISCRETIZATION: 1e-4,
-    MIN_ALPHA: 2,
-    MAX_ALPHA: 60
+    'title': 'Sigma vs Epsilon',
+    'x name': 'Sigma',
+    'y name': 'Epsilon'
 }
 
-methods_list = [LOCAL, POISSON_PLD, SHUFFLE, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_DECOMPOSITION]
+# Define visualization configuration
+visualization_config = {
+    'log_x_axis': False,
+    'log_y_axis': True
+}
 
-experiment_data = calc_params(params_dict, config_dict, methods_list)
-plot_combined_data(experiment_data, log_x_axis=True, log_y_axis=True)
+# Define methods to compare
+methods = [ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION]
+
+# Run the experiment
+run_experiment(
+    params_dict=params_dict,
+    config_dict=config_dict,
+    methods=methods,
+    visualization_config=visualization_config,
+    experiment_name='sigma_vs_epsilon',
+    plot_type=PlotType.COMPARISON,
+    save_data=True,
+    save_plots=True
+)
 ```
+
+## Creating Custom Experiments
+
+To create your own experiments:
+
+1. Create a new Python file (e.g., `my_experiments.py`)
+2. Import the necessary functions and constants from `random_allocation`
+3. Define your experiment parameters, configuration, and methods
+4. Call `run_experiment` with your settings
+
+The package provides two types of plots:
+- `PlotType.COMPARISON`: For comparing different methods
+- `PlotType.COMBINED`: For showing combined results
+
+## Available Methods
+
+The package includes several methods for comparison:
+- `ALLOCATION_ANALYTIC`: Our analytic method
+- `ALLOCATION_RDP`: Our RDP-based method
+- `ALLOCATION_DECOMPOSITION`: Our decomposition method
 
 ## License
 
