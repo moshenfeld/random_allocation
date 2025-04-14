@@ -1,0 +1,17 @@
+setup.py
+random_allocation/__init__.py
+random_allocation.egg-info/PKG-INFO
+random_allocation.egg-info/SOURCES.txt
+random_allocation.egg-info/dependency_links.txt
+random_allocation.egg-info/requires.txt
+random_allocation.egg-info/top_level.txt
+random_allocation/comparisons/__init__.py
+random_allocation/comparisons/definitions.py
+random_allocation/comparisons/experiments.py
+random_allocation/comparisons/visualization.py
+random_allocation/notebooks/__init__.py
+random_allocation/random_allocation/RDP.py
+random_allocation/random_allocation/__init__.py
+random_allocation/random_allocation/analytic.py
+random_allocation/random_allocation/decomposition.py
+random_allocation/random_allocation/loose_RDP.py
