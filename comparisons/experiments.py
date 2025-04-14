@@ -2,6 +2,9 @@ from typing import Dict, Any, Callable, List, Tuple
 import inspect
 import time
 import numpy as np
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
 
 from comparisons.definitions import EPSILON, DELTA, VARIABLES, methods_dict, names_dict
 
@@ -87,9 +90,64 @@ def calc_params_inner(params_dict: Dict[str, Any],
         print(f"Calculating {method} took {end_time - start_time:.3f} seconds")
     return data
 
+def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
+    """
+    Save experiment data as a CSV file.
+    
+    Args:
+        data: The experiment data dictionary
+        methods: List of methods used in the experiment
+        experiment_name: Name of the experiment for the output file
+    """
+    # Create data directory if it doesn't exist
+    os.makedirs('data', exist_ok=True)
+    
+    # Create DataFrame
+    df_data = {'x': data['x data']}
+    for method in methods:
+        df_data[method] = data['y data'][method]
+        if method + '- std' in data['y data']:
+            df_data[method + '_std'] = data['y data'][method + '- std']
+    
+    df = pd.DataFrame(df_data)
+    df.to_csv(f'data/{experiment_name}_data.csv', index=False)
+
+def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
+    """
+    Save experiment plot as a PNG file.
+    
+    Args:
+        data: The experiment data dictionary
+        methods: List of methods used in the experiment
+        experiment_name: Name of the experiment for the output file
+    """
+    # Create plots directory if it doesn't exist
+    os.makedirs('plots', exist_ok=True)
+    
+    # Create and save the plot
+    plt.figure(figsize=(10, 6))
+    for method in methods:
+        plt.plot(data['x data'], data['y data'][method], label=method)
+        if method + '- std' in data['y data']:
+            plt.fill_between(data['x data'],
+                           data['y data'][method] - data['y data'][method + '- std'],
+                           data['y data'][method] + data['y data'][method + '- std'],
+                           alpha=0.2)
+    
+    plt.xlabel(data['x name'])
+    plt.ylabel(data['y name'])
+    plt.title(data['title'])
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f'plots/{experiment_name}_plot.png')
+    plt.close()
+
 def calc_params(params_dict: Dict[str, Any],
                 config_dict: Dict[str, Any],
                 methods: list[str],
+                save_data: bool = False,
+                save_plots: bool = False,
+                experiment_name: str = None,
                 )-> Dict[str, Any]:
     x_var, y_var = get_x_y_vars(params_dict)
     data = calc_params_inner(params_dict, config_dict, methods)
@@ -101,4 +159,12 @@ def calc_params(params_dict: Dict[str, Any],
         if var != x_var and var != y_var:
             data[var] = params_dict[var]
             data['title'] += f"{names_dict[var]} = {params_dict[var]}, "
+    
+    # Save data and plots if requested
+    if experiment_name:
+        if save_data:
+            save_experiment_data(data, methods, experiment_name)
+        if save_plots:
+            save_experiment_plot(data, methods, experiment_name)
+    
     return data
