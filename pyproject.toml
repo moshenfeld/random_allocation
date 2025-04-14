@@ -28,4 +28,4 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["random_allocation", "comparisons", "notebooks", "other_methods"] 
+packages = ["comparisons", "examples", "other_schemes", "random_allocation_scheme"] 

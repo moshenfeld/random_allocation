@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Dict, Any, List
+import numpy as np
+import pandas as pd
 
 from other_schemes.local import local_epsilon, local_delta
 from other_schemes.poisson import poisson_epsilon_pld, poisson_delta_pld, poisson_epsilon_rdp, poisson_delta_rdp
@@ -131,3 +133,21 @@ methods_dict = {
         color=colors_dict[ALLOCATION]
     ),
 }
+
+def get_features_for_methods(methods: List[str], feature: str) -> Dict[str, Any]:
+    """
+    Extract a specific feature for a list of methods using the global methods_dict.
+    
+    Args:
+        methods: List of method keys
+        feature: Name of the feature to extract
+        
+    Returns:
+        Dictionary mapping method names to their feature values
+    """
+    try:
+        return {method: getattr(methods_dict[method], feature) for method in methods}
+    except KeyError as e:
+        raise KeyError(f"Invalid method key: {e}")
+    except AttributeError as e:
+        raise AttributeError(f"Invalid feature name: {feature}")

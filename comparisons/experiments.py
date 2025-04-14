@@ -1,29 +1,32 @@
-from typing import Dict, Any, Callable, List, Tuple
+from typing import Dict, Any, Callable, List, Tuple, Optional
 import inspect
 import time
 import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from functools import cache, lru_cache
+from dataclasses import dataclass
 
-from comparisons.definitions import EPSILON, DELTA, VARIABLES, methods_dict, names_dict
-
-def get_features_for_methods(method_keys: List[str], feature_name: str) -> Dict[str, Any]:
-    """
-    Extract a specific feature for a list of methods using the global methods_dict.
-    """
-    if not all(key in methods_dict for key in method_keys):
-        invalid_keys = [key for key in method_keys if key not in methods_dict]
-        raise KeyError(f"Invalid method keys: {invalid_keys}")
-    if not hasattr(methods_dict[method_keys[0]], feature_name):
-        raise AttributeError(f"Invalid feature name: {feature_name}")
-    return {key: getattr(methods_dict[key], feature_name) for key in method_keys}
+from comparisons.definitions import *
+from comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
+import other_schemes.poisson as poisson
+import other_schemes.shuffle as shuffle
+import other_schemes.local as local
+import random_allocation_scheme.analytic as analytic
+import random_allocation_scheme.loose_RDP as loose_RDP
+import random_allocation_scheme.RDP as RDP
+import random_allocation_scheme.decomposition as decomposition
+import comparisons.definitions as definitions
 
 def match_function_args(params_dict: Dict[str, Any],
                         config_dict: Dict[str, Any],
                         func: Callable,
                         x_var: str,
                         ) -> List[Dict[str, Any]]:
+    """
+    Match the function arguments with the parameters and configuration dictionaries.
+    """
     params = inspect.signature(func).parameters
     args = {}
     for key in params_dict.keys():
@@ -40,6 +43,9 @@ def match_function_args(params_dict: Dict[str, Any],
     return args_arr
 
 def get_x_y_vars(params_dict: Dict[str, Any]) -> Tuple[str, str]:
+    """
+    Get the x and y variables from the parameters dictionary.
+    """
     x_var = params_dict['x_var']
     if x_var not in params_dict.keys():
         raise ValueError(f"{x_var} was defined as the x-axis variable but does not appear in the params_dict.")
@@ -49,30 +55,36 @@ def get_x_y_vars(params_dict: Dict[str, Any]) -> Tuple[str, str]:
     return x_var, y_var
 
 def get_main_var(params_dict: Dict[str, Any]) -> str:
-    main_var = params_dict['main_var']
-    if main_var not in params_dict.keys():
-        raise ValueError(f"{main_var} was defined as the main variable but does not appear in the params_dict.")
-    x_var = params_dict['x_var']
-    if main_var == x_var:
-        raise ValueError(f"{main_var} was chosen as both the main and x-axis variable.")
-    y_var = params_dict['y_var']
-    if main_var == y_var:
-        raise ValueError(f"{main_var} was chosen as both the main and y-axis variable.")
-    return main_var
+    """
+    Get the main variable from the parameters dictionary.
+    """
+    if 'main_var' in params_dict:
+        return params_dict['main_var']
+    return params_dict['x_var']
 
 def get_func_dict(methods: list[str],
                   y_var: str
                   ) -> Dict[str, Any]:
+    """
+    Get the function dictionary for the given methods and y variable.
+    """
     if y_var == EPSILON:
         return get_features_for_methods(methods, 'epsilon_calculator')
-    if y_var == DELTA:
-        return get_features_for_methods(methods, 'delta_calculator')
-    raise ValueError(f"Invalid y_var: {y_var}")
+    return get_features_for_methods(methods, 'delta_calculator')
 
-def calc_params_inner(params_dict: Dict[str, Any],
-                      config_dict: Dict[str, Any],
-                      methods: list[str],
-                      )-> Dict[str, Any]:
+def clear_all_caches():
+    """
+    Clear all caches for all modules.
+    """
+    for module in [analytic, loose_RDP, RDP, decomposition, poisson, shuffle, local, definitions]:
+        for name, obj in module.__dict__.items():
+            if callable(obj) and hasattr(obj, 'cache_clear'):
+                obj.cache_clear()
+
+def calc_experiment_data(params_dict: Dict[str, Any],
+                         config_dict: Dict[str, Any],
+                         methods: list[str],
+                         )-> Dict[str, Any]:
     x_var, y_var = get_x_y_vars(params_dict)
     data = {'y data': {}}
     func_dict = get_func_dict(methods, y_var)
@@ -88,6 +100,15 @@ def calc_params_inner(params_dict: Dict[str, Any],
             data['y data'][method] = data['y data'][method][:,0]
         end_time = time.time()
         print(f"Calculating {method} took {end_time - start_time:.3f} seconds")
+
+    data['x name'] = names_dict[x_var]
+    data['y name'] = names_dict[y_var]
+    data['x data'] = params_dict[x_var]
+    data['title'] = f"{names_dict[y_var]} as a function of {names_dict[x_var]} \n"
+    for var in VARIABLES:
+        if var != x_var and var != y_var:
+            data[var] = params_dict[var]
+            data['title'] += f"{names_dict[var]} = {params_dict[var]}, "
     return data
 
 def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
@@ -97,10 +118,10 @@ def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_na
     Args:
         data: The experiment data dictionary
         methods: List of methods used in the experiment
-        experiment_name: Name of the experiment for the output file
+        experiment_name: Name of the experiment for the output file (full path)
     """
     # Create data directory if it doesn't exist
-    os.makedirs('data', exist_ok=True)
+    os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
     # Create DataFrame
     df_data = {'x': data['x data']}
@@ -110,7 +131,7 @@ def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_na
             df_data[method + '_std'] = data['y data'][method + '- std']
     
     df = pd.DataFrame(df_data)
-    df.to_csv(f'data/{experiment_name}_data.csv', index=False)
+    df.to_csv(f'{experiment_name}_data.csv', index=False)
 
 def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
     """
@@ -119,10 +140,10 @@ def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_na
     Args:
         data: The experiment data dictionary
         methods: List of methods used in the experiment
-        experiment_name: Name of the experiment for the output file
+        experiment_name: Name of the experiment for the output file (full path)
     """
     # Create plots directory if it doesn't exist
-    os.makedirs('plots', exist_ok=True)
+    os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
     # Create and save the plot
     plt.figure(figsize=(10, 6))
@@ -139,32 +160,49 @@ def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_na
     plt.title(data['title'])
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'plots/{experiment_name}_plot.png')
+    plt.savefig(f'{experiment_name}_plot.png')
     plt.close()
 
-def calc_params(params_dict: Dict[str, Any],
-                config_dict: Dict[str, Any],
-                methods: list[str],
-                save_data: bool = False,
-                save_plots: bool = False,
-                experiment_name: str = None,
-                )-> Dict[str, Any]:
-    x_var, y_var = get_x_y_vars(params_dict)
-    data = calc_params_inner(params_dict, config_dict, methods)
-    data['x name'] = names_dict[x_var]
-    data['y name'] = names_dict[y_var]
-    data['x data'] = params_dict[x_var]
-    data['title'] = f"{names_dict[y_var]} as a function of {names_dict[x_var]} \n"
-    for var in VARIABLES:
-        if var != x_var and var != y_var:
-            data[var] = params_dict[var]
-            data['title'] += f"{names_dict[var]} = {params_dict[var]}, "
+def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
+                  methods: List[str], visualization_config: Dict[str, Any],
+                  experiment_name: str, plot_func: Callable,
+                  save_data: bool = True, save_plots: bool = True) -> None:
+    """
+    Run an experiment and handle its results.
     
-    # Save data and plots if requested
-    if experiment_name:
+    Args:
+        params_dict: Dictionary of experiment parameters
+        config_dict: Dictionary of configuration parameters
+        methods: List of methods to use in the experiment
+        visualization_config: Additional keyword arguments for the plot function
+        experiment_name: Name of the experiment for the output file
+        plot_func: Function to use for plotting (plot_combined_data or plot_comparison)
+        save_data: Whether to save data to CSV files
+        save_plots: Whether to save plots to files
+    """
+    # Clear all caches before running the experiment
+    clear_all_caches()
+    
+    # Get the examples directory path
+    examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
+    data_file = os.path.join(examples_dir, 'data', f'{experiment_name}.csv')
+    
+    # If save_data is True and the data file exists, read it
+    if save_data and os.path.exists(data_file):
+        print(f"Reading data from {data_file}")
+        data = pd.read_csv(data_file)
+    else:
+        # Execute the experiment
+        print(f"Computing data for {experiment_name}")
+        data = calc_experiment_data(params_dict, config_dict, methods)
+        
         if save_data:
-            save_experiment_data(data, methods, experiment_name)
-        if save_plots:
-            save_experiment_plot(data, methods, experiment_name)
+            save_experiment_data(data, methods, os.path.join(examples_dir, 'data', experiment_name))
     
-    return data
+    if save_plots:
+        save_experiment_plot(data, methods, os.path.join(examples_dir, 'plots', experiment_name))
+    else:
+        if visualization_config is None:
+            visualization_config = {}
+        plot_func(data, **visualization_config)
+        plot_as_table(data)
