@@ -1,9 +1,11 @@
 from functools import cache, lru_cache
 from numba import jit
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 import math
 import numpy as np
+
 from random_allocation.other_schemes.local import bin_search
+from random_allocation.random_allocation_scheme.inverse import allocation_epsilon_inverse, allocation_delta_inverse
 
 @cache
 def generate_partitions(n: int, max_size: int) -> List[List[Tuple[int, ...]]]:
@@ -92,36 +94,22 @@ def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sig
     partition_sum_square = calc_partition_sum_square_cached(arr=partition) / (2 * sigma**2)
     return counts_log_multinomial + partition_log_multinomial + partition_sum_square
 
-@cache
-def allocation_rdp(alpha: int, sigma: float, num_steps: int) -> float:
-    ''' Compute the RDP of the allocation mechanism '''
-    partitions = generate_partitions(n=alpha, max_size=num_steps)
-    exp_terms = [compute_exp_term(partition=partition, alpha=alpha, num_steps=num_steps, sigma=sigma) for partition in partitions]
-
-    max_val = max(exp_terms)
-    log_sum = np.log(sum(np.exp(term - max_val) for term in exp_terms))
-
-    return (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)
-
-@cache
-def allocation_epsilon_rdp(sigma: float,
-                           delta: float,
-                           num_steps: int,
-                           num_selected: int,
-                           num_epochs: int,
-                           min_alpha: int = 2,
-                           max_alpha: int = 50,
-                           print_alpha: bool = False,
-                           ) -> float:
-    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
-    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
-    alpha_rdp = allocation_rdp(min_alpha, sigma, num_steps_per_round)*num_rounds*num_epochs
+def epsilon_from_rdp(sigma: float,
+                     delta: float,
+                     num_steps:int,
+                     num_epochs:int,
+                     min_alpha: int,
+                     max_alpha: int,
+                     rdp_function: Callable,
+                     print_alpha: bool,
+                     ) -> float:
+    alpha_rdp = rdp_function(min_alpha, sigma, num_steps)*num_epochs
     epsilon = alpha_rdp + math.log1p(-1/min_alpha) - math.log(delta * min_alpha)/(min_alpha-1)
     used_alpha = min_alpha
     alpha = int(min_alpha+1)
     surpased_rdp = False
     while alpha <= max_alpha and not surpased_rdp:
-        alpha_rdp = allocation_rdp(alpha, sigma, num_steps_per_round)*num_rounds*num_epochs
+        alpha_rdp = rdp_function(alpha, sigma, num_steps)*num_epochs
         if alpha_rdp > epsilon:
             surpased_rdp = True
             break
@@ -133,14 +121,119 @@ def allocation_epsilon_rdp(sigma: float,
             alpha += 1
     if used_alpha == max_alpha:
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-        # return np.inf
     if used_alpha == min_alpha:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
     if print_alpha:
         print(f'Used alpha: {used_alpha}')
     return epsilon
 
-@cache
+# @cache
+def allocation_rdp_remove(alpha: int, 
+                          sigma: float, 
+                          num_steps: int
+                          ) -> float:
+    ''' Compute the RDP of the allocation mechanism '''
+    partitions = generate_partitions(n=alpha, max_size=num_steps)
+    exp_terms = [compute_exp_term(partition=partition, alpha=alpha, num_steps=num_steps, sigma=sigma) for partition in partitions]
+
+    max_val = max(exp_terms)
+    log_sum = np.log(sum(np.exp(term - max_val) for term in exp_terms))
+
+    return (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)
+
+# @cache
+def allocation_epsilon_rdp_remove(sigma: float,
+                                  delta: float,
+                                  num_steps: int,
+                                  num_selected: int,
+                                  num_epochs: int,
+                                  min_alpha: int,
+                                  max_alpha: int,
+                                  print_alpha: bool,
+                                  ) -> float:
+    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
+    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    return epsilon_from_rdp(sigma=sigma, delta=delta, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
+                            min_alpha=min_alpha, max_alpha=max_alpha, rdp_function=allocation_rdp_remove, print_alpha=print_alpha)
+
+# @cache
+def allocation_delta_rdp_remove(sigma: float,
+                                epsilon: float,
+                                num_steps: int,
+                                num_selected: int,
+                                num_epochs: int,
+                                min_alpha: int,
+                                max_alpha: int,
+                                delta_tolerance: float,
+                                ) -> float:
+    return bin_search(lambda delta: allocation_epsilon_rdp_remove(sigma=sigma, delta=delta, num_steps=num_steps, 
+                                                                  num_selected=num_selected, num_epochs=num_epochs, 
+                                                                  min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False),
+                      lower=0, upper=1, target=epsilon, tolerance=delta_tolerance, increasing=False)
+
+# @cache
+def allocation_rdp_add(alpha: int, 
+                       sigma: float, 
+                       num_steps: int
+                       ) -> float:
+    ''' Compute the RDP of the allocation mechanism '''
+    partitions = generate_partitions(n=alpha-1, max_size=num_steps)
+    exp_terms = [compute_exp_term(partition=partition, alpha=alpha-1, num_steps=num_steps, sigma=sigma)
+                 for partition in partitions]
+
+    max_val = max(exp_terms)
+    log_sum = np.log(sum(np.exp(term - max_val) for term in exp_terms))
+
+    return (log_sum + max_val) / (alpha-1) - np.log(num_steps) + 1/(2*sigma**2)
+
+# @cache
+def allocation_delta_rdp_add(sigma: float,
+                             epsilon: float,
+                             num_steps: int,
+                             num_selected: int,
+                             num_epochs: int,
+                             min_alpha: int,
+                             max_alpha: int,
+                             delta_tolerance: float,
+                             ) -> float:
+    return bin_search(lambda delta: allocation_epsilon_rdp_add(sigma=sigma, delta=delta, num_steps=num_steps,
+                                                               num_selected=num_selected, num_epochs=num_epochs,
+                                                               min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False),
+                      lower=0, upper=1, target=epsilon, tolerance=delta_tolerance, increasing=False)
+
+# @cache
+def allocation_epsilon_rdp_add(sigma: float,
+                               delta: float,
+                               num_steps: int,
+                               num_selected: int,
+                               num_epochs: int,
+                               min_alpha: int,
+                               max_alpha: int,
+                               print_alpha: bool,
+                               ) -> float:
+    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
+    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    return epsilon_from_rdp(sigma=sigma, delta=delta, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
+                            min_alpha=min_alpha, max_alpha=max_alpha, rdp_function=allocation_rdp_add, print_alpha=print_alpha)
+
+# @cache
+def allocation_epsilon_rdp(sigma: float,
+                           delta: float,
+                           num_steps: int,
+                           num_selected: int,
+                           num_epochs: int,
+                           min_alpha: int = 2,
+                           max_alpha: int = 50,
+                           print_alpha: bool = False,
+                           ) -> float:
+    epsilon_remove = allocation_epsilon_rdp_remove(sigma=sigma, delta=delta, num_steps=num_steps, num_selected=num_selected,
+                                                  num_epochs=num_epochs, min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=print_alpha)
+    epsilon_add = allocation_epsilon_rdp_add(sigma=sigma, delta=delta, num_steps=num_steps, num_selected=num_selected,
+                                            num_epochs=num_epochs, min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=print_alpha)
+    epsilon_add_inverse = allocation_epsilon_inverse(sigma=sigma, delta=delta, num_steps=num_steps)
+    return max(epsilon_remove, min(epsilon_add, epsilon_add_inverse))
+
+# @cache
 def allocation_delta_rdp(sigma: float,
                          epsilon: float,
                          num_steps: int,
@@ -148,7 +241,11 @@ def allocation_delta_rdp(sigma: float,
                          num_epochs: int,
                          min_alpha: int = 2,
                          max_alpha: int = 50,
+                         delta_tolerance: float = 1e-15,
                          ) -> float:
-    return bin_search(lambda delta: allocation_epsilon_rdp(sigma=sigma, delta=delta, num_steps=num_steps, num_selected=num_selected,
-                                                           num_epochs=num_epochs, min_alpha=min_alpha, max_alpha=max_alpha),
-                      0, 1, epsilon, increasing=False)
+    delta_remove = allocation_delta_rdp_remove(sigma=sigma, epsilon=epsilon, num_steps=num_steps, num_selected=num_selected,
+                                              num_epochs=num_epochs, min_alpha=min_alpha, max_alpha=max_alpha, delta_tolerance=delta_tolerance)
+    delta_add = allocation_delta_rdp_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps, num_selected=num_selected,
+                                        num_epochs=num_epochs, min_alpha=min_alpha, max_alpha=max_alpha, delta_tolerance=delta_tolerance)
+    delta_add_inverse = allocation_delta_inverse(sigma=sigma, epsilon=epsilon, num_steps=num_steps)
+    return max(delta_remove, min(delta_add, delta_add_inverse))

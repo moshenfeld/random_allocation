@@ -1,10 +1,10 @@
-from functools import cache
+# from functools import cache
 import numpy as np
 
 from random_allocation.other_schemes.local import local_epsilon, bin_search
 from random_allocation.other_schemes.poisson import poisson_epsilon_pld
 
-@cache
+# @cache
 def sampling_prob_from_sigma(sigma: float,
                              delta: float,
                              num_steps: int,
@@ -19,7 +19,7 @@ def sampling_prob_from_sigma(sigma: float,
         return 1.0
     return np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1)
 
-@cache
+# @cache
 def allocation_epsilon_analytic(sigma: float,
                                 delta: float,
                                 num_steps: int,
@@ -42,7 +42,7 @@ def allocation_epsilon_analytic(sigma: float,
                                   num_epochs=num_epochs, sampling_prob=sampling_prob, discretization=discretization)
     return min(epsilon, local_epsilon_val)
 
-@cache
+# @cache
 def allocation_delta_analytic(sigma: float,
                               epsilon: float,
                               num_steps: int,

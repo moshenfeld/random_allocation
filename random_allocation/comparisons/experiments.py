@@ -126,13 +126,21 @@ def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_na
     
     # Create DataFrame
     df_data = {'x': data['x data']}
+    
+    # Save y data for each method
     for method in methods:
         df_data[method] = data['y data'][method]
         if method + '- std' in data['y data']:
             df_data[method + '_std'] = data['y data'][method + '- std']
     
+    # Include additional relevant data
+    df_data['title'] = data.get('title', '')
+    df_data['x name'] = data.get('x name', '')
+    df_data['y name'] = data.get('y name', '')
+    
+    # Create DataFrame and save to CSV
     df = pd.DataFrame(df_data)
-    df.to_csv(f'{experiment_name}_data.csv', index=False)
+    df.to_csv(experiment_name, index=False)
 
 def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
     """
@@ -174,14 +182,13 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
     # Get the examples directory path
     examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
     data_file = os.path.join(examples_dir, 'data', f'{experiment_name}.csv')
-    
     # Data logic:
     # If save_data is True: always recalculate and save
     # If save_data is False: try to read existing data, if not exists - recalculate but don't save
     if save_data:
         print(f"Computing data for {experiment_name}")
         data = calc_experiment_data(params_dict, config_dict, methods)
-        save_experiment_data(data, methods, os.path.join(examples_dir, 'data', experiment_name))
+        save_experiment_data(data, methods, data_file)
     else:
         if os.path.exists(data_file):
             print(f"Reading data from {data_file}")

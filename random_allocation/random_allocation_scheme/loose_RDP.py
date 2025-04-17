@@ -1,12 +1,12 @@
 import numpy as np
-from functools import cache
+# from functools import cache
 import math
 
 from .RDP import log_factorial_range, log_factorial
 from random_allocation.other_schemes.local import bin_search
 
 
-@cache
+# @cache
 def allocation_rdp_loose(alpha: float, sigma: float, num_steps: int, num_selected: int) -> float:
     ''' Compute an upper bound on RDP of the allocation mechanism based on alpha=2 '''
     log_terms_arr = np.array([log_factorial_range(n=num_selected, m=i) - log_factorial(n=i)
@@ -15,7 +15,7 @@ def allocation_rdp_loose(alpha: float, sigma: float, num_steps: int, num_selecte
     max_log_term = np.max(log_terms_arr)
     return max_log_term + np.log(np.sum(np.exp(log_terms_arr - max_log_term))) - log_factorial_range(n=num_steps, m=num_selected) + log_factorial(n=num_selected)
 
-@cache
+# @cache
 def allocation_epsilon_rdp_loose(sigma: float,
                                  delta: float,
                                  num_steps: int,
@@ -50,7 +50,7 @@ def allocation_epsilon_rdp_loose(sigma: float,
         print(f'Used alpha: {used_alpha}')
     return epsilon
 
-@cache
+# @cache
 def allocation_delta_rdp_loose(sigma: float,
                                epsilon: float,
                                num_steps: int,

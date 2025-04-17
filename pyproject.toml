@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "random-allocation"
-version = "0.1.1"
+version = "0.2"
 authors = [
     {name = "Moshe Shenfeld", email = "mosheshenfeld@gmail.com"},
 ]
@@ -24,12 +24,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "numpy>=1.21.0,<3.0.0",
+    "numpy>=2.0.0,<3.0.0",
     "scipy>=1.7.0",
     "matplotlib>=3.4.0",
     "pandas>=1.3.0",
     "numba>=0.60.0",
     "dp_accounting>=0.4.4",
+    "ml-shuffling-amplification @ git+https://github.com/apple/ml-shuffling-amplification",
 ]
 
 [project.optional-dependencies]

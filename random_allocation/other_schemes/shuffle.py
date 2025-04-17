@@ -1,9 +1,10 @@
-from functools import cache
+# from functools import cache
 import numpy as np
+# from computeamplification import numericalanalysis
 from .shuffle_external import numericalanalysis
 from .local import local_epsilon, bin_search
 
-@cache
+# @cache
 def shuffle_epsilon_analytic(sigma: float,
                              delta: float,
                              num_steps: int,
@@ -33,7 +34,7 @@ def shuffle_epsilon_analytic(sigma: float,
         return det_eps
     return epsilon
 
-@cache
+# @cache
 def shuffle_delta_analytic(sigma: float,
                            epsilon: float,
                            num_steps: int,

@@ -1,7 +1,16 @@
+import sys
+import os
+
+# Add the correct project root directory to PYTHONPATH
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# print("Updated PYTHONPATH:", sys.path)
+
 import numpy as np
 from random_allocation.comparisons.definitions import *
-from random_allocation.comparisons.experiments import run_experiment
-from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison
+from random_allocation.comparisons.experiments import run_experiment, PlotType
 
 # Configuration
 SAVE_DATA = True  # Set to True to save data to CSV files
@@ -20,12 +29,13 @@ config_dict_1 = {DISCRETIZATION: 1e-4,
                  MIN_ALPHA: 2,
                  MAX_ALPHA: 60}
 
-methods_list_1 = [LOCAL, POISSON_PLD, SHUFFLE, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_DECOMPOSITION]
+# methods_list_1 = [LOCAL, POISSON_PLD, SHUFFLE, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_DECOMPOSITION]
+methods_list_1 = [LOCAL, ALLOCATION_DECOMPOSITION, POISSON_PLD, SHUFFLE, ALLOCATION_RDP, ALLOCATION_ANALYTIC]
 
 visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 
 run_experiment(params_dict_1, config_dict_1, methods_list_1, visualization_config_1,
-              'epsilon_vs_sigma', plot_combined_data, SAVE_DATA, SAVE_PLOTS)
+              'epsilon_vs_sigma', PlotType.COMBINED, SAVE_DATA, SAVE_PLOTS)
 
 # Second experiment
 params_dict_2 = {'x_var': NUM_EPOCHS,
@@ -38,13 +48,13 @@ params_dict_2 = {'x_var': NUM_EPOCHS,
 
 config_dict_2 = {DISCRETIZATION: 1e-4,
                  MIN_ALPHA: 2,
-                 MAX_ALPHA: 60}
+                 MAX_ALPHA: 10}
 
 methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD, ALLOCATION_DECOMPOSITION]
 
 visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
 run_experiment(params_dict_2, config_dict_2, methods_list_2, visualization_config_2,
-              'epsilon_vs_epochs', plot_comparison, SAVE_DATA, SAVE_PLOTS)
+              'epsilon_vs_epochs', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
 
 # Third experiment
 params_dict_3 = {'x_var': NUM_STEPS,
@@ -65,7 +75,7 @@ methods_list_3 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
 
 run_experiment(params_dict_3, config_dict_3, methods_list_3, visualization_config_3,
-              'delta_ve_steps', plot_comparison, SAVE_DATA, SAVE_PLOTS)
+              'delta_ve_steps', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
 
 # Fourth experiment
 params_dict_4 = {'x_var': NUM_SELECTED,
@@ -84,4 +94,4 @@ methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_LOOSE_RDP]
 
 visualization_config_4 = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
 run_experiment(params_dict_4, config_dict_4, methods_list_4, visualization_config_4,
-              'epsilon_vs_selected', plot_comparison, SAVE_DATA, SAVE_PLOTS)
+              'epsilon_vs_selected', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
