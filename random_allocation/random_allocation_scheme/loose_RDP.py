@@ -47,7 +47,7 @@ def allocation_epsilon_rdp_loose(sigma: float,
     if used_alpha == min_alpha:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
     if print_alpha:
-        print(f'Used alpha: {used_alpha}')
+        print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_selected: {num_selected}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
     return epsilon
 
 # @cache

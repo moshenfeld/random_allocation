@@ -124,7 +124,7 @@ def epsilon_from_rdp(sigma: float,
     if used_alpha == min_alpha:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
     if print_alpha:
-        print(f'Used alpha: {used_alpha}')
+        print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
     return epsilon
 
 # @cache
@@ -151,8 +151,8 @@ def allocation_epsilon_rdp_remove(sigma: float,
                                   max_alpha: int,
                                   print_alpha: bool,
                                   ) -> float:
-    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
-    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    num_steps_per_round = int(np.ceil(num_steps/num_selected))
+    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     return epsilon_from_rdp(sigma=sigma, delta=delta, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
                             min_alpha=min_alpha, max_alpha=max_alpha, rdp_function=allocation_rdp_remove, print_alpha=print_alpha)
 
@@ -211,8 +211,8 @@ def allocation_epsilon_rdp_add(sigma: float,
                                max_alpha: int,
                                print_alpha: bool,
                                ) -> float:
-    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
-    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    num_steps_per_round = int(np.ceil(num_steps/num_selected))
+    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     return epsilon_from_rdp(sigma=sigma, delta=delta, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
                             min_alpha=min_alpha, max_alpha=max_alpha, rdp_function=allocation_rdp_add, print_alpha=print_alpha)
 

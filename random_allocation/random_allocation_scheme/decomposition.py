@@ -13,8 +13,8 @@ def allocation_delta_decomposition_add(sigma: float,
                                        num_epochs: int,
                                        discretization: float,
                                        ) -> float:    
-    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
-    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    num_steps_per_round = int(np.ceil(num_steps/num_selected))
+    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     # use one of two identical formulas to avoid numerical instability
     if epsilon < 1:
@@ -24,7 +24,6 @@ def allocation_delta_decomposition_add(sigma: float,
     epsilon_new = -np.log(1-lambda_val*(1-np.exp(-epsilon)))
     delta_Poisson = poisson_delta_pld(sigma=sigma, epsilon=epsilon_new, num_steps=num_steps_per_round, num_selected=1,
                                       num_epochs=num_rounds*num_epochs, discretization=discretization)
-    # print(f"Sigma: {sigma}, epsilon: {epsilon}, delda: {delta_Poisson / lambda_new}")
     return delta_Poisson / lambda_new
 
 # @cache
@@ -51,8 +50,8 @@ def allocation_delta_decomposition_remove(sigma: float,
                                    num_epochs: int,
                                    discretization: float,
                                    ) -> float:
-    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
-    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    num_steps_per_round = int(np.ceil(num_steps/num_selected))
+    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     local_delta_val = local_delta(sigma, epsilon, num_epochs)
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     epsilon_new = np.log(1+lambda_val*(np.exp(epsilon)-1))
@@ -69,9 +68,8 @@ def allocation_epsilon_decomposition_remove(sigma: float,
                                             num_epochs: int,
                                             discretization: float,
                                             ) -> float:
-    print(f'Sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_selected: {num_selected}, num_epochs: {num_epochs}, discretization: {discretization}')
-    num_steps_per_round = np.ceil(num_steps/num_selected).astype(int)
-    num_rounds = np.ceil(num_steps/num_steps_per_round).astype(int)
+    num_steps_per_round = int(np.ceil(num_steps/num_selected))
+    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     delta_new = delta * lambda_val
     epsilon_Poisson = poisson_epsilon_pld(sigma=sigma, delta=delta_new, num_steps=num_steps_per_round, 

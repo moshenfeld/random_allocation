@@ -25,12 +25,6 @@ def poisson_pld(sigma: float,
                                                                     value_discretization_interval=discretization,
                                                                     sampling_prob=sampling_prob,
                                                                     use_connect_dots=True)
-    # Go over the internal variables of the PLD object and print them
-    vars = pl_dist.__dict__
-    for var in vars:
-        if var == 'privacy_loss_distribution':
-            continue
-        print(f'{var}: {vars[var]}')
     return pl_dist.self_compose(num_steps*num_epochs)
 
 # @cache
@@ -81,7 +75,6 @@ def poisson_epsilon_pld(sigma: float,
     - sampling_prob: The probability of sampling.
     - discretization: The discretization interval for the PLD.
     """
-    print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_selected: {num_selected}, num_epochs: {num_epochs}, sampling_prob: {sampling_prob}, discretization: {discretization}')
     if sampling_prob == 0.0:
         sampling_prob = num_selected/num_steps
     pld = poisson_pld(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
@@ -175,6 +168,6 @@ def poisson_epsilon_rdp(sigma: float,
                              alpha_orders=alpha_orders)
     if print_alpha:
         epsilon, used_alpha = accountant.get_epsilon_and_optimal_order(delta)
-        print(f'Used alpha: {used_alpha}')
+        print(f'sigma: {sigma}, num_steps: {num_steps}, num_epochs: {num_epochs}, sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
         return epsilon
     return accountant.get_epsilon(delta)
