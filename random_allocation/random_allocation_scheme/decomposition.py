@@ -116,5 +116,4 @@ def allocation_epsilon_decomposition(sigma: float,
                                                        discretization = discretization, epsilon_tolerance = epsilon_tolerance, 
                                                        epsilon_upper_bound = epsilon_upper_bound)
     epsilon_inverse = allocation_epsilon_inverse(sigma=sigma, delta=delta, num_steps=num_steps)
-    print(f"Sigma: {sigma}, Epsilon remove: {epsilon_remove}, Epsilon add: {epsilon_add}, Epsilon inverse: {epsilon_inverse}")
     return max(epsilon_remove, min(epsilon_add, epsilon_inverse))
