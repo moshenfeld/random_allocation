@@ -19,9 +19,7 @@ def bin_search(func: Callable, lower: float, upper: float, target: float, tolera
     - increasing: Boolean indicating if the function is increasing.
     """
     search_params = pld.common.BinarySearchParameters(lower_bound=lower, upper_bound=upper, tolerance=tolerance)
-    if increasing:
-        return pld.common.monotone_function(func, target, search_params)
-    return pld.common.inverse_monotone_function(func, target, search_params)
+    return pld.common.inverse_monotone_function(func, target, search_params, increasing)
 
 # ==================== Deterministic ====================
 # @cache

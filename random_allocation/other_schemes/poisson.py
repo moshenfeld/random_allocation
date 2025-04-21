@@ -1,5 +1,6 @@
 # from functools import cache
 from dp_accounting import pld, dp_event, rdp
+
 from typing import List
 
 # ==================== PLD ====================
@@ -9,23 +10,35 @@ def poisson_pld(sigma: float,
                 num_epochs: int,
                 sampling_prob: float,
                 discretization: float,
+                direction: str,
                 ) -> pld.privacy_loss_distribution:
     """
-    Calculate the privacy loss distribution (PLD) for the Poisson mechanism.
+    Calculate the privacy loss distribution (PLD) for the Poisson scheme with the Gaussian mechanism.
 
     Parameters:
     - sigma: The standard deviation of the Gaussian mechanism.
     - num_steps: The number of steps in each epoch.
-    - num_epochs: The number of epochs.
     - sampling_prob: The probability of sampling.
+    - num_epochs: The number of epochs.
     - discretization: The discretization interval for the PLD.
+    - direction: The direction of the PLD. Can be 'add', 'remove', or 'both'.
     """
-    pl_dist = pld.privacy_loss_distribution.from_gaussian_mechanism(standard_deviation=sigma,
-                                                                    pessimistic_estimate=True,
-                                                                    value_discretization_interval=discretization,
-                                                                    sampling_prob=sampling_prob,
-                                                                    use_connect_dots=True)
-    return pl_dist.self_compose(num_steps*num_epochs)
+    gauss_pld = pld.privacy_loss_distribution.from_gaussian_mechanism(standard_deviation=sigma,
+                                                                      value_discretization_interval=discretization,
+                                                                      pessimistic_estimate=True,
+                                                                      sampling_prob=sampling_prob,
+                                                                      use_connect_dots=True)
+    zero_delta_pmf = pld.privacy_loss_distribution.pld_pmf.create_pmf(loss_probs={-1000: 1.0},
+                                                                      discretization=discretization,
+                                                                      infinity_mass=0,
+                                                                      pessimistic_estimate=True)
+    if direction == "add":
+        pld_single = pld.privacy_loss_distribution.PrivacyLossDistribution(zero_delta_pmf, gauss_pld._pmf_add)
+    elif direction == "remove":
+        pld_single = pld.privacy_loss_distribution.PrivacyLossDistribution(gauss_pld._pmf_remove, zero_delta_pmf)
+    elif direction == "both":
+        pld_single = gauss_pld
+    return pld_single.self_compose(num_steps*num_epochs)
 
 # @cache
 def poisson_delta_pld(sigma: float,
@@ -35,9 +48,10 @@ def poisson_delta_pld(sigma: float,
                       num_epochs: int,
                       sampling_prob: float = 0.0,
                       discretization: float = 1e-4,
+                      direction: str = 'both',
                       ) -> float:
     """
-    Calculate the delta value for the Poisson mechanism based on PLD.
+    Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on PLD.
 
     Parameters:
     - sigma: The standard deviation of the Gaussian mechanism.
@@ -51,7 +65,7 @@ def poisson_delta_pld(sigma: float,
     if sampling_prob == 0.0:
         sampling_prob = num_selected/num_steps
     pld = poisson_pld(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
-                      discretization=discretization)
+                      discretization=discretization, direction=direction)
     return pld.get_delta_for_epsilon(epsilon)
 
 # @cache
@@ -62,9 +76,10 @@ def poisson_epsilon_pld(sigma: float,
                         num_epochs: int,
                         sampling_prob: float = 0.0,
                         discretization: float = 1e-4,
+                        direction: str = 'both',
                         ) -> float:
     """
-    Calculate the epsilon value for the Poisson mechanism based on PLD.
+    Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on PLD.
 
     Parameters:
     - sigma: The standard deviation of the Gaussian mechanism.
@@ -78,7 +93,7 @@ def poisson_epsilon_pld(sigma: float,
     if sampling_prob == 0.0:
         sampling_prob = num_selected/num_steps
     pld = poisson_pld(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
-                      discretization=discretization)
+                      discretization=discretization, direction=direction)
     return pld.get_epsilon_for_delta(delta)
 
 # ==================== RDP ====================
@@ -90,7 +105,7 @@ def poisson_rdp(sigma: float,
                 alpha_orders: List[float],
                 ) -> rdp.RdpAccountant:
     """
-    Create an RDP accountant for the Poisson mechanism.
+    Create an RDP accountant for the Poisson scheme with the Gaussian mechanism.
 
     Parameters:
     - sigma: The standard deviation of the Gaussian mechanism.
@@ -115,7 +130,7 @@ def poisson_delta_rdp(sigma: float,
                       print_alpha: bool = False,
                       ) -> float:
     """
-    Calculate the delta value for the Poisson mechanism based on RDP.
+    Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on RDP.
 
     Parameters:
     - sigma: The standard deviation of the Gaussian mechanism.
@@ -149,7 +164,7 @@ def poisson_epsilon_rdp(sigma: float,
                         print_alpha: bool = False,
                         ) -> float:
     """
-    Calculate the epsilon value for the Poisson mechanism based on RDP.
+    Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on RDP.
 
     Parameters:
     - sigma: The standard deviation of the Gaussian mechanism.

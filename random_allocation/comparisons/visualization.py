@@ -34,7 +34,7 @@ def plot_comparison(data, log_x_axis = False, log_y_axis = False, format_x=lambd
     plt.tick_params(axis='both', which='major', labelsize=12)
     plt.xticks(data['x data'])
     plt.legend(fontsize=20)
-    plt.grid(True)
+    # plt.grid(True)
     return fig
 
 def plot_as_table(data):
@@ -77,5 +77,5 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
     plt.tick_params(axis='both', which='major', labelsize=12)
     plt.xticks(data['x data'])
     plt.legend(fontsize=20, loc='lower left', framealpha=0.)
-    plt.grid(True)
+    # plt.grid(True)
     return fig

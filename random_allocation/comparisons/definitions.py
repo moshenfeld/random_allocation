@@ -11,6 +11,11 @@ from random_allocation.random_allocation_scheme import allocation_epsilon_rdp, a
 from random_allocation.random_allocation_scheme import allocation_epsilon_rdp_loose, allocation_delta_rdp_loose
 from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
 
+#======================= Direction =======================
+ADD    = 'add'
+REMOVE = 'remove'
+BOTH   = 'both'
+
 #======================= Variables =======================
 EPSILON = 'epsilon'
 DELTA = 'delta'
@@ -28,7 +33,9 @@ NUM_EXP = 'num_experiments'
 DISCRETIZATION = 'discretization'
 MIN_ALPHA = 'min_alpha'
 MAX_ALPHA = 'max_alpha'
-CONFIGS = [NUM_EXP, DISCRETIZATION, MIN_ALPHA, MAX_ALPHA]
+EPSILON_TOLERANCE = 'epsilon_tolerance'
+DELTA_TOLERANCE = 'delta_tolerance'
+CONFIGS = [NUM_EXP, DISCRETIZATION, MIN_ALPHA, MAX_ALPHA, EPSILON_TOLERANCE, DELTA_TOLERANCE]
 ALPHA_ORDERS = 'alpha_orders'
 
 # ======================= Schemes =======================

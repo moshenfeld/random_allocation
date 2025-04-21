@@ -27,7 +27,9 @@ params_dict_1 = {'x_var': SIGMA,
 
 config_dict_1 = {DISCRETIZATION: 1e-4,
                  MIN_ALPHA: 2,
-                 MAX_ALPHA: 60}
+                 MAX_ALPHA: 60,
+                 EPSILON_TOLERANCE: 1e-3,
+                 DELTA_TOLERANCE: 1e-10,}
 
 methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_DECOMPOSITION]
 
@@ -47,7 +49,9 @@ params_dict_2 = {'x_var': NUM_EPOCHS,
 
 config_dict_2 = {DISCRETIZATION: 1e-4,
                  MIN_ALPHA: 2,
-                 MAX_ALPHA: 10}
+                 MAX_ALPHA: 60,
+                 EPSILON_TOLERANCE: 1e-3,
+                 DELTA_TOLERANCE: 1e-10,}
 
 methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD, ALLOCATION_DECOMPOSITION]
 
@@ -67,14 +71,16 @@ params_dict_3 = {'x_var': NUM_STEPS,
 config_dict_3 = {DISCRETIZATION: 1e-4,
                  NUM_EXP: 1_000_000,
                  MIN_ALPHA: 2,
-                 MAX_ALPHA: 60}
+                 MAX_ALPHA: 60,
+                 EPSILON_TOLERANCE: 1e-3,
+                 DELTA_TOLERANCE: 1e-10,}
 
 methods_list_3 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
 visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
 
 run_experiment(params_dict_3, config_dict_3, methods_list_3, visualization_config_3,
-              'delta_ve_steps', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
+              'delta_vs_steps', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
 
 # Fourth experiment
 params_dict_4 = {'x_var': NUM_SELECTED,
@@ -87,7 +93,9 @@ params_dict_4 = {'x_var': NUM_SELECTED,
 
 config_dict_4 = {DISCRETIZATION: 1e-4,
                  MIN_ALPHA: 2,
-                 MAX_ALPHA: 60}
+                 MAX_ALPHA: 60,
+                 EPSILON_TOLERANCE: 1e-3,
+                 DELTA_TOLERANCE: 1e-10,}
 
 methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_LOOSE_RDP]
 

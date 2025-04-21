@@ -3,8 +3,8 @@ import numpy as np
 
 from random_allocation.other_schemes.local import local_epsilon, bin_search
 from random_allocation.other_schemes.poisson import poisson_epsilon_pld
+from random_allocation.random_allocation_scheme.inverse import allocation_epsilon_inverse, allocation_delta_inverse
 
-# @cache
 def sampling_prob_from_sigma(sigma: float,
                              delta: float,
                              num_steps: int,
@@ -19,12 +19,12 @@ def sampling_prob_from_sigma(sigma: float,
         return 1.0
     return np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1)
 
-# @cache
 def allocation_epsilon_analytic(sigma: float,
                                 delta: float,
                                 num_steps: int,
                                 num_selected: int,
                                 num_epochs: int,
+                                direction: str = 'both',
                                 discretization: float = 1e-4,
                                 ) -> float:
     local_delta_split = 0.99
@@ -39,17 +39,17 @@ def allocation_epsilon_analytic(sigma: float,
     if sampling_prob > 0.99:
         return local_epsilon_val
     epsilon = poisson_epsilon_pld(sigma=sigma, delta=Poisson_delta, num_steps=num_steps, num_selected=num_selected,
-                                  num_epochs=num_epochs, sampling_prob=sampling_prob, discretization=discretization)
+                                  num_epochs=num_epochs, sampling_prob=sampling_prob, discretization=discretization, direction=direction)
     return min(epsilon, local_epsilon_val)
 
-# @cache
 def allocation_delta_analytic(sigma: float,
                               epsilon: float,
                               num_steps: int,
                               num_selected: int,
                               num_epochs: int,
-                              discretization: float = 1e-4,
+                              direction: str = 'both',
+                              discretization: float = 1e-4, 
                               ) -> float:
     return bin_search(lambda delta: allocation_epsilon_analytic(sigma=sigma, delta=delta, num_steps=num_steps,
-                                                                num_selected=num_selected, num_epochs=num_epochs, discretization=discretization),
+                                                                num_selected=num_selected, num_epochs=num_epochs, discretization=discretization, direction=direction),
                       0, 1, epsilon, increasing=False)
