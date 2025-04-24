@@ -13,7 +13,7 @@ import pickle
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
 from random_allocation.other_schemes import poisson, shuffle, local
-from random_allocation.random_allocation_scheme import analytic, loose_RDP, RDP, decomposition
+from random_allocation.random_allocation_scheme import RDP_DCO, analytic, RDP, decomposition
 import random_allocation.comparisons.definitions as definitions
 
 class PlotType(Enum):
@@ -77,7 +77,7 @@ def clear_all_caches():
     """
     Clear all caches for all modules.
     """
-    for module in [analytic, loose_RDP, RDP, decomposition, poisson, shuffle, local, definitions]:
+    for module in [analytic, RDP_DCO, RDP, decomposition, poisson, shuffle, local, definitions]:
         for name, obj in module.__dict__.items():
             if callable(obj) and hasattr(obj, 'cache_clear'):
                 obj.cache_clear()

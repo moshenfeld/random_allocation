@@ -8,7 +8,7 @@ from random_allocation.other_schemes.poisson import poisson_epsilon_pld, poisson
 from random_allocation.other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
 from random_allocation.random_allocation_scheme import allocation_epsilon_analytic, allocation_delta_analytic
 from random_allocation.random_allocation_scheme import allocation_epsilon_rdp, allocation_delta_rdp
-from random_allocation.random_allocation_scheme import allocation_epsilon_rdp_loose, allocation_delta_rdp_loose
+from random_allocation.random_allocation_scheme import allocation_epsilon_rdp_DCO, allocation_delta_rdp_DCO
 from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
 
 #======================= Direction =======================
@@ -125,8 +125,8 @@ methods_dict = {
     ),
     ALLOCATION_LOOSE_RDP: MethodFeatures(
         name=ALLOCATION_LOOSE_RDP,
-        epsilon_calculator=allocation_epsilon_rdp_loose,
-        delta_calculator=allocation_delta_rdp_loose,
+        epsilon_calculator=allocation_epsilon_rdp_DCO,
+        delta_calculator=allocation_delta_rdp_DCO,
         legend='_{\\mathcal{A}}$ - ' + ALLOCATION_LOOSE_RDP,
         marker='o',
         color=colors_dict[ALLOCATION]

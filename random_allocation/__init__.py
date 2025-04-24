@@ -14,7 +14,7 @@ from random_allocation.comparisons.definitions import (
 from random_allocation.random_allocation_scheme import (
     allocation_epsilon_analytic, allocation_delta_analytic,
     allocation_epsilon_rdp, allocation_delta_rdp,
-    allocation_epsilon_rdp_loose, allocation_delta_rdp_loose,
+    allocation_epsilon_rdp_DCO, allocation_delta_rdp_DCO,
     allocation_epsilon_decomposition, allocation_delta_decomposition
 )
 
@@ -45,8 +45,8 @@ __all__ = [
     'allocation_delta_analytic',
     'allocation_epsilon_rdp',
     'allocation_delta_rdp',
-    'allocation_epsilon_rdp_loose',
-    'allocation_delta_rdp_loose',
+    'allocation_epsilon_rdp_DCO',
+    'allocation_delta_rdp_DCO',
     'allocation_epsilon_decomposition',
     'allocation_delta_decomposition'
 ] 
