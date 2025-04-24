@@ -1,16 +1,8 @@
-from functools import cache, lru_cache
+from functools import cache
 from numba import jit
 from typing import List, Tuple
+import numpy as np
 import math
-import numpy as np
-
-
-from random_allocation.other_schemes.local import bin_search
-
-from functools import cache, lru_cache
-from numba import jit
-from typing import List, Tuple
-import numpy as np
 
 from random_allocation.other_schemes.local import bin_search
 
@@ -73,7 +65,7 @@ def generate_partitions(n: int, max_size: int) -> List[List[Tuple[int, ...]]]:
                 partitions[n].append((j,) + p)
     return partitions[n]
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def log_factorial(n: int) -> float:
     """
     Compute the natural logarithm of n!.
@@ -82,7 +74,7 @@ def log_factorial(n: int) -> float:
         return 0.0
     return np.sum(np.log(np.arange(1, n + 1)))
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def log_factorial_range(n: int, m: int) -> float:
     """
     Compute the natural logarithm of (n! / (n-m)!).
@@ -91,7 +83,7 @@ def log_factorial_range(n: int, m: int) -> float:
         return 0.0
     return np.sum(np.log(np.arange(n - m + 1, n + 1)))
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def calc_partition_sum_square(arr: Tuple[int, ...]) -> float:
     """
     Compute the sum of squares of an array.
@@ -101,14 +93,7 @@ def calc_partition_sum_square(arr: Tuple[int, ...]) -> float:
         result += x * x
     return result
 
-# @lru_cache(maxsize=None)
-# def calc_partition_sum_square_cached(arr: Tuple[int, ...]) -> float:
-#     """
-#     Cached version of calc_partition_sum_square.
-#     """
-#     return calc_partition_sum_square(arr=arr)
-
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def calc_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
     """
     Compute the log of the multinomial coefficient for a given partition.
@@ -119,14 +104,7 @@ def calc_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
         log_prod_factorial += log_factorial(n=p)
     return log_factorial(n=n) - log_prod_factorial
 
-# @lru_cache(maxsize=None)
-# def calc_log_multinomial_cached(partition: Tuple[int, ...], n: int) -> float:
-#     """
-#     Cached version of calc_log_multinomial.
-#     """
-#     return calc_log_multinomial(partition=partition, n=n)
-
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def calc_counts_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
     """
     Compute the counts of each unique integer in a partition and calculate the multinomial coefficient.
@@ -147,14 +125,7 @@ def calc_counts_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
 
     return log_factorial_range(n=n, m=sum_counts) - log_counts_factorial
 
-# @lru_cache(maxsize=None)
-# def calc_counts_log_multinomial_cached(partition: Tuple[int, ...], n: int) -> float:
-#     """
-#     Cached version of calc_counts_log_multinomial.
-#     """
-#     return calc_counts_log_multinomial(partition=partition, n=n)
-
-@cache
+@jit(nopython=True, cache=True)
 def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sigma: float) -> float:
     """
     Compute the exponent term that is summed up inside the log term in the first of Corollary 6.2.
@@ -294,120 +265,3 @@ def allocation_delta_rdp(sigma: float,
     if direction == 'remove':
         return delta_remove
     return max(delta_add, delta_remove)
-
-
-# # ==================== Add ====================
-# def allocation_epsilon_rdp_add(sigma: float, delta: float, num_steps: int, print_alpha: bool) -> float:
-#     small_alpha_orders = np.linspace(1.001, 2, 20)
-#     alpha_orders = np.arange(2, 202)
-#     large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-#     alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
-#     alpha_rdp = (1+(alpha_orders-1)/num_steps)/(2 * sigma**2)
-#     alpha_epsilons = alpha_rdp + np.log1p(-1/alpha_orders) - np.log(delta * alpha_orders)/(alpha_orders-1)
-#     epsilon = np.min(alpha_epsilons)
-#     used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
-#     if used_alpha == alpha_orders[-1]:
-#         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-#     if used_alpha == alpha_orders[0]:
-#         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
-#     if print_alpha:
-#         print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, used_alpha: {used_alpha}')
-#     return epsilon
-
-# # ==================== Remove ====================
-# @cache
-# def generate_partitions(n: int, max_size: int) -> List[List[Tuple[int, ...]]]:
-#     ''' Generate all integer partitions of [1, ..., n] with a maximum number of elements in the partition '''
-#     partitions = [[] for _ in range(n + 1)]
-#     partitions[0].append(())
-
-#     for i in range(1, n):
-#         partitions[i] = generate_partitions(n=i, max_size=max_size)
-#     for j in range(n, 0, -1):
-#         for p in partitions[n - j]:
-#             if (not p or j <= p[0]) and len(p) < max_size:  # Ensure descending order
-#                 partitions[n].append((j,) + p)
-#     return partitions[n]
-
-# @jit(nopython=True)
-# def log_factorial(n: int) -> float:
-#     ''' Compute log(n!) '''
-#     if n <= 1:
-#         return 0.0
-#     return np.sum(np.log(np.arange(1, n + 1)))
-
-# @jit(nopython=True)
-# def log_factorial_range(n: int, m:int) -> float:
-#     ''' Compute log(n! / (n-m)!) '''
-#     if n <= 1:
-#         return 0.0
-#     return np.sum(np.log(np.arange(n - m + 1, n + 1)))
-
-# @jit(nopython=True)
-# def calc_partition_sum_square(arr: Tuple[int, ...]) -> float:
-#     ''' Compute the sum of squares of an array. e.g. (1, 2, 3) -> 1^2 + 2^2 + 3^2 '''
-#     result = 0.0
-#     for x in arr:
-#         result += x * x
-#     return result
-
-# @lru_cache(maxsize=None)
-# def calc_partition_sum_square_cached(arr: Tuple[int, ...]) -> float:
-#     ''' Compute the sum of squares of an array. e.g. (1, 2, 3) -> 1^2 + 2^2 + 3^2 '''
-#     return calc_partition_sum_square(arr=arr)
-
-# @jit(nopython=True)
-# def calc_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
-#     ''' Compute the log of the multinomial of n over its partition'''
-#     log_prod_factorial = 0.0
-#     for p in partition:
-#         log_prod_factorial += log_factorial(n=p)
-
-#     return log_factorial(n=n) - log_prod_factorial
-
-# @lru_cache(maxsize=None)
-# def calc_log_multinomial_cached(partition: Tuple[int, ...], n: int) -> float:
-#     ''' Compute the log of the multinomial of n over its partition'''
-#     return calc_log_multinomial(partition=partition, n=n)
-
-# @jit(nopython=True)
-# def calc_counts_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
-#     ''' Compute the counts of each unique integer in an array and calculate multinomial '''
-#     sum_partition = sum(partition)
-
-#     # Count frequencies
-#     counts = np.zeros(sum_partition + 1, dtype=np.int64)
-#     for x in partition:
-#         counts[x] += 1
-#     sum_counts = sum(counts)
-
-#     # Compute multinomial
-#     log_counts_factorial = 0.0
-#     for i in range(1, sum_partition + 1):
-#         if counts[i] > 0:
-#             log_counts_factorial += log_factorial(n=counts[i])
-
-#     return log_factorial_range(n=n, m=sum_counts) - log_counts_factorial
-
-# @lru_cache(maxsize=None)
-# def calc_counts_log_multinomial_cached(partition: Tuple[int, ...], n: int) -> float:
-#     ''' Compute the counts of each unique integer in an array and calculate multinomial '''
-#     return calc_counts_log_multinomial(partition=partition, n=n)
-
-# @cache
-# def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sigma: float) -> float:
-#     ''' Compute the exponent term of the sum '''
-#     counts_log_multinomial = calc_counts_log_multinomial_cached(partition=partition, n=num_steps)
-#     partition_log_multinomial = calc_log_multinomial_cached(partition=partition, n=alpha)
-#     partition_sum_square = calc_partition_sum_square_cached(arr=partition) / (2 * sigma**2)
-#     return counts_log_multinomial + partition_log_multinomial + partition_sum_square
-
-# def allocation_rdp_remove(alpha: int, sigma: float, num_steps: int) -> float:
-#     ''' Compute the RDP of the allocation mechanism '''
-#     partitions = generate_partitions(n=alpha, max_size=num_steps)
-#     exp_terms = [compute_exp_term(partition=partition, alpha=alpha, num_steps=num_steps, sigma=sigma) for partition in partitions]
-
-#     max_val = max(exp_terms)
-#     log_sum = np.log(sum(np.exp(term - max_val) for term in exp_terms))
-
-#     return (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)

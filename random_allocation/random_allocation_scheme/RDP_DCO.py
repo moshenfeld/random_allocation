@@ -1,7 +1,5 @@
 import numpy as np
 from typing import Callable
-# from functools import cache
-import math
 
 from random_allocation.random_allocation_scheme.RDP import log_factorial_range, log_factorial
 from random_allocation.other_schemes.local          import bin_search
