@@ -7,13 +7,14 @@ from random_allocation.random_allocation_scheme.RDP import allocation_epsilon_rd
 
 
 
-# # def allocation_delta_combined(sigma: float,
-# #                               epsilon: float,
-# #                               num_steps: int,
-# #                               num_selected: int,
-# #                               num_epochs: int,
-# #                               discretization: float = 1e-4,
-# #                               ) -> float:
+def allocation_delta_combined(sigma: float,
+                              epsilon: float,
+                              num_steps: int,
+                              num_selected: int,
+                              num_epochs: int,
+                              discretization: float = 1e-4,
+                              ) -> float:
+    return 0
 
 def allocation_epsilon_combined(sigma: float,
                                 delta: float,

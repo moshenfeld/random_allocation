@@ -1,14 +1,11 @@
-from typing import Dict, Any, Callable, List, Tuple, Optional
+from typing import Dict, Any, Callable, List, Tuple
 import inspect
 import time
 import numpy as np
-import pandas as pd
+# import pandas as pd
 import os
 import matplotlib.pyplot as plt
-from functools import cache, lru_cache
-from dataclasses import dataclass
 from enum import Enum
-import pickle
 
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
@@ -112,35 +109,35 @@ def calc_experiment_data(params_dict: Dict[str, Any],
             data['title'] += f"{names_dict[var]} = {params_dict[var]}, "
     return data
 
-def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
-    """
-    Save experiment data as a CSV file.
+# def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
+#     """
+#     Save experiment data as a CSV file.
     
-    Args:
-        data: The experiment data dictionary
-        methods: List of methods used in the experiment
-        experiment_name: Name of the experiment for the output file (full path)
-    """
-    # Create data directory if it doesn't exist
-    os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
+#     Args:
+#         data: The experiment data dictionary
+#         methods: List of methods used in the experiment
+#         experiment_name: Name of the experiment for the output file (full path)
+#     """
+#     # Create data directory if it doesn't exist
+#     os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
-    # Create DataFrame
-    df_data = {'x': data['x data']}
+#     # Create DataFrame
+#     df_data = {'x': data['x data']}
     
-    # Save y data for each method
-    for method in methods:
-        df_data[method] = data['y data'][method]
-        if method + '- std' in data['y data']:
-            df_data[method + '_std'] = data['y data'][method + '- std']
+#     # Save y data for each method
+#     for method in methods:
+#         df_data[method] = data['y data'][method]
+#         if method + '- std' in data['y data']:
+#             df_data[method + '_std'] = data['y data'][method + '- std']
     
-    # Include additional relevant data
-    df_data['title'] = data.get('title', '')
-    df_data['x name'] = data.get('x name', '')
-    df_data['y name'] = data.get('y name', '')
+#     # Include additional relevant data
+#     df_data['title'] = data.get('title', '')
+#     df_data['x name'] = data.get('x name', '')
+#     df_data['y name'] = data.get('y name', '')
     
-    # Create DataFrame and save to CSV
-    df = pd.DataFrame(df_data)
-    df.to_csv(experiment_name, index=False)
+#     # Create DataFrame and save to CSV
+#     df = pd.DataFrame(df_data)
+#     df.to_csv(experiment_name, index=False)
 
 def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
     """
@@ -188,7 +185,7 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
     if save_data:
         print(f"Computing data for {experiment_name}")
         data = calc_experiment_data(params_dict, config_dict, methods)
-        save_experiment_data(data, methods, data_file)
+        # save_experiment_data(data, methods, data_file)
     else:
         if os.path.exists(data_file):
             print(f"Reading data from {data_file}")
@@ -218,4 +215,4 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
         # Display the plot and table
         plt.show()
         plot_as_table(data)
-        plt.close(fig)
+    return data

@@ -3,7 +3,6 @@ import numpy as np
 
 from random_allocation.other_schemes.local import local_epsilon, bin_search
 from random_allocation.other_schemes.poisson import poisson_epsilon_pld
-from random_allocation.random_allocation_scheme.inverse import allocation_epsilon_inverse, allocation_delta_inverse
 
 def sampling_prob_from_sigma(sigma: float,
                              delta: float,

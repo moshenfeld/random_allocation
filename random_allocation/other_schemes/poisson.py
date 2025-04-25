@@ -28,7 +28,7 @@ def poisson_pld(sigma: float,
                                                                       pessimistic_estimate=True,
                                                                       sampling_prob=sampling_prob,
                                                                       use_connect_dots=True)
-    zero_delta_pmf = pld.privacy_loss_distribution.pld_pmf.create_pmf(loss_probs={-1000: 1.0},
+    zero_delta_pmf = pld.privacy_loss_distribution.pld_pmf.create_pmf(loss_probs={-10: 1.0},
                                                                       discretization=discretization,
                                                                       infinity_mass=0,
                                                                       pessimistic_estimate=True)

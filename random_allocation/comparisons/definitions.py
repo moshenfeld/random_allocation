@@ -10,6 +10,9 @@ from random_allocation.random_allocation_scheme import allocation_epsilon_analyt
 from random_allocation.random_allocation_scheme import allocation_epsilon_rdp, allocation_delta_rdp
 from random_allocation.random_allocation_scheme import allocation_epsilon_rdp_DCO, allocation_delta_rdp_DCO
 from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
+from random_allocation.random_allocation_scheme import allocation_epsilon_combined, allocation_delta_combined
+from random_allocation.random_allocation_scheme import allocation_epsilon_inverse, allocation_delta_inverse
+from random_allocation.random_allocation_scheme import allocation_epsilon_recursive, allocation_delta_recursive
 
 #======================= Direction =======================
 ADD    = 'add'
@@ -29,14 +32,15 @@ names_dict = {EPSILON: '$\\varepsilon$', DELTA: '$\\delta$', SIGMA: '$\\sigma$',
               NUM_EPOCHS: '$E$'}
 
 #===================== Configuration =====================
-NUM_EXP = 'num_experiments'
-DISCRETIZATION = 'discretization'
-MIN_ALPHA = 'min_alpha'
-MAX_ALPHA = 'max_alpha'
+NUM_EXP           = 'num_experiments'
+DISCRETIZATION    = 'discretization'
+MIN_ALPHA         = 'min_alpha'
+MAX_ALPHA         = 'max_alpha'
 EPSILON_TOLERANCE = 'epsilon_tolerance'
-DELTA_TOLERANCE = 'delta_tolerance'
-CONFIGS = [NUM_EXP, DISCRETIZATION, MIN_ALPHA, MAX_ALPHA, EPSILON_TOLERANCE, DELTA_TOLERANCE]
-ALPHA_ORDERS = 'alpha_orders'
+DELTA_TOLERANCE   = 'delta_tolerance'
+DIRECTION         = 'direction'
+CONFIGS           = [NUM_EXP, DISCRETIZATION, MIN_ALPHA, MAX_ALPHA, EPSILON_TOLERANCE, DELTA_TOLERANCE, DIRECTION]
+ALPHA_ORDERS      = 'alpha_orders'
 
 # ======================= Schemes =======================
 LOCAL = 'Local'
@@ -52,14 +56,20 @@ MONTE_CARLO = 'Monte Carlo'
 PLD = 'PLD'
 RDP = 'RDP'
 DECOMPOSITION = 'Decomposition'
+INVERSE = 'Inverse'
+COMBINED = 'Combined'
+RECURSIVE = 'Recursive'
 
 # ======================= Methods =======================
 POISSON_PLD                 = f'{POISSON} ({PLD})'
 POISSON_RDP                 = f'{POISSON} ({RDP})'
 ALLOCATION_ANALYTIC         = f'{ALLOCATION} (Our - {ANALYTIC})'
 ALLOCATION_RDP              = f'{ALLOCATION} (Our - {RDP})'
-ALLOCATION_LOOSE_RDP        = f'{ALLOCATION} (DCO25 - {RDP})'
+ALLOCATION_RDP_DCO          = f'{ALLOCATION} (DCO25 - {RDP})'
 ALLOCATION_DECOMPOSITION    = f'{ALLOCATION} (Our - {DECOMPOSITION})'
+ALLOCATION_INVERSE          = f'{ALLOCATION} (Our - {INVERSE})'
+ALLOCATION_COMBINED         = f'{ALLOCATION} (Our - {COMBINED})'
+ALLOCATION_RECURSIVE         = f'{ALLOCATION} (Our - {RECURSIVE})'
 
 # ======================= Methods Features =======================
 @dataclass
@@ -123,11 +133,11 @@ methods_dict = {
         marker='^',
         color=colors_dict[ALLOCATION]
     ),
-    ALLOCATION_LOOSE_RDP: MethodFeatures(
-        name=ALLOCATION_LOOSE_RDP,
+    ALLOCATION_RDP_DCO: MethodFeatures(
+        name=ALLOCATION_RDP_DCO,
         epsilon_calculator=allocation_epsilon_rdp_DCO,
         delta_calculator=allocation_delta_rdp_DCO,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_LOOSE_RDP,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_RDP_DCO,
         marker='o',
         color=colors_dict[ALLOCATION]
     ),
@@ -139,6 +149,30 @@ methods_dict = {
         marker='X',
         color=colors_dict[ALLOCATION]
     ),
+    ALLOCATION_COMBINED: MethodFeatures(
+        name=ALLOCATION_COMBINED,
+        epsilon_calculator=allocation_epsilon_combined,
+        delta_calculator=allocation_delta_combined,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_COMBINED,
+        marker='s',
+        color=colors_dict[ALLOCATION]
+    ),
+    ALLOCATION_INVERSE: MethodFeatures(
+        name=ALLOCATION_INVERSE,
+        epsilon_calculator=allocation_epsilon_inverse,
+        delta_calculator=allocation_delta_inverse,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_INVERSE,
+        marker='D',
+        color=colors_dict[ALLOCATION]
+    ),
+    ALLOCATION_RECURSIVE: MethodFeatures(
+        name=ALLOCATION_RECURSIVE,
+        epsilon_calculator=allocation_epsilon_recursive,
+        delta_calculator=allocation_delta_recursive,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_RECURSIVE,
+        marker='h',
+        color=colors_dict[ALLOCATION]
+    )
 }
 
 def get_features_for_methods(methods: List[str], feature: str) -> Dict[str, Any]:

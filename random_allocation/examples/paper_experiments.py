@@ -35,8 +35,8 @@ methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_RDP, ALLOCATION_ANALYT
 
 visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 
-run_experiment(params_dict_1, config_dict_1, methods_list_1, visualization_config_1,
-              'epsilon_vs_sigma', PlotType.COMBINED, SAVE_DATA, SAVE_PLOTS)
+data_2 = run_experiment(params_dict_1, config_dict_1, methods_list_1, visualization_config_1, 'epsilon_vs_sigma', 
+                        PlotType.COMBINED, SAVE_DATA, SAVE_PLOTS)
 
 # Second experiment
 params_dict_2 = {'x_var': NUM_EPOCHS,
@@ -56,8 +56,8 @@ config_dict_2 = {DISCRETIZATION: 1e-4,
 methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD, ALLOCATION_DECOMPOSITION]
 
 visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
-run_experiment(params_dict_2, config_dict_2, methods_list_2, visualization_config_2,
-              'epsilon_vs_epochs', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
+data_2 = run_experiment(params_dict_2, config_dict_2, methods_list_2, visualization_config_2, 'epsilon_vs_epochs', 
+                        PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
 
 # Third experiment
 params_dict_3 = {'x_var': NUM_STEPS,
@@ -79,8 +79,8 @@ methods_list_3 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
 visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
 
-run_experiment(params_dict_3, config_dict_3, methods_list_3, visualization_config_3,
-              'delta_vs_steps', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
+data_3 = run_experiment(params_dict_3, config_dict_3, methods_list_3, visualization_config_3, 'delta_vs_steps', 
+                        PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
 
 # Fourth experiment
 params_dict_4 = {'x_var': NUM_SELECTED,
@@ -97,8 +97,8 @@ config_dict_4 = {DISCRETIZATION: 1e-4,
                  EPSILON_TOLERANCE: 1e-3,
                  DELTA_TOLERANCE: 1e-10,}
 
-methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_LOOSE_RDP]
+methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_RDP_DCO]
 
 visualization_config_4 = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
-run_experiment(params_dict_4, config_dict_4, methods_list_4, visualization_config_4,
-              'epsilon_vs_selected', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
+data_4 = run_experiment(params_dict_4, config_dict_4, methods_list_4, visualization_config_4, 
+                        'epsilon_vs_selected', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
