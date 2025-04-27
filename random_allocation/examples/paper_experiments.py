@@ -35,7 +35,7 @@ methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_RDP, ALLOCATION_ANALYT
 
 visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 
-data_2 = run_experiment(params_dict_1, config_dict_1, methods_list_1, visualization_config_1, 'epsilon_vs_sigma', 
+data_1 = run_experiment(params_dict_1, config_dict_1, methods_list_1, visualization_config_1, 'epsilon_vs_sigma', 
                         PlotType.COMBINED, SAVE_DATA, SAVE_PLOTS)
 
 # Second experiment
@@ -53,7 +53,7 @@ config_dict_2 = {DISCRETIZATION: 1e-4,
                  EPSILON_TOLERANCE: 1e-3,
                  DELTA_TOLERANCE: 1e-10,}
 
-methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD, ALLOCATION_DECOMPOSITION]
+methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
 visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
 data_2 = run_experiment(params_dict_2, config_dict_2, methods_list_2, visualization_config_2, 'epsilon_vs_epochs', 

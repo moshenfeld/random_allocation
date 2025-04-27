@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 from typing import Callable, Dict, Any, List
-import numpy as np
-import pandas as pd
 
 from random_allocation.other_schemes.local import local_epsilon, local_delta
 from random_allocation.other_schemes.poisson import poisson_epsilon_pld, poisson_delta_pld, poisson_epsilon_rdp, poisson_delta_rdp

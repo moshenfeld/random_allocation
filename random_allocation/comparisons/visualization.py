@@ -24,11 +24,14 @@ def plot_comparison(data, log_x_axis = False, log_y_axis = False, format_x=lambd
     plt.xlabel(data['x name'], fontsize=20)
     plt.ylabel(data['y name'], fontsize=20)
     #compute the maximum y value over all methods
-    max_y_val = np.max([np.max(methods_data[method]) for method in methods], axis=0)
+    none_inf_min = lambda arr: np.min(arr[np.isfinite(arr)])
+    min_y_val = np.min([none_inf_min(methods_data[method]) for method in methods], axis=0)
+    none_inf_max = lambda arr: np.max(arr[np.isfinite(arr)])
+    max_y_val = np.max([none_inf_max(methods_data[method]) for method in methods], axis=0)
     if data['y name'] == names_dict[EPSILON]:
-        plt.ylim(0, min(max_y_val * 1.1, 100))
+        plt.ylim(max(0, min_y_val * 0.9), min(max_y_val * 1.1, 100))
     elif data['y name'] == names_dict[DELTA]:
-        plt.ylim(0, min(max_y_val * 1.1, 1))
+        plt.ylim(max(0, min_y_val * 0.9), min(max_y_val * 1.1, 1))
     if log_x_axis:
         plt.xscale('log')
         plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(format_x))
@@ -81,11 +84,16 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
     plt.xlabel(data['x name'], fontsize=20)
     plt.ylabel(data['y name'], fontsize=20)
     #compute the maximum y value over all methods
-    max_y_val = np.max([np.max(methods_data[method]) for method in methods], axis=0)
+    
+    # Compute the max of arr where arr is not inf
+    none_inf_min = lambda arr: np.min(arr[np.isfinite(arr)])
+    min_y_val = np.min([none_inf_min(methods_data[method]) for method in methods], axis=0)
+    none_inf_max = lambda arr: np.max(arr[np.isfinite(arr)])
+    max_y_val = np.max([none_inf_max(methods_data[method]) for method in methods], axis=0)
     if data['y name'] == names_dict[EPSILON]:
-        plt.ylim(0, min(max_y_val * 1.1, 100))
+        plt.ylim(max(0, min_y_val * 0.9), min(max_y_val * 1.1, 100))
     elif data['y name'] == names_dict[DELTA]:
-        plt.ylim(0, min(max_y_val * 1.1, 1))
+        plt.ylim(max(0, min_y_val * 0.9), min(max_y_val * 1.1, 1))
     if log_x_axis:
         plt.xscale('log')
         plt.gca().xaxis.set_major_formatter(plt.FuncFormatter(format_x))
@@ -97,5 +105,4 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
     plt.tick_params(axis='both', which='major', labelsize=12)
     plt.xticks(data['x data'])
     plt.legend(fontsize=20, loc='lower left', framealpha=0.)
-    # plt.grid(True)
     return fig

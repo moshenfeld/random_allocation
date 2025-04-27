@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "random-allocation"
-version = "0.2.7"
+version = "0.2.10"
 authors = [
     {name = "Moshe Shenfeld", email = "mosheshenfeld@gmail.com"},
 ]
@@ -24,11 +24,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
+    "dp_accounting>=0.4.4",
     "scipy>=1.7.0",
     "matplotlib>=3.4.0",
     "numba>=0.60.0",
-    "dp_accounting>=0.4.4",
-]
+ ]
 
 [project.optional-dependencies]
 dev = [
