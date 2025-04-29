@@ -8,6 +8,19 @@ from random_allocation.other_schemes.local import bin_search
 
 
 # ==================== Add ====================
+def allocation_rdp_add(sigma: float, 
+                       num_steps: int, 
+                       num_epochs: int,
+                       ) -> Tuple[np.ndarray, np.ndarray]:
+    small_alpha_orders = np.linspace(1.001, 2, 20)
+    alpha_orders = np.arange(2, 202)
+    large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
+    alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
+
+    # Compute RDP values
+    alpha_rdp = num_epochs * (alpha_orders + num_steps - 1) / (2 * num_steps * sigma**2)
+    return alpha_orders, alpha_rdp
+
 def allocation_epsilon_rdp_add(sigma: float, 
                                delta: float, 
                                num_steps: int, 
@@ -24,14 +37,8 @@ def allocation_epsilon_rdp_add(sigma: float,
         num_epochs (int): Number of epochs.
         print_alpha (bool): Whether to print the alpha value used.
     """
-    # Define alpha orders for RDP computation
-    small_alpha_orders = np.linspace(1.001, 2, 20)
-    alpha_orders = np.arange(2, 202)
-    large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-    alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
-
     # Compute RDP and epsilon values
-    alpha_rdp = num_epochs * (alpha_orders + num_steps - 1) / (2 * num_steps * sigma**2)
+    alpha_orders, alpha_rdp = allocation_rdp_add(sigma, num_steps, num_epochs)
     alpha_epsilons = alpha_rdp + np.log1p(-1 / alpha_orders) - np.log(delta * alpha_orders) / (alpha_orders - 1)
     epsilon = np.min(alpha_epsilons)
     used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
@@ -47,6 +54,41 @@ def allocation_epsilon_rdp_add(sigma: float,
         print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
     
     return epsilon
+
+def allocation_delta_rdp_add(sigma: float, 
+                             epsilon: float, 
+                             num_steps: int,
+                             num_epochs: int,
+                             print_alpha: bool,
+                             ) -> float:
+    """
+    Compute the privacy profile of the allocation scheme in the add direction using Rényi Differential Privacy (RDP).
+    This function is based on the second part of Corollary 6.2, combined with Lemma 2.4.
+
+    Args:
+        sigma (float): Gaussian noise scale.
+        epsilon (float): Target epsilon value for differential privacy.
+        num_steps (int): Number of steps in the allocation scheme.
+        num_epochs (int): Number of epochs.
+        print_alpha (bool): Whether to print the alpha value used.
+    """
+    # Compute RDP and epsilon values
+    alpha_orders, alpha_rdp = allocation_rdp_add(sigma, num_steps, num_epochs)
+    alpha_deltas = np.exp((alpha_orders-1) * (alpha_rdp - epsilon))*(1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
+    delta = np.min(alpha_deltas)
+    used_alpha = alpha_orders[np.argmin(alpha_deltas)]
+
+    # Check for potential alpha overflow or underflow
+    if used_alpha == alpha_orders[-1]:
+        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
+    if used_alpha == alpha_orders[0]:
+        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+
+    # Optionally print the alpha value used
+    if print_alpha:
+        print(f'sigma: {sigma}, epsilon: {epsilon}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
+    
+    return delta
 
 # ==================== Remove ====================
 @cache
@@ -257,9 +299,8 @@ def allocation_delta_rdp(sigma: float,
                                                                         num_selected=num_selected, num_epochs=num_epochs, direction='remove', min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False),
                       lower=0, upper=1, target=epsilon, tolerance=delta_tolerance, increasing=False)
     if direction != 'remove':
-        delta_add =  bin_search(lambda delta: allocation_epsilon_rdp(sigma=sigma, delta=delta, num_steps=num_steps,
-                                                                     num_selected=num_selected, num_epochs=num_epochs, direction='add', min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False),
-                      lower=0, upper=1, target=epsilon, tolerance=delta_tolerance, increasing=False)
+        delta_add =  allocation_delta_rdp_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps,
+                                              num_selected=num_selected, num_epochs=num_epochs),
     if direction == 'add':
         return delta_add
     if direction == 'remove':

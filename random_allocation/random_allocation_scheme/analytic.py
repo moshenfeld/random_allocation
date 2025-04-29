@@ -14,7 +14,7 @@ def sampling_prob_from_sigma(sigma: float,
     if local_epsilon_val is None:
         return 1.0
     gamma = np.cosh(local_epsilon_val)*np.sqrt(2*num_selected*np.log(num_selected/delta)/num_steps)
-    if gamma > 0.99:
+    if gamma > 1 - num_selected/num_steps:
         return 1.0
     return np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1)
 
@@ -34,12 +34,9 @@ def allocation_epsilon_analytic(sigma: float,
     large_sampling_prob_delta = delta*large_sampling_prob_delta_split/num_epochs
     sampling_prob = sampling_prob_from_sigma(sigma=sigma, delta=large_sampling_prob_delta, num_steps=num_steps,
                                              num_selected=num_selected, local_delta=local_delta)
-    local_epsilon_val = local_epsilon(sigma=sigma, delta=delta, num_selected=num_selected, num_epochs=num_epochs)
-    if sampling_prob > 0.99:
-        return local_epsilon_val
     epsilon = poisson_epsilon_pld(sigma=sigma, delta=Poisson_delta, num_steps=num_steps, num_selected=num_selected,
                                   num_epochs=num_epochs, sampling_prob=sampling_prob, discretization=discretization, direction=direction)
-    return min(epsilon, local_epsilon_val)
+    return epsilon
 
 def allocation_delta_analytic(sigma: float,
                               epsilon: float,
