@@ -2,7 +2,7 @@
 import numpy as np
 
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
-from shuffle_clones.computeamplification import numericalanalysis
+from random_allocation.other_schemes.shuffle_external import numericalanalysis
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 from random_allocation.other_schemes.local import local_epsilon
 
