@@ -1,11 +1,12 @@
 # from functools import cache
 import numpy as np
 
-from random_allocation.other_schemes.poisson import poisson_delta_pld, poisson_epsilon_pld, poisson_pld
-from random_allocation.other_schemes.local import local_delta, bin_search
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.other_schemes.poisson import Poisson_delta_PLD, Poisson_epsilon_PLD, Poisson_PLD
+from random_allocation.other_schemes.local import local_delta
 
 # ==================== Add ====================
-def allocation_delta_decomposition_add_from_pld(epsilon: float, num_steps: int, Poisson_pld_obj) -> float:
+def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, Poisson_PLD_obj) -> float:
     lambda_val = 1 - (1-1.0/num_steps)**num_steps
     # use one of two identical formulas to avoid numerical instability
     if epsilon < 1:
@@ -13,7 +14,7 @@ def allocation_delta_decomposition_add_from_pld(epsilon: float, num_steps: int, 
     else:
         lambda_new = lambda_val*np.exp(-epsilon) / (lambda_val*np.exp(-epsilon) + (1-lambda_val))
     epsilon_new = -np.log(1-lambda_val*(1-np.exp(-epsilon)))
-    return Poisson_pld_obj.get_delta_for_epsilon(epsilon_new)/lambda_new
+    return Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new
 
 def allocation_delta_decomposition_add(sigma: float,
                                        epsilon: float,
@@ -24,10 +25,10 @@ def allocation_delta_decomposition_add(sigma: float,
                                        ) -> float:
     num_steps_per_round = int(np.ceil(num_steps/num_selected))
     num_rounds = int(np.ceil(num_steps/num_steps_per_round))
-    Poisson_pld_obj = poisson_pld(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
+    Poisson_PLD_obj = Poisson_PLD(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
                                   sampling_prob=1.0/num_steps_per_round, discretization=discretization, direction='add')
-    return allocation_delta_decomposition_add_from_pld(epsilon=epsilon, num_steps=num_steps_per_round,
-                                                       Poisson_pld_obj=Poisson_pld_obj)
+    return allocation_delta_decomposition_add_from_PLD(epsilon=epsilon, num_steps=num_steps_per_round,
+                                                       Poisson_PLD_obj=Poisson_PLD_obj)
 
 def allocation_epsilon_decomposition_add(sigma: float,
                                          delta: float,
@@ -41,37 +42,37 @@ def allocation_epsilon_decomposition_add(sigma: float,
     num_steps_per_round = int(np.ceil(num_steps/num_selected))
     num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
-    Poisson_pld_obj = poisson_pld(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
+    Poisson_PLD_obj = Poisson_PLD(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
                                   sampling_prob=1.0/num_steps_per_round, discretization=discretization, direction='add')
-    epsilon = bin_search(lambda eps: Poisson_pld_obj.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps)))),
-                         lower=0, upper=epsilon_upper_bound, target=delta, tolerance=epsilon_tolerance, increasing=False)    
+    optimization_func = lambda eps: Poisson_PLD_obj.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))
+    epsilon = search_function_with_bounds(func=optimization_func, y_target=delta, bounds=(0, epsilon_upper_bound),
+                                          tolerance=epsilon_tolerance, function_type=FunctionType.DECREASING)
     if epsilon is None:
         return np.inf
     lower_bound = max(0, (epsilon-epsilon_tolerance)/2)
     upper_bound = min((epsilon + epsilon_tolerance)*2, epsilon_upper_bound)
-    epsilon = bin_search(lambda eps: allocation_delta_decomposition_add_from_pld(epsilon=eps, 
-                                                                                 num_steps=num_steps_per_round,
-                                                                                 Poisson_pld_obj=Poisson_pld_obj),
-                         lower=lower_bound, upper=upper_bound, target=delta, tolerance=epsilon_tolerance, increasing=False)
+    optimization_func = lambda eps: allocation_delta_decomposition_add_from_PLD(epsilon=eps, num_steps=num_steps_per_round,
+                                                                                Poisson_PLD_obj=Poisson_PLD_obj)
+    epsilon = search_function_with_bounds(func=optimization_func, y_target=delta, bounds=(lower_bound, upper_bound),
+                                          tolerance=epsilon_tolerance, function_type=FunctionType.DECREASING)
     return np.inf if epsilon is None else epsilon
 
 # ==================== Remove ====================
 def allocation_delta_decomposition_remove(sigma: float,
-                                   epsilon: float,
-                                   num_steps: int,
-                                   num_selected: int,
-                                   num_epochs: int,
-                                   discretization: float,
-                                   ) -> float:
+                                          epsilon: float,
+                                          num_steps: int,
+                                          num_selected: int,
+                                          num_epochs: int,
+                                          discretization: float,
+                                          ) -> float:
     num_steps_per_round = int(np.ceil(num_steps/num_selected))
     num_rounds = int(np.ceil(num_steps/num_steps_per_round))
-    local_delta_val = local_delta(sigma, epsilon, num_epochs)
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     epsilon_new = np.log(1+lambda_val*(np.exp(epsilon)-1))
-    delta_Poisson = poisson_delta_pld(sigma=sigma, epsilon=epsilon_new, num_steps=num_steps_per_round, 
+    delta_Poisson = Poisson_delta_PLD(sigma=sigma, epsilon=epsilon_new, num_steps=num_steps_per_round, 
                                       num_selected=1, num_epochs=num_rounds*num_epochs,
                                       discretization=discretization)
-    return min(local_delta_val, delta_Poisson / lambda_val)
+    return delta_Poisson / lambda_val
 
 # @cache
 def allocation_epsilon_decomposition_remove(sigma: float,
@@ -85,7 +86,7 @@ def allocation_epsilon_decomposition_remove(sigma: float,
     num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     delta_new = delta * lambda_val
-    epsilon_Poisson = poisson_epsilon_pld(sigma=sigma, delta=delta_new, num_steps=num_steps_per_round, 
+    epsilon_Poisson = Poisson_epsilon_PLD(sigma=sigma, delta=delta_new, num_steps=num_steps_per_round, 
                                           num_selected=1, num_epochs=num_rounds*num_epochs,
                                           discretization=discretization)
     factor = 1.0/lambda_val
@@ -129,12 +130,12 @@ def allocation_delta_decomposition(sigma: float,
                                    discretization: float = 1e-4,
                                    ) -> float:
     if direction != 'add':
-        delta_add = allocation_delta_decomposition_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps, 
-                                                    num_selected=num_selected, num_epochs=num_epochs, 
-                                                    discretization=discretization)
+        delta_remove = allocation_delta_decomposition_remove(sigma=sigma, epsilon=epsilon, num_steps=num_steps,
+                                                             num_selected=num_selected, num_epochs=num_epochs, discretization=discretization)
     if direction != 'remove':
-        delta_remove = allocation_delta_decomposition_remove(sigma=sigma, epsilon=epsilon, num_steps=num_steps, 
-                                                            num_selected=num_selected, num_epochs=num_epochs, discretization=discretization)
+        delta_add = allocation_delta_decomposition_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps,
+                                                       num_selected=num_selected, num_epochs=num_epochs, 
+                                                       discretization=discretization)
     if direction == 'add':
         return delta_add
     if direction == 'remove':

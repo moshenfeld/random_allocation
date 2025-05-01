@@ -1,28 +1,10 @@
 from __future__ import annotations
-from typing import Callable
-from functools import cache
 import numpy as np
 from scipy import stats
-from dp_accounting import pld
 
-# ================= Supporting function =================
-def bin_search(func: Callable, lower: float, upper: float, target: float, tolerance: float, increasing: bool) -> float:
-    """
-    Perform binary search on a monotonic function.
-
-    Parameters:
-    - func: The function to search.
-    - lower: The lower bound of the search.
-    - upper: The upper bound of the search.
-    - target: The target value to find.
-    - tolerance: The acceptable error margin.
-    - increasing: Boolean indicating if the function is increasing.
-    """
-    search_params = pld.common.BinarySearchParameters(lower_bound=lower, upper_bound=upper, tolerance=tolerance)
-    return pld.common.inverse_monotone_function(func, target, search_params, increasing)
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 
 # ==================== Deterministic ====================
-# @cache
 def Gaussian_delta(sigma: float,
                    epsilon: float,
                    ) -> float:
@@ -37,11 +19,9 @@ def Gaussian_delta(sigma: float,
     lower_log_cdfs = stats.norm.logcdf(-0.5 / sigma - sigma * epsilon)
     return upper_cdfs - np.exp(epsilon + lower_log_cdfs)
 
-# @cache
 def Gaussian_epsilon(sigma: float,
                      delta: float,
-                     tolerance: float = 0.001,
-                     epsilon_upper_bound: float = 100,
+                     epsilon_tolerance: float = 1e-3,
                      ) -> float:
     """
     Calculate the epsilon privacy parameter of the Gaussian mechanism for a given delta.
@@ -50,17 +30,20 @@ def Gaussian_epsilon(sigma: float,
     - sigma: The standard deviation of the Gaussian mechanism.
     - delta: The privacy profile bound.
     - tolerance: The acceptable error margin.
-    - epsilon_upper_bound: The upper bound for epsilon.
 
     Returns:
     - The calculated epsilon value or infinity if not found.
     """
-    epsilon = bin_search(lambda eps: Gaussian_delta(sigma=sigma, epsilon=eps),
-                         lower=0, upper=epsilon_upper_bound, target=delta, tolerance=tolerance, increasing=False)
+    # Compute the analytic upper bound for epsilon
+    epsilon_upper_bound = 1/(2*sigma**2) + np.sqrt(2*np.log(sigma/delta*np.sqrt(2/np.pi)))/sigma
+
+    # Find the epsilon value using binary search
+    optimization_func = lambda eps: Gaussian_delta(sigma=sigma, epsilon=eps)
+    epsilon = search_function_with_bounds(func=optimization_func, y_target=delta, bounds=(0, epsilon_upper_bound),
+                                          tolerance=epsilon_tolerance, function_type=FunctionType.DECREASING)
     return np.inf if epsilon is None else epsilon
 
 # ==================== Local ====================
-# @cache
 def local_delta(sigma: float,
                 epsilon: float,
                 num_selected: int,
@@ -77,7 +60,6 @@ def local_delta(sigma: float,
     """
     return Gaussian_delta(sigma=sigma/np.sqrt(num_selected*num_epochs), epsilon=epsilon)
 
-# @cache
 def local_epsilon(sigma: float,
                   delta: float,
                   num_selected: int,

@@ -20,4 +20,4 @@ def allocation_delta_inverse(sigma: float,
                              ) -> float:
     num_steps_per_round = int(math.ceil(num_steps/num_selected))
     num_rounds = int(math.ceil(num_steps/num_steps_per_round))
-    return Gaussian_delta(sigma=sigma*math.math.sqrt(num_steps_per_round/(num_epochs*num_rounds)), epsilon=epsilon - (1-1.0/num_steps_per_round)/(2*sigma**2))
+    return Gaussian_delta(sigma=sigma*math.sqrt(num_steps_per_round/(num_epochs*num_rounds)), epsilon=epsilon - (1-1.0/num_steps_per_round)/(2*sigma**2))

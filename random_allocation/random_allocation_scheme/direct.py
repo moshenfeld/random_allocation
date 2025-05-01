@@ -4,91 +4,23 @@ from typing import List, Tuple
 import numpy as np
 import math
 
-from random_allocation.other_schemes.local import bin_search
-
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
 
 # ==================== Add ====================
-def allocation_rdp_add(sigma: float, 
-                       num_steps: int, 
-                       num_epochs: int,
-                       ) -> Tuple[np.ndarray, np.ndarray]:
-    small_alpha_orders = np.linspace(1.001, 2, 20)
-    alpha_orders = np.arange(2, 202)
-    large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-    alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
+def allocation_epsilon_direct_add(sigma: float,
+                                  delta: float,
+                                  num_steps: int,
+                                  num_epochs: int,
+                                  ) -> float:
+    return Gaussian_epsilon(sigma=sigma*math.sqrt(num_steps/(num_epochs)), delta=delta) + (1-1.0/num_steps)/(2*sigma**2)
 
-    # Compute RDP values
-    alpha_rdp = num_epochs * (alpha_orders + num_steps - 1) / (2 * num_steps * sigma**2)
-    return alpha_orders, alpha_rdp
-
-def allocation_epsilon_rdp_add(sigma: float, 
-                               delta: float, 
-                               num_steps: int, 
-                               num_epochs: int, 
-                               print_alpha: bool) -> float:
-    """
-    Compute the epsilon value of the allocation scheme in the add direction using Rényi Differential Privacy (RDP).
-    This function is based on the second part of Corollary 6.2, combined with Lemma 2.4.
-
-    Args:
-        sigma (float): Gaussian noise scale.
-        delta (float): Target delta value for differential privacy.
-        num_steps (int): Number of steps in the allocation scheme.
-        num_epochs (int): Number of epochs.
-        print_alpha (bool): Whether to print the alpha value used.
-    """
-    # Compute RDP and epsilon values
-    alpha_orders, alpha_rdp = allocation_rdp_add(sigma, num_steps, num_epochs)
-    alpha_epsilons = alpha_rdp + np.log1p(-1 / alpha_orders) - np.log(delta * alpha_orders) / (alpha_orders - 1)
-    epsilon = np.min(alpha_epsilons)
-    used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
-
-    # Check for potential alpha overflow or underflow
-    if used_alpha == alpha_orders[-1]:
-        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
-        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
-
-    # Optionally print the alpha value used
-    if print_alpha:
-        print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
-    
-    return epsilon
-
-def allocation_delta_rdp_add(sigma: float, 
-                             epsilon: float, 
-                             num_steps: int,
-                             num_epochs: int,
-                             print_alpha: bool,
-                             ) -> float:
-    """
-    Compute the privacy profile of the allocation scheme in the add direction using Rényi Differential Privacy (RDP).
-    This function is based on the second part of Corollary 6.2, combined with Lemma 2.4.
-
-    Args:
-        sigma (float): Gaussian noise scale.
-        epsilon (float): Target epsilon value for differential privacy.
-        num_steps (int): Number of steps in the allocation scheme.
-        num_epochs (int): Number of epochs.
-        print_alpha (bool): Whether to print the alpha value used.
-    """
-    # Compute RDP and epsilon values
-    alpha_orders, alpha_rdp = allocation_rdp_add(sigma, num_steps, num_epochs)
-    alpha_deltas = np.exp((alpha_orders-1) * (alpha_rdp - epsilon))*(1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
-    delta = np.min(alpha_deltas)
-    used_alpha = alpha_orders[np.argmin(alpha_deltas)]
-
-    # Check for potential alpha overflow or underflow
-    if used_alpha == alpha_orders[-1]:
-        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
-        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
-
-    # Optionally print the alpha value used
-    if print_alpha:
-        print(f'sigma: {sigma}, epsilon: {epsilon}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
-    
-    return delta
+def allocation_delta_direct_add(sigma: float,
+                                epsilon: float,
+                                num_steps: int,
+                                num_epochs: int,
+                                ) -> float:
+    return Gaussian_delta(sigma=sigma*math.sqrt(num_steps/(num_epochs)), epsilon=epsilon - (1-1.0/num_steps)/(2*sigma**2))
 
 # ==================== Remove ====================
 @cache
@@ -178,7 +110,7 @@ def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sig
     return counts_log_multinomial + partition_log_multinomial + partition_sum_square
 
 @cache
-def allocation_rdp_remove(alpha: int, sigma: float, num_steps: int) -> float:
+def allocation_RDP_remove(alpha: int, sigma: float, num_steps: int) -> float:
     """
     Compute the RDP of the allocation scheme in the emove direction.
     This function is based on the first part of Corollary 6.2,
@@ -191,7 +123,7 @@ def allocation_rdp_remove(alpha: int, sigma: float, num_steps: int) -> float:
 
     return (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)
 
-def allocation_epsilon_rdp_remove(sigma: float,
+def allocation_epsilon_direct_remove(sigma: float,
                                   delta: float,
                                   num_steps:int,
                                   num_epochs:int,
@@ -210,15 +142,15 @@ def allocation_epsilon_rdp_remove(sigma: float,
         print_alpha (bool): Whether to print the alpha value used.
     """
     alpha = alpha_orders[0]
-    alpha_rdp = allocation_rdp_remove(alpha, sigma, num_steps)*num_epochs
-    epsilon = alpha_rdp + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
+    alpha_RDP = allocation_RDP_remove(alpha, sigma, num_steps)*num_epochs
+    epsilon = alpha_RDP + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
     used_alpha = alpha
     for alpha in alpha_orders:
-        alpha_rdp = allocation_rdp_remove(alpha, sigma, num_steps)*num_epochs
-        if alpha_rdp > epsilon:
+        alpha_RDP = allocation_RDP_remove(alpha, sigma, num_steps)*num_epochs
+        if alpha_RDP > epsilon:
             break
         else:
-            new_eps = alpha_rdp + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
+            new_eps = alpha_RDP + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
             if new_eps < epsilon:
                 epsilon = new_eps
                 used_alpha = alpha
@@ -231,7 +163,7 @@ def allocation_epsilon_rdp_remove(sigma: float,
     return epsilon
 
 # ==================== Both ====================
-def allocation_epsilon_rdp(sigma: float,
+def allocation_epsilon_direct(sigma: float,
                            delta: float,
                            num_steps: int,
                            num_selected: int,
@@ -259,18 +191,18 @@ def allocation_epsilon_rdp(sigma: float,
     num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     if direction != 'add':
         alpha_orders = np.arange(min_alpha, max_alpha+1)
-        epsilon_remove = allocation_epsilon_rdp_remove(sigma=sigma, delta=delta, num_steps=num_steps_per_round,
-                                                       num_epochs=num_rounds*num_epochs, alpha_orders=alpha_orders, print_alpha=print_alpha)
+        epsilon_remove = allocation_epsilon_direct_remove(sigma=sigma, delta=delta, num_steps=num_steps_per_round,
+                                                          num_epochs=num_rounds*num_epochs, alpha_orders=alpha_orders, print_alpha=print_alpha)
     if direction != 'remove':
-        epsilon_add = allocation_epsilon_rdp_add(sigma=sigma, delta=delta, num_steps=num_steps_per_round,
-                                                 num_epochs=num_rounds*num_epochs, print_alpha=print_alpha)
+        epsilon_add = allocation_epsilon_direct_add(sigma=sigma, delta=delta, num_steps=num_steps_per_round,
+                                                    num_epochs=num_rounds*num_epochs)
     if direction == 'add':
         return epsilon_add
     if direction == 'remove':
         return epsilon_remove
     return max(epsilon_remove, epsilon_add)
 
-def allocation_delta_rdp(sigma: float,
+def allocation_delta_direct(sigma: float,
                          epsilon: float,
                          num_steps: int,
                          num_selected: int,
@@ -295,14 +227,106 @@ def allocation_delta_rdp(sigma: float,
         delta_tolerance (float): Tolerance for delta computation.
     """
     if direction != 'add':
-        delta_remove =  bin_search(lambda delta: allocation_epsilon_rdp(sigma=sigma, delta=delta, num_steps=num_steps,
-                                                                        num_selected=num_selected, num_epochs=num_epochs, direction='remove', min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False),
-                      lower=0, upper=1, target=epsilon, tolerance=delta_tolerance, increasing=False)
+        optimization_func = lambda delta: allocation_epsilon_direct(sigma=sigma, delta=delta, num_steps=num_steps,
+                                                                 num_selected=num_selected, num_epochs=num_epochs, direction='remove', min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False)
+        delta_remove = search_function_with_bounds(func=optimization_func, y_target=epsilon, 
+                                                   bounds=(delta_tolerance, 1-delta_tolerance), tolerance=delta_tolerance,
+                                                   function_type=FunctionType.DECREASING)
     if direction != 'remove':
-        delta_add =  allocation_delta_rdp_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps,
-                                              num_selected=num_selected, num_epochs=num_epochs),
+        num_steps_per_round = int(np.ceil(num_steps/num_selected))
+        num_rounds = int(np.ceil(num_steps/num_steps_per_round))
+        delta_add =  allocation_delta_direct_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps_per_round,
+                                                 num_epochs=num_epochs*num_rounds)
     if direction == 'add':
         return delta_add
     if direction == 'remove':
         return delta_remove
     return max(delta_add, delta_remove)
+
+# ==================== RDP based Add ====================
+def allocation_RDP_add(sigma: float, 
+                       num_steps: int, 
+                       num_epochs: int,
+                       ) -> Tuple[np.ndarray, np.ndarray]:
+    small_alpha_orders = np.linspace(1.001, 2, 20)
+    alpha_orders = np.arange(2, 202)
+    large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
+    alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
+
+    # Compute RDP values
+    alpha_RDP = num_epochs * (alpha_orders + num_steps - 1) / (2 * num_steps * sigma**2)
+    return alpha_orders, alpha_RDP
+
+def allocation_epsilon_RDP_add(sigma: float,
+                               delta: float,
+                               num_steps: int,
+                               num_epochs: int,
+                               print_alpha: bool = False,
+                               ) -> float:
+    """
+    Compute the epsilon value of the allocation scheme in the add direction using Rényi Differential Privacy (RDP).
+    This function is based on the second part of Corollary 6.2, combined with Lemma 2.4.
+
+    Args:
+        sigma (float): Gaussian noise scale.
+        delta (float): Target delta value for differential privacy.
+        num_steps (int): Number of steps in the allocation scheme.
+        num_epochs (int): Number of epochs.
+        print_alpha (bool): Whether to print the alpha value used.
+    """
+    # Compute RDP and epsilon values
+    alpha_orders, alpha_RDP = allocation_RDP_add(sigma, num_steps, num_epochs)
+    alpha_epsilons = alpha_RDP + np.log1p(-1 / alpha_orders) - np.log(delta * alpha_orders) / (alpha_orders - 1)
+    epsilon = np.min(alpha_epsilons)
+    used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
+
+    # Check for potential alpha overflow or underflow
+    if used_alpha == alpha_orders[-1]:
+        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
+    if used_alpha == alpha_orders[0]:
+        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+
+    # Optionally print the alpha value used
+    if print_alpha:
+        print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
+    
+    return epsilon
+
+def allocation_delta_RDP_add(sigma: float,
+                             epsilon: float,
+                             num_steps: int,
+                             num_selected: int,
+                             num_epochs: int,
+                             print_alpha: bool,
+                             ) -> float:
+    """
+    Compute the privacy profile of the allocation scheme in the add direction using Rényi Differential Privacy (RDP).
+    This function is based on the second part of Corollary 6.2, combined with Lemma 2.4.
+
+    Args:
+        sigma (float): Gaussian noise scale.
+        epsilon (float): Target epsilon value for differential privacy.
+        num_steps (int): Number of steps in the allocation scheme.
+        num_epochs (int): Number of epochs.
+        print_alpha (bool): Whether to print the alpha value used.
+    """
+    num_steps_per_round = int(np.ceil(num_steps/num_selected))
+    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
+
+    # Compute RDP and epsilon values
+    alpha_orders, alpha_RDP = allocation_RDP_add(sigma, num_steps_per_round, num_epochs*num_rounds)
+    alpha_deltas = np.exp((alpha_orders-1) * (alpha_RDP - epsilon))*(1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
+    delta = np.min(alpha_deltas)
+    used_alpha = alpha_orders[np.argmin(alpha_deltas)]
+
+    # Check for potential alpha overflow or underflow
+    if used_alpha == alpha_orders[-1]:
+        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
+    if used_alpha == alpha_orders[0]:
+        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+
+    # Optionally print the alpha value used
+    if print_alpha:
+        print(f'sigma: {sigma}, epsilon: {epsilon}, num_steps: {num_steps}, num_selected: {num_selected}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
+    
+    return delta

@@ -1,8 +1,11 @@
 # from functools import cache
 import numpy as np
-# from computeamplification import numericalanalysis
-from .shuffle_external import numericalanalysis
-from .local import local_epsilon, bin_search
+
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.other_schemes.shuffle_external import numericalanalysis
+from random_allocation.other_schemes.local import local_epsilon
+
+
 
 # @cache
 def shuffle_epsilon_analytic(sigma: float,
@@ -41,9 +44,12 @@ def shuffle_delta_analytic(sigma: float,
                            num_selected: int,
                            num_epochs: int,
                            step: float = 100,
+                           delta_tolerance: float = 1e-15,
                            ) -> float:
     if num_epochs > 1 or num_selected > 1:
         raise ValueError('Shuffle method only supports num_epochs=1 and num_selected=1')
-    return bin_search(lambda delta: shuffle_epsilon_analytic(sigma=sigma, delta=delta, num_steps=num_steps, num_selected=num_selected,
-                                                             num_epochs=num_epochs, step=step),
-                      0, 1, epsilon, increasing=False)
+    
+    optimization_func = lambda delta: shuffle_epsilon_analytic(sigma=sigma, delta=delta, num_steps=num_steps,
+                                                               num_selected=num_selected, num_epochs=num_epochs, step=step)
+    return search_function_with_bounds(func=optimization_func, y_target=epsilon, bounds=(delta_tolerance, 1-delta_tolerance),
+                                       tolerance=delta_tolerance, function_type=FunctionType.DECREASING)

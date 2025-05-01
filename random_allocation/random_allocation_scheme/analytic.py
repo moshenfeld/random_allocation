@@ -1,8 +1,9 @@
 # from functools import cache
 import numpy as np
 
-from random_allocation.other_schemes.local import local_epsilon, bin_search
-from random_allocation.other_schemes.poisson import poisson_epsilon_pld
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.other_schemes.local import local_epsilon, FunctionType
+from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD
 
 def sampling_prob_from_sigma(sigma: float,
                              delta: float,
@@ -34,7 +35,9 @@ def allocation_epsilon_analytic(sigma: float,
     large_sampling_prob_delta = delta*large_sampling_prob_delta_split/num_epochs
     sampling_prob = sampling_prob_from_sigma(sigma=sigma, delta=large_sampling_prob_delta, num_steps=num_steps,
                                              num_selected=num_selected, local_delta=local_delta)
-    epsilon = poisson_epsilon_pld(sigma=sigma, delta=Poisson_delta, num_steps=num_steps, num_selected=num_selected,
+    if sampling_prob > np.sqrt(num_selected/num_steps):
+        return np.inf
+    epsilon = Poisson_epsilon_PLD(sigma=sigma, delta=Poisson_delta, num_steps=num_steps, num_selected=num_selected,
                                   num_epochs=num_epochs, sampling_prob=sampling_prob, discretization=discretization, direction=direction)
     return epsilon
 
@@ -44,8 +47,10 @@ def allocation_delta_analytic(sigma: float,
                               num_selected: int,
                               num_epochs: int,
                               direction: str = 'both',
-                              discretization: float = 1e-4, 
+                              discretization: float = 1e-4,
+                              delta_tolerance: float = 1e-15,
                               ) -> float:
-    return bin_search(lambda delta: allocation_epsilon_analytic(sigma=sigma, delta=delta, num_steps=num_steps,
-                                                                num_selected=num_selected, num_epochs=num_epochs, discretization=discretization, direction=direction),
-                      0, 1, epsilon, increasing=False)
+    optimization_func = lambda delta: allocation_epsilon_analytic(sigma=sigma, delta=delta, num_steps=num_steps,
+                                                                  num_selected=num_selected, num_epochs=num_epochs, discretization=discretization, direction=direction)
+    return search_function_with_bounds(func=optimization_func, y_target=epsilon, bounds=(delta_tolerance, 1-delta_tolerance),
+                                       tolerance=delta_tolerance, function_type=FunctionType.DECREASING)

@@ -1,8 +1,8 @@
 # from functools import cache
 import numpy as np
 
-from random_allocation.other_schemes.local import bin_search
-from random_allocation.other_schemes.poisson import poisson_pld
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.other_schemes.poisson import Poisson_PLD
 
 def allocation_epsilon_recursive(sigma: float,
                                  delta: float,
@@ -15,23 +15,32 @@ def allocation_epsilon_recursive(sigma: float,
     num_steps_per_round = int(np.ceil(num_steps/num_selected))
     num_rounds = int(np.ceil(num_steps/num_steps_per_round))
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
-    Poisson_pld_base = poisson_pld(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
+    Poisson_PLD_base = Poisson_PLD(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
                                    sampling_prob=1.0/num_steps_per_round, discretization=discretization, direction='add')
     if direction != 'add':
-        gamma = 2*bin_search(lambda eps: Poisson_pld_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))
-                                         *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps)),
-                             lower=0, upper=10, target=delta/4, tolerance=1e-2, increasing=False)
-        Poisson_pld = poisson_pld(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs, 
-                                  sampling_prob=np.exp(gamma)/num_steps_per_round, discretization=discretization, direction='remove')
-        epsilon_remove = Poisson_pld.get_epsilon_for_delta(delta/2)
+        optimization_func = lambda eps: Poisson_PLD_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))\
+                                        *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps))
+        gamma = 2*search_function_with_bounds(func=optimization_func, y_target=delta/4, bounds=(1e-5, 10),
+                                              tolerance=1e-2, function_type=FunctionType.DECREASING)
+        sampling_prob = np.exp(gamma)/num_steps_per_round
+        if sampling_prob > np.sqrt(1/num_steps_per_round):
+            epsilon_remove = np.inf
+        else:
+            Poisson_PLD_final = Poisson_PLD(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
+                                            sampling_prob=sampling_prob, discretization=discretization, direction='remove')
+            epsilon_remove = Poisson_PLD_final.get_epsilon_for_delta(delta/2)
     if direction != 'remove':
-        gamma = 2*bin_search(lambda eps: Poisson_pld_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))
-                                         *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps)),
-                             lower=0, upper=10, target=delta/2, tolerance=1e-2, increasing=False)
-        Poisson_pld = poisson_pld(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
-                                  sampling_prob=np.exp(gamma)/num_steps_per_round, discretization=discretization,
-                                  direction='add')
-        epsilon_add = Poisson_pld.get_epsilon_for_delta(delta/2)
+        optimization_func = lambda eps: Poisson_PLD_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))\
+                                        *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps))
+        gamma = 2*search_function_with_bounds(func=optimization_func, y_target=delta/2, bounds=(1e-5, 10),
+                                              tolerance=1e-2, function_type=FunctionType.DECREASING)
+        sampling_prob = np.exp(gamma)/num_steps_per_round
+        if sampling_prob > np.sqrt(1/num_steps_per_round):
+            epsilon_add = np.inf
+        else:
+            Poisson_PLD_final = Poisson_PLD(sigma=sigma, num_steps=num_steps_per_round, num_epochs=num_rounds*num_epochs,
+                                            sampling_prob=sampling_prob, discretization=discretization, direction='add')
+            epsilon_add = Poisson_PLD_final.get_epsilon_for_delta(delta/2)
     if direction == 'add':
         return epsilon_add
     if direction == 'remove':
@@ -45,7 +54,9 @@ def allocation_delta_recursive(sigma: float,
                                num_epochs: int,
                                direction: str = 'both',
                                discretization: float = 1e-4,
+                               delta_tolerance: float = 1e-15,
                                ) -> float:
-    return bin_search(lambda delta: allocation_epsilon_recursive(sigma=sigma, delta=delta, num_steps=num_steps,
-                                                                 num_selected=num_selected, num_epochs=num_epochs, discretization=discretization, direction=direction),
-                      0, 1, epsilon, increasing=False)
+    optimization_func = lambda delta: allocation_epsilon_recursive(sigma=sigma, delta=delta, num_steps=num_steps,
+                                                                   num_selected=num_selected, num_epochs=num_epochs, discretization=discretization, direction=direction)
+    return search_function_with_bounds(func=optimization_func, y_target=epsilon, bounds=(delta_tolerance, 1-delta_tolerance),
+                                       tolerance=delta_tolerance, function_type=FunctionType.DECREASING)
