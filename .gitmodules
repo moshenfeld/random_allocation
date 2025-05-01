@@ -1,0 +1,3 @@
+[submodule "shuffle_clones"]
+	path = shuffle_clones
+	url = https://github.com/apple/ml-shuffling-amplification.git
