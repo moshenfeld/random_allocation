@@ -2,11 +2,9 @@
 import numpy as np
 
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
-from random_allocation.other_schemes.shuffle_external import numericalanalysis
+from shuffle_clones.computeamplification import numericalanalysis
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 from random_allocation.other_schemes.local import local_epsilon
-
-
 
 # @cache
 def shuffle_epsilon_analytic(params: PrivacyParams,
@@ -128,47 +126,3 @@ def shuffle_delta_analytic(params: PrivacyParams,
         tolerance=config.delta_tolerance, 
         function_type=FunctionType.DECREASING
     )
-
-# For backward compatibility
-def _shuffle_epsilon_analytic_legacy(sigma: float,
-                             delta: float,
-                             num_steps: int,
-                             num_selected: int,
-                             num_epochs: int,
-                             step: float = 100,
-                             ) -> float:
-    """Legacy function for backward compatibility"""
-    temp_params = PrivacyParams(
-        sigma=sigma,
-        delta=delta,
-        epsilon=None,
-        num_steps=num_steps,
-        num_selected=num_selected,
-        num_epochs=num_epochs
-    )
-    
-    return shuffle_epsilon_analytic(params=temp_params, step=step)
-
-def _shuffle_delta_analytic_legacy(sigma: float,
-                           epsilon: float,
-                           num_steps: int,
-                           num_selected: int,
-                           num_epochs: int,
-                           step: float = 100,
-                           delta_tolerance: float = 1e-15,
-                           ) -> float:
-    """Legacy function for backward compatibility"""
-    temp_params = PrivacyParams(
-        sigma=sigma,
-        delta=None,
-        epsilon=epsilon,
-        num_steps=num_steps,
-        num_selected=num_selected,
-        num_epochs=num_epochs
-    )
-    
-    temp_config = SchemeConfig(
-        delta_tolerance=delta_tolerance
-    )
-    
-    return shuffle_delta_analytic(params=temp_params, config=temp_config, step=step)

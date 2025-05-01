@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable, Dict, Any, List, Optional, Literal
+import numpy as np
 
 """
 Common definitions for privacy parameters, scheme configurations, and experiment configuration.
@@ -29,12 +30,20 @@ class SchemeConfig:
     """Configuration for privacy schemes"""
     direction: Literal['add', 'remove', 'both'] = 'both'
     discretization: float = 1e-4
-    min_alpha: int = 2
-    max_alpha: int = 50 
+    allocation_direct_alpha_orders: np.ndarray = None  # Will be set in __post_init__
+    allocation_RDP_DCO_alpha_orders: np.ndarray = None  # Will be set in __post_init__
+    Poisson_alpha_orders: np.ndarray = None  # Will be set in __post_init__
     print_alpha: bool = False
     delta_tolerance: float = 1e-15
     epsilon_tolerance: float = 1e-3
-    epsilon_upper_bound: float = 100.0 
+    epsilon_upper_bound: float = 100.0
+    
+    def __post_init__(self):
+        """Initialize alpha_orders if not provided"""
+        if self.allocation_direct_alpha_orders is None:
+            min_alpha = 2
+            max_alpha = 50
+            self.allocation_direct_alpha_orders = np.arange(min_alpha, max_alpha + 1, 1)
 
 # Import privacy scheme functions after defining the dataclasses they need
 from random_allocation.other_schemes.local import local_epsilon, local_delta
@@ -68,13 +77,13 @@ names_dict = {EPSILON: '$\\varepsilon$', DELTA: '$\\delta$', SIGMA: '$\\sigma$',
 #===================== Configuration =====================
 NUM_EXP           = 'num_experiments'
 DISCRETIZATION    = 'discretization'
-MIN_ALPHA         = 'min_alpha'
-MAX_ALPHA         = 'max_alpha'
+MIN_ALPHA         = 'min_alpha'  # Kept for backward compatibility
+MAX_ALPHA         = 'max_alpha'  # Kept for backward compatibility
+ALPHA_ORDERS      = 'allocation_direct_alpha_orders'
 EPSILON_TOLERANCE = 'epsilon_tolerance'
 DELTA_TOLERANCE   = 'delta_tolerance'
 DIRECTION         = 'direction'
-CONFIGS           = [NUM_EXP, DISCRETIZATION, MIN_ALPHA, MAX_ALPHA, EPSILON_TOLERANCE, DELTA_TOLERANCE, DIRECTION]
-ALPHA_ORDERS      = 'alpha_orders'
+CONFIGS           = [NUM_EXP, DISCRETIZATION, ALPHA_ORDERS, EPSILON_TOLERANCE, DELTA_TOLERANCE, DIRECTION]
 
 # ======================= Schemes =======================
 LOCAL = 'Local'

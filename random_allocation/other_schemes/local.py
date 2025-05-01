@@ -79,36 +79,3 @@ def local_epsilon(params: PrivacyParams,
     return Gaussian_epsilon(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
                            delta=params.delta, 
                            epsilon_tolerance=config.epsilon_tolerance)
-
-# For backward compatibility
-def _local_delta_legacy(sigma: float,
-                epsilon: float,
-                num_selected: int,
-                num_epochs: int,
-                ) -> np.ndarray[float]:
-    """Legacy function for backward compatibility"""
-    temp_params = PrivacyParams(
-        sigma=sigma,
-        epsilon=epsilon,
-        delta=None,
-        num_steps=0,  # Not used in local methods
-        num_selected=num_selected,
-        num_epochs=num_epochs
-    )
-    return local_delta(params=temp_params)
-
-def _local_epsilon_legacy(sigma: float,
-                  delta: float,
-                  num_selected: int,
-                  num_epochs: int,
-                  ) -> float:
-    """Legacy function for backward compatibility"""
-    temp_params = PrivacyParams(
-        sigma=sigma,
-        epsilon=None,
-        delta=delta,
-        num_steps=0,  # Not used in local methods
-        num_selected=num_selected,
-        num_epochs=num_epochs
-    )
-    return local_epsilon(params=temp_params)

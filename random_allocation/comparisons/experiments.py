@@ -225,11 +225,19 @@ def run_experiment(
     # Convert config_dict to SchemeConfig if it's a dictionary
     if isinstance(config_dict_or_obj, dict):
         config_dict = config_dict_or_obj
+        
+        # Check if min_alpha and max_alpha are provided instead of alpha_orders
+        if MIN_ALPHA in config_dict and MAX_ALPHA in config_dict and ALPHA_ORDERS not in config_dict:
+            min_alpha = config_dict[MIN_ALPHA]
+            max_alpha = config_dict[MAX_ALPHA]
+            alpha_orders = np.arange(min_alpha, max_alpha + 1, 1)
+        else:
+            alpha_orders = config_dict.get(ALPHA_ORDERS, None)
+        
         config = SchemeConfig(
             direction=config_dict.get(DIRECTION, 'both'),
             discretization=config_dict.get(DISCRETIZATION, 1e-4),
-            min_alpha=config_dict.get(MIN_ALPHA, 2),
-            max_alpha=config_dict.get(MAX_ALPHA, 50),
+            allocation_direct_alpha_orders=alpha_orders,
             print_alpha=config_dict.get('print_alpha', False),
             delta_tolerance=config_dict.get(DELTA_TOLERANCE, 1e-15),
             epsilon_tolerance=config_dict.get(EPSILON_TOLERANCE, 1e-3),

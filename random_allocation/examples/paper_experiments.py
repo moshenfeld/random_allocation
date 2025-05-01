@@ -6,8 +6,6 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# print("Updated PYTHONPATH:", sys.path)
-
 import numpy as np
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.experiments import run_experiment, PlotType
@@ -29,8 +27,7 @@ params_dict_1 = {
 
 config_dict_1 = {
     DISCRETIZATION: 1e-4,
-    MIN_ALPHA: 2,
-    MAX_ALPHA: 60,
+    ALPHA_ORDERS: np.arange(2, 61),
     EPSILON_TOLERANCE: 1e-3,
     DELTA_TOLERANCE: 1e-10,
 }
@@ -63,8 +60,7 @@ params_dict_2 = {
 
 config_dict_2 = {
     DISCRETIZATION: 1e-4,
-    MIN_ALPHA: 2,
-    MAX_ALPHA: 60,
+    ALPHA_ORDERS: np.arange(2, 61),
     EPSILON_TOLERANCE: 1e-3,
     DELTA_TOLERANCE: 1e-10,
 }
@@ -98,8 +94,7 @@ params_dict_3 = {
 config_dict_3 = {
     DISCRETIZATION: 1e-4,
     NUM_EXP: 1_000_000,
-    MIN_ALPHA: 2,
-    MAX_ALPHA: 60,
+    ALPHA_ORDERS: np.arange(2, 61),
     EPSILON_TOLERANCE: 1e-3,
     DELTA_TOLERANCE: 1e-10,
 }
@@ -132,8 +127,7 @@ params_dict_4 = {
 
 config_dict_4 = {
     DISCRETIZATION: 1e-4,
-    MIN_ALPHA: 2,
-    MAX_ALPHA: 60,
+    ALPHA_ORDERS: np.arange(2, 61),
     EPSILON_TOLERANCE: 1e-3,
     DELTA_TOLERANCE: 1e-10,
 }
@@ -152,45 +146,3 @@ data_4 = run_experiment(
     SAVE_DATA, 
     SAVE_PLOTS
 )
-
-# Example of using PrivacyParams and SchemeConfig objects directly
-# (Just showing how it could be done, using the same parameters as experiment 1)
-sigma_values = np.exp(np.linspace(np.log(0.2), np.log(5), 20))
-
-# Create base parameters
-base_params = PrivacyParams(
-    sigma=0,  # Will be set for each x value in the experiment
-    delta=1e-10,
-    epsilon=None,
-    num_steps=100_000,
-    num_selected=1,
-    num_epochs=1
-)
-# Add x_var and x_values attributes
-setattr(base_params, 'x_var', SIGMA)
-setattr(base_params, 'y_var', EPSILON)
-setattr(base_params, 'x_values', sigma_values)
-
-# Create configuration
-config = SchemeConfig(
-    discretization=1e-4,
-    min_alpha=2,
-    max_alpha=60,
-    epsilon_tolerance=1e-3,
-    delta_tolerance=1e-10
-)
-
-# This would be equivalent to experiment 1
-# Uncomment to run if you want to test the direct object interface
-"""
-data_5 = run_experiment(
-    base_params,
-    config,
-    methods_list_1,
-    visualization_config_1,
-    'epsilon_vs_sigma_direct',
-    PlotType.COMBINED,
-    SAVE_DATA,
-    SAVE_PLOTS
-)
-"""

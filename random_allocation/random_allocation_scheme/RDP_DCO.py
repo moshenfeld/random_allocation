@@ -41,11 +41,13 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
-    # Define alpha orders for RDP computation
-    small_alpha_orders = np.linspace(1.001, 2, 20)
-    alpha_orders = np.arange(2, 202)
-    large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-    alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
+    # Use alpha_orders directly from config or generate if not provided
+    alpha_orders = config.allocation_RDP_DCO_alpha_orders
+    if alpha_orders is None:
+        small_alpha_orders = np.linspace(1.001, 2, 20)
+        alpha_orders = np.arange(2, 202)
+        large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
+        alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
 
     # Compute RDP and epsilon values
     if config.direction != 'add':
@@ -98,11 +100,13 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    # Define alpha orders for RDP computation
-    small_alpha_orders = np.linspace(1.001, 2, 20)
-    alpha_orders = np.arange(2, 202)
-    large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-    alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
+    # Use alpha_orders directly from config or generate if not provided
+    alpha_orders = config.allocation_RDP_DCO_alpha_orders
+    if alpha_orders is None:
+        small_alpha_orders = np.linspace(1.001, 2, 20)
+        alpha_orders = np.arange(2, 202)
+        large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
+        alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
 
     # Compute RDP and epsilon values
     if config.direction != 'add':

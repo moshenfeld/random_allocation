@@ -128,7 +128,7 @@ def allocation_epsilon_direct_remove(sigma: float,
                                   delta: float,
                                   num_steps:int,
                                   num_epochs:int,
-                                  alpha_orders: List[int],
+                                  alpha_orders,
                                   print_alpha: bool,
                                   ) -> float:
     """
@@ -139,7 +139,7 @@ def allocation_epsilon_direct_remove(sigma: float,
         delta (float): Target delta value for differential privacy.
         num_steps (int): Number of steps in the allocation scheme.
         num_epochs (int): Number of epochs.
-        alpha_orders (List[int]): List of alpha orders for RDP computation.
+        alpha_orders: Array of alpha orders for RDP computation.
         print_alpha (bool): Whether to print the alpha value used.
     """
     alpha = alpha_orders[0]
@@ -155,6 +155,7 @@ def allocation_epsilon_direct_remove(sigma: float,
             if new_eps < epsilon:
                 epsilon = new_eps
                 used_alpha = alpha
+    
     if used_alpha == alpha_orders[-1]:
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
     if used_alpha == alpha_orders[0]:
@@ -186,13 +187,12 @@ def allocation_epsilon_direct(params: PrivacyParams,
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
     
     if config.direction != 'add':
-        alpha_orders = np.arange(config.min_alpha, config.max_alpha+1)
         epsilon_remove = allocation_epsilon_direct_remove(
             sigma=params.sigma, 
             delta=params.delta, 
             num_steps=num_steps_per_round,
             num_epochs=num_rounds*params.num_epochs, 
-            alpha_orders=alpha_orders, 
+            alpha_orders=config.allocation_direct_alpha_orders, 
             print_alpha=config.print_alpha
         )
     
@@ -244,8 +244,7 @@ def allocation_delta_direct(params: PrivacyParams,
             # Use 'remove' specifically for this optimization
             remove_config = SchemeConfig(
                 direction='remove',
-                min_alpha=config.min_alpha,
-                max_alpha=config.max_alpha,
+                allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
                 print_alpha=False,
                 delta_tolerance=config.delta_tolerance
             )
