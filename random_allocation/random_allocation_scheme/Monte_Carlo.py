@@ -2,10 +2,8 @@ from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
 def allocation_delta_Monte_Carlo(params: PrivacyParams,
-                                config: SchemeConfig = SchemeConfig(),
-                                use_order_stats: bool = True,
-                                use_mean: bool = False,
-                                ) -> float:
+                                 config: SchemeConfig,
+                                 ) -> float:
     """
     Compute delta using Monte Carlo simulation for the allocation scheme.
     
@@ -28,7 +26,7 @@ def allocation_delta_Monte_Carlo(params: PrivacyParams,
     
     if config.direction != 'add':
         adjacency_type = AdjacencyType.REMOVE
-        if use_order_stats:
+        if config.MC_use_order_stats:
             sample_size = 500_000
             order_stats_encoding = (1, 100, 1, 100, 500, 10, 500, 1000, 50)
             order_stats_seq = get_order_stats_seq_from_encoding(order_stats_encoding, params.num_steps)
@@ -52,11 +50,11 @@ def allocation_delta_Monte_Carlo(params: PrivacyParams,
                 adjacency_type, 
                 use_importance_sampling=True
             )[0]
-        delta_remove = delta_estimate.mean if use_mean else delta_estimate.get_upper_confidence_bound(error_prob)
+        delta_remove = delta_estimate.mean if config.MC_use_mean else delta_estimate.get_upper_confidence_bound(error_prob)
     
     if config.direction != 'remove':
         adjacency_type = AdjacencyType.ADD
-        if use_order_stats:
+        if config.MC_use_order_stats:
             sample_size = 500_000
             order_stats_encoding = (1, 100, 1, 100, 500, 10, 500, 1000, 50)
             order_stats_seq = get_order_stats_seq_from_encoding(order_stats_encoding, params.num_steps)
@@ -80,7 +78,7 @@ def allocation_delta_Monte_Carlo(params: PrivacyParams,
                 adjacency_type, 
                 use_importance_sampling=True
             )[0]
-        delta_add = delta_estimate.mean if use_mean else delta_estimate.get_upper_confidence_bound(error_prob)
+        delta_add = delta_estimate.mean if config.MC_use_mean else delta_estimate.get_upper_confidence_bound(error_prob)
     
     if config.direction == 'add':
         return delta_add

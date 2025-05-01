@@ -150,7 +150,7 @@ def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_na
 
 def run_experiment(
     params_dict_or_obj: Union[Dict[str, Any], PrivacyParams],
-    config_dict_or_obj: Union[Dict[str, Any], SchemeConfig],
+    config: SchemeConfig,
     methods: List[str], 
     visualization_config: Dict[str, Any] = None,
     experiment_name: str = '',
@@ -179,7 +179,7 @@ def run_experiment(
     examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
     data_file = os.path.join(examples_dir, 'data', f'{experiment_name}.csv')
     
-    # Convert params_dict and config_dict to objects if they're dictionaries
+    # Convert params_dict to object if they're dictionaries
     if isinstance(params_dict_or_obj, dict):
         # Extract x_var, y_var and x_values from the dictionary
         params_dict = params_dict_or_obj
@@ -221,32 +221,7 @@ def run_experiment(
         x_var = params.x_var
         y_var = params.y_var
         x_values = params.x_values
-    
-    # Convert config_dict to SchemeConfig if it's a dictionary
-    if isinstance(config_dict_or_obj, dict):
-        config_dict = config_dict_or_obj
-        
-        # Check if min_alpha and max_alpha are provided instead of alpha_orders
-        if MIN_ALPHA in config_dict and MAX_ALPHA in config_dict and ALPHA_ORDERS not in config_dict:
-            min_alpha = config_dict[MIN_ALPHA]
-            max_alpha = config_dict[MAX_ALPHA]
-            alpha_orders = np.arange(min_alpha, max_alpha + 1, 1)
-        else:
-            alpha_orders = config_dict.get(ALPHA_ORDERS, None)
-        
-        config = SchemeConfig(
-            direction=config_dict.get(DIRECTION, 'both'),
-            discretization=config_dict.get(DISCRETIZATION, 1e-4),
-            allocation_direct_alpha_orders=alpha_orders,
-            print_alpha=config_dict.get('print_alpha', False),
-            delta_tolerance=config_dict.get(DELTA_TOLERANCE, 1e-15),
-            epsilon_tolerance=config_dict.get(EPSILON_TOLERANCE, 1e-3),
-            epsilon_upper_bound=config_dict.get('epsilon_upper_bound', 100.0)
-        )
-    else:
-        # config_dict_or_obj is already a SchemeConfig object
-        config = config_dict_or_obj
-    
+
     # Data logic:
     # If save_data is True: always recalculate and save
     # If save_data is False: try to read existing data, if not exists - recalculate but don't save

@@ -107,14 +107,14 @@ def allocation_delta_decomposition_remove(params: PrivacyParams,
     lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     epsilon_new = np.log(1+lambda_val*(np.exp(params.epsilon)-1))
     
-    delta_Poisson = Poisson_delta_PLD(
+    Poisson_params = PrivacyParams(
         sigma=params.sigma, 
         epsilon=epsilon_new, 
         num_steps=num_steps_per_round, 
         num_selected=1, 
-        num_epochs=num_rounds*params.num_epochs,
-        discretization=config.discretization
+        num_epochs=num_rounds*params.num_epochs
     )
+    delta_Poisson = Poisson_delta_PLD(params=Poisson_params, config=config)
     
     return delta_Poisson / lambda_val
 

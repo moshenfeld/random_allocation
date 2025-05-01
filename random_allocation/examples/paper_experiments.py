@@ -25,12 +25,7 @@ params_dict_1 = {
     NUM_EPOCHS: 1
 }
 
-config_dict_1 = {
-    DISCRETIZATION: 1e-4,
-    ALPHA_ORDERS: np.arange(2, 61),
-    EPSILON_TOLERANCE: 1e-3,
-    DELTA_TOLERANCE: 1e-10,
-}
+config_1 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
 methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
 
@@ -38,7 +33,7 @@ visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 
 data_1 = run_experiment(
     params_dict_1, 
-    config_dict_1, 
+    config_1, 
     methods_list_1, 
     visualization_config_1, 
     'epsilon_vs_sigma', 
@@ -58,12 +53,7 @@ params_dict_2 = {
     NUM_EPOCHS: np.exp(np.linspace(np.log(1), np.log(1001), 10)).astype(int)
 }
 
-config_dict_2 = {
-    DISCRETIZATION: 1e-4,
-    ALPHA_ORDERS: np.arange(2, 61),
-    EPSILON_TOLERANCE: 1e-3,
-    DELTA_TOLERANCE: 1e-10,
-}
+config_2 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
 methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
@@ -71,7 +61,7 @@ visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': l
 
 data_2 = run_experiment(
     params_dict_2, 
-    config_dict_2, 
+    config_2, 
     methods_list_2, 
     visualization_config_2, 
     'epsilon_vs_epochs', 
@@ -91,13 +81,7 @@ params_dict_3 = {
     NUM_EPOCHS: 1
 }
 
-config_dict_3 = {
-    DISCRETIZATION: 1e-4,
-    NUM_EXP: 1_000_000,
-    ALPHA_ORDERS: np.arange(2, 61),
-    EPSILON_TOLERANCE: 1e-3,
-    DELTA_TOLERANCE: 1e-10,
-}
+config_3 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
 methods_list_3 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
@@ -105,7 +89,7 @@ visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': l
 
 data_3 = run_experiment(
     params_dict_3, 
-    config_dict_3, 
+    config_3, 
     methods_list_3, 
     visualization_config_3, 
     'delta_vs_steps', 
@@ -125,12 +109,7 @@ params_dict_4 = {
     NUM_EPOCHS: 1,
 }
 
-config_dict_4 = {
-    DISCRETIZATION: 1e-4,
-    ALPHA_ORDERS: np.arange(2, 61),
-    EPSILON_TOLERANCE: 1e-3,
-    DELTA_TOLERANCE: 1e-10,
-}
+config_4 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
 methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_RDP_DCO]
 
@@ -138,7 +117,7 @@ visualization_config_4 = {'log_x_axis': True, 'log_y_axis': True, 'format_x': la
 
 data_4 = run_experiment(
     params_dict_4, 
-    config_dict_4, 
+    config_4, 
     methods_list_4, 
     visualization_config_4, 
     'epsilon_vs_selected', 

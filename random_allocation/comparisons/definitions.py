@@ -1,51 +1,6 @@
-from dataclasses import dataclass
-from typing import Callable, Dict, Any, List, Optional, Literal
-import numpy as np
+from typing import Dict, Any, List
 
-"""
-Common definitions for privacy parameters, scheme configurations, and experiment configuration.
-"""
-
-#======================= Privacy Parameters & Scheme Config =======================
-@dataclass
-class PrivacyParams:
-    """Parameters common to all privacy schemes"""
-    sigma: float
-    num_steps: int
-    num_selected: int
-    num_epochs: int
-    # Either epsilon or delta must be provided, the other one will be computed
-    epsilon: Optional[float] = None
-    delta: Optional[float] = None
-    
-    def validate(self):
-        """Validate that the parameters are correctly specified"""
-        if self.epsilon is None and self.delta is None:
-            raise ValueError("Either epsilon or delta must be provided")
-        if self.epsilon is not None and self.delta is not None:
-            raise ValueError("Only one of epsilon or delta should be provided")
-
-@dataclass
-class SchemeConfig:
-    """Configuration for privacy schemes"""
-    direction: Literal['add', 'remove', 'both'] = 'both'
-    discretization: float = 1e-4
-    allocation_direct_alpha_orders: np.ndarray = None  # Will be set in __post_init__
-    allocation_RDP_DCO_alpha_orders: np.ndarray = None  # Will be set in __post_init__
-    Poisson_alpha_orders: np.ndarray = None  # Will be set in __post_init__
-    print_alpha: bool = False
-    delta_tolerance: float = 1e-15
-    epsilon_tolerance: float = 1e-3
-    epsilon_upper_bound: float = 100.0
-    
-    def __post_init__(self):
-        """Initialize alpha_orders if not provided"""
-        if self.allocation_direct_alpha_orders is None:
-            min_alpha = 2
-            max_alpha = 50
-            self.allocation_direct_alpha_orders = np.arange(min_alpha, max_alpha + 1, 1)
-
-# Import privacy scheme functions after defining the dataclasses they need
+from random_allocation.comparisons.structs import MethodFeatures, PrivacyParams, SchemeConfig
 from random_allocation.other_schemes.local import local_epsilon, local_delta
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_delta_PLD, Poisson_epsilon_RDP, Poisson_delta_RDP
 from random_allocation.other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
@@ -56,6 +11,9 @@ from random_allocation.random_allocation_scheme import allocation_epsilon_RDP_DC
 from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
 from random_allocation.random_allocation_scheme import allocation_epsilon_combined, allocation_delta_combined
 from random_allocation.random_allocation_scheme import allocation_epsilon_recursive, allocation_delta_recursive
+"""
+Common definitions for privacy parameters, scheme configurations, and experiment configuration.
+"""
 
 #======================= Direction =======================
 ADD    = 'add'
@@ -74,21 +32,10 @@ VARIABLES = [EPSILON, DELTA, SIGMA, NUM_STEPS, NUM_SELECTED, NUM_EPOCHS]
 names_dict = {EPSILON: '$\\varepsilon$', DELTA: '$\\delta$', SIGMA: '$\\sigma$', NUM_STEPS: '$t$', NUM_SELECTED: '$k$',
               NUM_EPOCHS: '$E$'}
 
-#===================== Configuration =====================
-NUM_EXP           = 'num_experiments'
-DISCRETIZATION    = 'discretization'
-MIN_ALPHA         = 'min_alpha'  # Kept for backward compatibility
-MAX_ALPHA         = 'max_alpha'  # Kept for backward compatibility
-ALPHA_ORDERS      = 'allocation_direct_alpha_orders'
-EPSILON_TOLERANCE = 'epsilon_tolerance'
-DELTA_TOLERANCE   = 'delta_tolerance'
-DIRECTION         = 'direction'
-CONFIGS           = [NUM_EXP, DISCRETIZATION, ALPHA_ORDERS, EPSILON_TOLERANCE, DELTA_TOLERANCE, DIRECTION]
-
 # ======================= Schemes =======================
 LOCAL = 'Local'
 POISSON = 'Poisson'
-ALLOCATION = 'allocation'
+ALLOCATION = 'Allocation'
 SHUFFLE = 'Shuffle'
 
 colors_dict = {LOCAL: '#FF0000', POISSON: '#2BB22C', ALLOCATION: '#157DED', SHUFFLE: '#FF00FF'}
@@ -114,17 +61,8 @@ ALLOCATION_COMBINED         = f'{ALLOCATION} (Our - {COMBINED})'
 ALLOCATION_RECURSIVE         = f'{ALLOCATION} (Our - {RECURSIVE})'
 
 # ======================= Methods Features =======================
-@dataclass
-class MethodFeatures:
-    """
-    Container for all features associated with a method.
-    """
-    name: str
-    epsilon_calculator: Callable
-    delta_calculator: Callable
-    legend: str
-    marker: str
-    color: str
+
+
 
 methods_dict = {
     LOCAL: MethodFeatures(
