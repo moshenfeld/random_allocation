@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
 # ==================== Deterministic ====================
 def Gaussian_delta(sigma: float,
@@ -44,34 +45,70 @@ def Gaussian_epsilon(sigma: float,
     return np.inf if epsilon is None else epsilon
 
 # ==================== Local ====================
-def local_delta(sigma: float,
-                epsilon: float,
-                num_selected: int,
-                num_epochs: int,
-                ) -> np.ndarray[float]:
+def local_delta(params: PrivacyParams,
+                config: SchemeConfig = SchemeConfig(),
+                ) -> float:
     """
     Calculate the privacy profile in case the index where each element is used is public (no amplification).
 
     Parameters:
-    - sigma: The standard deviation of the Gaussian mechanism.
-    - epsilon: The privacy parameter.
-    - num_selected: The number of steps that an element is used per epoch
-    - num_epochs: The number of epochs.
+    - params: PrivacyParams containing sigma, epsilon, num_selected, and num_epochs
+    - config: Configuration parameters (not used for this calculation)
     """
-    return Gaussian_delta(sigma=sigma/np.sqrt(num_selected*num_epochs), epsilon=epsilon)
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+        
+    return Gaussian_delta(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
+                         epsilon=params.epsilon)
 
-def local_epsilon(sigma: float,
-                  delta: float,
-                  num_selected: int,
-                  num_epochs: int,
+def local_epsilon(params: PrivacyParams,
+                  config: SchemeConfig = SchemeConfig(),
                   ) -> float:
     """
     Calculate the local epsilon value based on sigma, delta, number of selections, and epochs.
 
     Parameters:
-    - sigma: The standard deviation of the Gaussian mechanism.
-    - delta: The privacy profile bound.
-    - num_selected: The number of steps that each element is used per epoch
-    - num_epochs: The number of epochs.
+    - params: PrivacyParams containing sigma, delta, num_selected, and num_epochs
+    - config: Configuration parameters
     """
-    return Gaussian_epsilon(sigma=sigma/np.sqrt(num_selected*num_epochs), delta=delta)
+    params.validate()
+    if params.delta is None:
+        raise ValueError("Delta must be provided to compute epsilon")
+    
+    return Gaussian_epsilon(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
+                           delta=params.delta, 
+                           epsilon_tolerance=config.epsilon_tolerance)
+
+# For backward compatibility
+def _local_delta_legacy(sigma: float,
+                epsilon: float,
+                num_selected: int,
+                num_epochs: int,
+                ) -> np.ndarray[float]:
+    """Legacy function for backward compatibility"""
+    temp_params = PrivacyParams(
+        sigma=sigma,
+        epsilon=epsilon,
+        delta=None,
+        num_steps=0,  # Not used in local methods
+        num_selected=num_selected,
+        num_epochs=num_epochs
+    )
+    return local_delta(params=temp_params)
+
+def _local_epsilon_legacy(sigma: float,
+                  delta: float,
+                  num_selected: int,
+                  num_epochs: int,
+                  ) -> float:
+    """Legacy function for backward compatibility"""
+    temp_params = PrivacyParams(
+        sigma=sigma,
+        epsilon=None,
+        delta=delta,
+        num_steps=0,  # Not used in local methods
+        num_selected=num_selected,
+        num_epochs=num_epochs
+    )
+    return local_epsilon(params=temp_params)

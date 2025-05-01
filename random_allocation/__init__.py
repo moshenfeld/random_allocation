@@ -11,6 +11,7 @@ from random_allocation.comparisons.definitions import (
     ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION,
     EPSILON, DELTA, VARIABLES, methods_dict, names_dict, colors_dict
 )
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 from random_allocation.random_allocation_scheme import (
     allocation_epsilon_analytic, allocation_delta_analytic,
     allocation_epsilon_direct, allocation_delta_direct,
@@ -19,6 +20,10 @@ from random_allocation.random_allocation_scheme import (
 )
 
 __all__ = [
+    # Parameter and configuration classes
+    'PrivacyParams',
+    'SchemeConfig',
+    
     # Experiment functions
     'run_experiment',
     'PlotType',

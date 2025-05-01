@@ -1,6 +1,7 @@
 from typing import List
 
 from dp_accounting import pld, dp_event, rdp
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
 
 # ==================== PLD ====================
@@ -39,59 +40,61 @@ def Poisson_PLD(sigma: float,
         PLD_single = Gauss_PLD
     return PLD_single.self_compose(num_steps*num_epochs)
 
-def Poisson_delta_PLD(sigma: float,
-                      epsilon: float,
-                      num_steps: int,
-                      num_selected: int,
-                      num_epochs: int,
+def Poisson_delta_PLD(params: PrivacyParams,
+                      config: SchemeConfig = SchemeConfig(),
                       sampling_prob: float = 0.0,
-                      discretization: float = 1e-4,
-                      direction: str = 'both',
                       ) -> float:
     """
     Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on pld.
 
     Parameters:
-    - sigma: The standard deviation of the Gaussian mechanism.
-    - epsilon: The privacy parameter.
-    - num_steps: The number of steps in each epoch.
-    - num_selected: The number of selected items.
-    - num_epochs: The number of epochs.
-    - sampling_prob: The probability of sampling.
-    - discretization: The discretization interval for the pld.
+    - params: Privacy parameters
+    - config: Scheme configuration
     """
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+    
     if sampling_prob == 0.0:
-        sampling_prob = num_selected/num_steps
-    PLD = Poisson_PLD(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
-                      discretization=discretization, direction=direction)
-    return PLD.get_delta_for_epsilon(epsilon)
+        sampling_prob = params.num_selected / params.num_steps
+    
+    PLD = Poisson_PLD(
+        sigma=params.sigma, 
+        num_steps=params.num_steps, 
+        num_epochs=params.num_epochs, 
+        sampling_prob=sampling_prob,
+        discretization=config.discretization, 
+        direction=config.direction
+    )
+    return PLD.get_delta_for_epsilon(params.epsilon)
 
-def Poisson_epsilon_PLD(sigma: float,
-                        delta: float,
-                        num_steps: int,
-                        num_selected: int,
-                        num_epochs: int,
+def Poisson_epsilon_PLD(params: PrivacyParams,
+                        config: SchemeConfig = SchemeConfig(),
                         sampling_prob: float = 0.0,
-                        discretization: float = 1e-4,
-                        direction: str = 'both',
                         ) -> float:
     """
     Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on pld.
 
     Parameters:
-    - sigma: The standard deviation of the Gaussian mechanism.
-    - delta: The privacy profile bound.
-    - num_steps: The number of steps in each epoch.
-    - num_selected: The number of selected items.
-    - num_epochs: The number of epochs.
-    - sampling_prob: The probability of sampling.
-    - discretization: The discretization interval for the pld.
+    - params: Privacy parameters
+    - config: Scheme configuration
     """
+    params.validate()
+    if params.delta is None:
+        raise ValueError("Delta must be provided to compute epsilon")
+    
     if sampling_prob == 0.0:
-        sampling_prob = num_selected/num_steps
-    PLD = Poisson_PLD(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
-                      discretization=discretization, direction=direction)
-    return PLD.get_epsilon_for_delta(delta)
+        sampling_prob = params.num_selected / params.num_steps
+    
+    PLD = Poisson_PLD(
+        sigma=params.sigma, 
+        num_steps=params.num_steps, 
+        num_epochs=params.num_epochs, 
+        sampling_prob=sampling_prob,
+        discretization=config.discretization, 
+        direction=config.direction
+    )
+    return PLD.get_epsilon_for_delta(params.delta)
 
 # ==================== RDP ====================
 def Poisson_RDP(sigma: float,
@@ -115,7 +118,126 @@ def Poisson_RDP(sigma: float,
     accountant.compose(event, int(num_steps*num_epochs))
     return accountant
 
-def Poisson_delta_RDP(sigma: float,
+def Poisson_delta_RDP(params: PrivacyParams,
+                      config: SchemeConfig = SchemeConfig(),
+                      ) -> float:
+    """
+    Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on rdp.
+
+    Parameters:
+    - params: Privacy parameters
+    - config: Scheme configuration
+    """
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+    
+    sampling_prob = params.num_selected / params.num_steps
+    alpha_orders = list(range(config.min_alpha, config.max_alpha + 1))
+    
+    accountant = Poisson_RDP(
+        sigma=params.sigma, 
+        num_steps=params.num_steps, 
+        num_epochs=params.num_epochs, 
+        sampling_prob=sampling_prob,
+        alpha_orders=alpha_orders
+    )
+    
+    if config.print_alpha:
+        delta, used_alpha = accountant.get_delta_and_optimal_order(params.epsilon)
+        print(f'sigma: {params.sigma}, num_steps: {params.num_steps}, num_epochs: {params.num_epochs}, '
+              f'sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
+        return delta
+    
+    return accountant.get_delta(params.epsilon)
+
+def Poisson_epsilon_RDP(params: PrivacyParams,
+                        config: SchemeConfig = SchemeConfig(),
+                        ) -> float:
+    """
+    Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on rdp.
+
+    Parameters:
+    - params: Privacy parameters
+    - config: Scheme configuration
+    """
+    params.validate()
+    if params.delta is None:
+        raise ValueError("Delta must be provided to compute epsilon")
+    
+    sampling_prob = params.num_selected / params.num_steps
+    alpha_orders = list(range(config.min_alpha, config.max_alpha + 1))
+    
+    accountant = Poisson_RDP(
+        sigma=params.sigma, 
+        num_steps=params.num_steps, 
+        num_epochs=params.num_epochs, 
+        sampling_prob=sampling_prob,
+        alpha_orders=alpha_orders
+    )
+    
+    if config.print_alpha:
+        epsilon, used_alpha = accountant.get_epsilon_and_optimal_order(params.delta)
+        print(f'sigma: {params.sigma}, num_steps: {params.num_steps}, num_epochs: {params.num_epochs}, '
+              f'sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
+        return epsilon
+    
+    return accountant.get_epsilon(params.delta)
+
+# For backward compatibility
+def _Poisson_delta_PLD_legacy(sigma: float,
+                      epsilon: float,
+                      num_steps: int,
+                      num_selected: int,
+                      num_epochs: int,
+                      sampling_prob: float = 0.0,
+                      discretization: float = 1e-4,
+                      direction: str = 'both',
+                      ) -> float:
+    """Legacy function for backward compatibility"""
+    temp_params = PrivacyParams(
+        sigma=sigma,
+        epsilon=epsilon,
+        delta=None,
+        num_steps=num_steps,
+        num_selected=num_selected,
+        num_epochs=num_epochs
+    )
+    
+    temp_config = SchemeConfig(
+        discretization=discretization,
+        direction=direction
+    )
+    
+    return Poisson_delta_PLD(params=temp_params, config=temp_config)
+
+def _Poisson_epsilon_PLD_legacy(sigma: float,
+                        delta: float,
+                        num_steps: int,
+                        num_selected: int,
+                        num_epochs: int,
+                        sampling_prob: float = 0.0,
+                        discretization: float = 1e-4,
+                        direction: str = 'both',
+                        ) -> float:
+    """Legacy function for backward compatibility"""
+    temp_params = PrivacyParams(
+        sigma=sigma,
+        epsilon=None,
+        delta=delta,
+        num_steps=num_steps,
+        num_selected=num_selected,
+        num_epochs=num_epochs
+    )
+    
+    temp_config = SchemeConfig(
+        discretization=discretization,
+        direction=direction
+    )
+    
+    return Poisson_epsilon_PLD(params=temp_params, config=temp_config)
+
+def _Poisson_delta_RDP_legacy(sigma: float,
                       epsilon: float,
                       num_steps: int,
                       num_selected: int,
@@ -124,31 +246,25 @@ def Poisson_delta_RDP(sigma: float,
                       alpha_orders: List[float] = None,
                       print_alpha: bool = False,
                       ) -> float:
-    """
-    Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on rdp.
+    """Legacy function for backward compatibility"""
+    temp_params = PrivacyParams(
+        sigma=sigma,
+        epsilon=epsilon,
+        delta=None,
+        num_steps=num_steps,
+        num_selected=num_selected,
+        num_epochs=num_epochs
+    )
+    
+    temp_config = SchemeConfig(
+        min_alpha=alpha_orders[0] if alpha_orders else 2,
+        max_alpha=alpha_orders[-1] if alpha_orders else 50,
+        print_alpha=print_alpha
+    )
+    
+    return Poisson_delta_RDP(params=temp_params, config=temp_config)
 
-    Parameters:
-    - sigma: The standard deviation of the Gaussian mechanism.
-    - epsilon: The privacy parameter.
-    - num_steps: The number of steps in each epoch.
-    - num_selected: The number of steps that an element is used per epoch
-    - num_epochs: The number of epochs.
-    - sampling_prob: The probability of sampling.
-    - alpha_orders: The list of alpha orders for rdp.
-    - print_alpha: Whether to print the used alpha order.
-    """
-    # Default sampling probability is num_selected/num_steps
-    if sampling_prob == 0.0:
-        sampling_prob = num_selected/num_steps
-    accountant = Poisson_RDP(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
-                             alpha_orders=alpha_orders)
-    if print_alpha:
-        delta, used_alpha = accountant.get_delta_and_optimal_order(epsilon)
-        print(f'sigma: {sigma}, num_steps: {num_steps}, num_epochs: {num_epochs}, sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
-        return delta
-    return accountant.get_delta(epsilon)
-
-def Poisson_epsilon_RDP(sigma: float,
+def _Poisson_epsilon_RDP_legacy(sigma: float,
                         delta: float,
                         num_steps: int,
                         num_selected: int,
@@ -157,26 +273,20 @@ def Poisson_epsilon_RDP(sigma: float,
                         alpha_orders: List[float] = None,
                         print_alpha: bool = False,
                         ) -> float:
-    """
-    Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on rdp.
-
-    Parameters:
-    - sigma: The standard deviation of the Gaussian mechanism.
-    - delta: The privacy profile bound.
-    - num_steps: The number of steps in each epoch.
-    - num_selected: The number of steps that an element is used per epoch
-    - num_epochs: The number of epochs.
-    - sampling_prob: The probability of sampling.
-    - alpha_orders: The list of alpha orders for rdp.
-    - print_alpha: Whether to print the used alpha order.
-    """
-    # Default sampling probability is num_selected/num_steps
-    if sampling_prob == 0.0:
-        sampling_prob = num_selected/num_steps
-    accountant = Poisson_RDP(sigma=sigma, num_steps=num_steps, num_epochs=num_epochs, sampling_prob=sampling_prob,
-                             alpha_orders=alpha_orders)
-    if print_alpha:
-        epsilon, used_alpha = accountant.get_epsilon_and_optimal_order(delta)
-        print(f'sigma: {sigma}, num_steps: {num_steps}, num_epochs: {num_epochs}, sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
-        return epsilon
-    return accountant.get_epsilon(delta)
+    """Legacy function for backward compatibility"""
+    temp_params = PrivacyParams(
+        sigma=sigma,
+        epsilon=None,
+        delta=delta,
+        num_steps=num_steps,
+        num_selected=num_selected,
+        num_epochs=num_epochs
+    )
+    
+    temp_config = SchemeConfig(
+        min_alpha=alpha_orders[0] if alpha_orders else 2,
+        max_alpha=alpha_orders[-1] if alpha_orders else 50,
+        print_alpha=print_alpha
+    )
+    
+    return Poisson_epsilon_RDP(params=temp_params, config=temp_config)

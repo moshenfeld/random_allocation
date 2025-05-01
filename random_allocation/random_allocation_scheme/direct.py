@@ -6,6 +6,7 @@ import math
 
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
 # ==================== Add ====================
 def allocation_epsilon_direct_add(sigma: float,
@@ -163,83 +164,114 @@ def allocation_epsilon_direct_remove(sigma: float,
     return epsilon
 
 # ==================== Both ====================
-def allocation_epsilon_direct(sigma: float,
-                           delta: float,
-                           num_steps: int,
-                           num_selected: int,
-                           num_epochs: int,
-                           direction: str = 'both',
-                           min_alpha: int = 2,
-                           max_alpha: int = 50,
-                           print_alpha: bool = False,
+def allocation_epsilon_direct(params: PrivacyParams,
+                           config: SchemeConfig = SchemeConfig(),
                            ) -> float:
     """
     Compute the epsilon value of the allocation scheme using Rényi Differential Privacy (RDP).
     This function can compute epsilon for both the add and remove directions, or maximum of both.
+    
     Args:
-        sigma (float): Gaussian noise scale.
-        delta (float): Target delta value for differential privacy.
-        num_steps (int): Number of steps in the allocation scheme.  
-        num_selected (int): Number of selected elements in the allocation scheme.
-        num_epochs (int): Number of epochs.
-        direction (str): Direction of the allocation scheme ('add', 'remove', or 'both').
-        min_alpha (int): Minimum alpha value for RDP computation.
-        max_alpha (int): Maximum alpha value for RDP computation.
-        print_alpha (bool): Whether to print the alpha value used.
+        params: Privacy parameters (must include delta)
+        config: Scheme configuration parameters
+    
+    Returns:
+        Computed epsilon value
     """
-    num_steps_per_round = int(np.ceil(num_steps/num_selected))
-    num_rounds = int(np.ceil(num_steps/num_steps_per_round))
-    if direction != 'add':
-        alpha_orders = np.arange(min_alpha, max_alpha+1)
-        epsilon_remove = allocation_epsilon_direct_remove(sigma=sigma, delta=delta, num_steps=num_steps_per_round,
-                                                          num_epochs=num_rounds*num_epochs, alpha_orders=alpha_orders, print_alpha=print_alpha)
-    if direction != 'remove':
-        epsilon_add = allocation_epsilon_direct_add(sigma=sigma, delta=delta, num_steps=num_steps_per_round,
-                                                    num_epochs=num_rounds*num_epochs)
-    if direction == 'add':
+    params.validate()
+    if params.delta is None:
+        raise ValueError("Delta must be provided to compute epsilon")
+    
+    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+    
+    if config.direction != 'add':
+        alpha_orders = np.arange(config.min_alpha, config.max_alpha+1)
+        epsilon_remove = allocation_epsilon_direct_remove(
+            sigma=params.sigma, 
+            delta=params.delta, 
+            num_steps=num_steps_per_round,
+            num_epochs=num_rounds*params.num_epochs, 
+            alpha_orders=alpha_orders, 
+            print_alpha=config.print_alpha
+        )
+    
+    if config.direction != 'remove':
+        epsilon_add = allocation_epsilon_direct_add(
+            sigma=params.sigma, 
+            delta=params.delta, 
+            num_steps=num_steps_per_round,
+            num_epochs=num_rounds*params.num_epochs
+        )
+    
+    if config.direction == 'add':
         return epsilon_add
-    if direction == 'remove':
+    if config.direction == 'remove':
         return epsilon_remove
     return max(epsilon_remove, epsilon_add)
 
-def allocation_delta_direct(sigma: float,
-                         epsilon: float,
-                         num_steps: int,
-                         num_selected: int,
-                         num_epochs: int,
-                         direction: str = 'both',
-                         min_alpha: int = 2,
-                         max_alpha: int = 50,
-                         delta_tolerance: float = 1e-15,
+def allocation_delta_direct(params: PrivacyParams,
+                         config: SchemeConfig = SchemeConfig(),
                          ) -> float:
     """
     Compute the delta value of the allocation scheme using Rényi Differential Privacy (RDP).
     This function can compute delta for both the add and remove directions, or maximum of both.
+    
     Args:
-        sigma (float): Gaussian noise scale.
-        epsilon (float): Target epsilon value for differential privacy.
-        num_steps (int): Number of steps in the allocation scheme.
-        num_selected (int): Number of selected elements in the allocation scheme.
-        num_epochs (int): Number of epochs.
-        direction (str): Direction of the allocation scheme ('add', 'remove', or 'both').
-        min_alpha (int): Minimum alpha value for RDP computation.
-        max_alpha (int): Maximum alpha value for RDP computation.
-        delta_tolerance (float): Tolerance for delta computation.
+        params: Privacy parameters (must include epsilon)
+        config: Scheme configuration parameters
+    
+    Returns:
+        Computed delta value
     """
-    if direction != 'add':
-        optimization_func = lambda delta: allocation_epsilon_direct(sigma=sigma, delta=delta, num_steps=num_steps,
-                                                                 num_selected=num_selected, num_epochs=num_epochs, direction='remove', min_alpha=min_alpha, max_alpha=max_alpha, print_alpha=False)
-        delta_remove = search_function_with_bounds(func=optimization_func, y_target=epsilon, 
-                                                   bounds=(delta_tolerance, 1-delta_tolerance), tolerance=delta_tolerance,
-                                                   function_type=FunctionType.DECREASING)
-    if direction != 'remove':
-        num_steps_per_round = int(np.ceil(num_steps/num_selected))
-        num_rounds = int(np.ceil(num_steps/num_steps_per_round))
-        delta_add =  allocation_delta_direct_add(sigma=sigma, epsilon=epsilon, num_steps=num_steps_per_round,
-                                                 num_epochs=num_epochs*num_rounds)
-    if direction == 'add':
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+    
+    if config.direction != 'add':
+        # Create a copy of params with epsilon=None to use in optimization function
+        params_copy = PrivacyParams(
+            sigma=params.sigma,
+            num_steps=params.num_steps,
+            num_selected=params.num_selected,
+            num_epochs=params.num_epochs,
+            epsilon=None,
+            delta=None  # This will be set by the optimization function
+        )
+        
+        def optimization_func(delta):
+            params_copy.delta = delta
+            # Use 'remove' specifically for this optimization
+            remove_config = SchemeConfig(
+                direction='remove',
+                min_alpha=config.min_alpha,
+                max_alpha=config.max_alpha,
+                print_alpha=False,
+                delta_tolerance=config.delta_tolerance
+            )
+            return allocation_epsilon_direct(params=params_copy, config=remove_config)
+            
+        delta_remove = search_function_with_bounds(
+            func=optimization_func, 
+            y_target=params.epsilon, 
+            bounds=(config.delta_tolerance, 1-config.delta_tolerance), 
+            tolerance=config.delta_tolerance,
+            function_type=FunctionType.DECREASING
+        )
+    
+    if config.direction != 'remove':
+        num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+        num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+        delta_add = allocation_delta_direct_add(
+            sigma=params.sigma, 
+            epsilon=params.epsilon, 
+            num_steps=num_steps_per_round,
+            num_epochs=params.num_epochs*num_rounds
+        )
+    
+    if config.direction == 'add':
         return delta_add
-    if direction == 'remove':
+    if config.direction == 'remove':
         return delta_remove
     return max(delta_add, delta_remove)
 

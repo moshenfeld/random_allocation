@@ -16,89 +16,181 @@ from random_allocation.comparisons.experiments import run_experiment, PlotType
 SAVE_DATA = True  # Set to True to save data to CSV files
 SAVE_PLOTS = True  # Set to True to save plots to files, False to display them interactively
 
-# First experiment
-params_dict_1 = {'x_var': SIGMA,
-                 'y_var': EPSILON,
-                 SIGMA: np.exp(np.linspace(np.log(0.2), np.log(5), 20)),
-                 DELTA: 1e-10,
-                 NUM_STEPS: 100_000,
-                 NUM_SELECTED: 1,
-                 NUM_EPOCHS: 1}
+# First experiment - Compare different schemes for varying sigma
+params_dict_1 = {
+    'x_var': SIGMA,
+    'y_var': EPSILON,
+    SIGMA: np.exp(np.linspace(np.log(0.2), np.log(5), 20)),
+    DELTA: 1e-10,
+    NUM_STEPS: 100_000,
+    NUM_SELECTED: 1,
+    NUM_EPOCHS: 1
+}
 
-config_dict_1 = {DISCRETIZATION: 1e-4,
-                 MIN_ALPHA: 2,
-                 MAX_ALPHA: 60,
-                 EPSILON_TOLERANCE: 1e-3,
-                 DELTA_TOLERANCE: 1e-10,}
+config_dict_1 = {
+    DISCRETIZATION: 1e-4,
+    MIN_ALPHA: 2,
+    MAX_ALPHA: 60,
+    EPSILON_TOLERANCE: 1e-3,
+    DELTA_TOLERANCE: 1e-10,
+}
 
 methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
 
 visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 
-data_1 = run_experiment(params_dict_1, config_dict_1, methods_list_1, visualization_config_1, 'epsilon_vs_sigma', 
-                        PlotType.COMBINED, SAVE_DATA, SAVE_PLOTS)
+data_1 = run_experiment(
+    params_dict_1, 
+    config_dict_1, 
+    methods_list_1, 
+    visualization_config_1, 
+    'epsilon_vs_sigma', 
+    PlotType.COMBINED, 
+    SAVE_DATA, 
+    SAVE_PLOTS
+)
 
-# Second experiment
-params_dict_2 = {'x_var': NUM_EPOCHS,
-                 'y_var': EPSILON,
-                 SIGMA: 1,
-                 DELTA: 1e-8,
-                 NUM_STEPS: 10_000,
-                 NUM_SELECTED: 1,
-                 NUM_EPOCHS: np.exp(np.linspace(np.log(1), np.log(1001), 10)).astype(int)}
+# Second experiment - Compare different schemes for varying number of epochs
+params_dict_2 = {
+    'x_var': NUM_EPOCHS,
+    'y_var': EPSILON,
+    SIGMA: 1,
+    DELTA: 1e-8,
+    NUM_STEPS: 10_000,
+    NUM_SELECTED: 1,
+    NUM_EPOCHS: np.exp(np.linspace(np.log(1), np.log(1001), 10)).astype(int)
+}
 
-config_dict_2 = {DISCRETIZATION: 1e-4,
-                 MIN_ALPHA: 2,
-                 MAX_ALPHA: 60,
-                 EPSILON_TOLERANCE: 1e-3,
-                 DELTA_TOLERANCE: 1e-10,}
+config_dict_2 = {
+    DISCRETIZATION: 1e-4,
+    MIN_ALPHA: 2,
+    MAX_ALPHA: 60,
+    EPSILON_TOLERANCE: 1e-3,
+    DELTA_TOLERANCE: 1e-10,
+}
 
 methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
 visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
-data_2 = run_experiment(params_dict_2, config_dict_2, methods_list_2, visualization_config_2, 'epsilon_vs_epochs', 
-                        PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
 
-# Third experiment
-params_dict_3 = {'x_var': NUM_STEPS,
-                 'y_var': DELTA,
-                 SIGMA: 0.3,
-                 EPSILON: 10,
-                 NUM_STEPS: np.arange(25, 551, 50),
-                 NUM_SELECTED: 1,
-                 NUM_EPOCHS: 1}
+data_2 = run_experiment(
+    params_dict_2, 
+    config_dict_2, 
+    methods_list_2, 
+    visualization_config_2, 
+    'epsilon_vs_epochs', 
+    PlotType.COMPARISON, 
+    SAVE_DATA, 
+    SAVE_PLOTS
+)
 
-config_dict_3 = {DISCRETIZATION: 1e-4,
-                 NUM_EXP: 1_000_000,
-                 MIN_ALPHA: 2,
-                 MAX_ALPHA: 60,
-                 EPSILON_TOLERANCE: 1e-3,
-                 DELTA_TOLERANCE: 1e-10,}
+# Third experiment - Compare different schemes for varying number of steps
+params_dict_3 = {
+    'x_var': NUM_STEPS,
+    'y_var': DELTA,
+    SIGMA: 0.3,
+    EPSILON: 10,
+    NUM_STEPS: np.arange(25, 551, 50),
+    NUM_SELECTED: 1,
+    NUM_EPOCHS: 1
+}
+
+config_dict_3 = {
+    DISCRETIZATION: 1e-4,
+    NUM_EXP: 1_000_000,
+    MIN_ALPHA: 2,
+    MAX_ALPHA: 60,
+    EPSILON_TOLERANCE: 1e-3,
+    DELTA_TOLERANCE: 1e-10,
+}
 
 methods_list_3 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
 
 visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
 
-data_3 = run_experiment(params_dict_3, config_dict_3, methods_list_3, visualization_config_3, 'delta_vs_steps', 
-                        PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
+data_3 = run_experiment(
+    params_dict_3, 
+    config_dict_3, 
+    methods_list_3, 
+    visualization_config_3, 
+    'delta_vs_steps', 
+    PlotType.COMPARISON, 
+    SAVE_DATA, 
+    SAVE_PLOTS
+)
 
-# Fourth experiment
-params_dict_4 = {'x_var': NUM_SELECTED,
-                 'y_var': EPSILON,
-                 SIGMA: 1,
-                 DELTA: 1e-6,
-                 NUM_STEPS: 2**10,
-                 NUM_SELECTED: 2**np.arange(0, 10),
-                 NUM_EPOCHS: 1,}
+# Fourth experiment - Compare different schemes for varying number of selected items
+params_dict_4 = {
+    'x_var': NUM_SELECTED,
+    'y_var': EPSILON,
+    SIGMA: 1,
+    DELTA: 1e-6,
+    NUM_STEPS: 2**10,
+    NUM_SELECTED: 2**np.arange(0, 10),
+    NUM_EPOCHS: 1,
+}
 
-config_dict_4 = {DISCRETIZATION: 1e-4,
-                 MIN_ALPHA: 2,
-                 MAX_ALPHA: 60,
-                 EPSILON_TOLERANCE: 1e-3,
-                 DELTA_TOLERANCE: 1e-10,}
+config_dict_4 = {
+    DISCRETIZATION: 1e-4,
+    MIN_ALPHA: 2,
+    MAX_ALPHA: 60,
+    EPSILON_TOLERANCE: 1e-3,
+    DELTA_TOLERANCE: 1e-10,
+}
 
 methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_RDP_DCO]
 
 visualization_config_4 = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
-data_4 = run_experiment(params_dict_4, config_dict_4, methods_list_4, visualization_config_4, 
-                        'epsilon_vs_selected', PlotType.COMPARISON, SAVE_DATA, SAVE_PLOTS)
+
+data_4 = run_experiment(
+    params_dict_4, 
+    config_dict_4, 
+    methods_list_4, 
+    visualization_config_4, 
+    'epsilon_vs_selected', 
+    PlotType.COMPARISON, 
+    SAVE_DATA, 
+    SAVE_PLOTS
+)
+
+# Example of using PrivacyParams and SchemeConfig objects directly
+# (Just showing how it could be done, using the same parameters as experiment 1)
+sigma_values = np.exp(np.linspace(np.log(0.2), np.log(5), 20))
+
+# Create base parameters
+base_params = PrivacyParams(
+    sigma=0,  # Will be set for each x value in the experiment
+    delta=1e-10,
+    epsilon=None,
+    num_steps=100_000,
+    num_selected=1,
+    num_epochs=1
+)
+# Add x_var and x_values attributes
+setattr(base_params, 'x_var', SIGMA)
+setattr(base_params, 'y_var', EPSILON)
+setattr(base_params, 'x_values', sigma_values)
+
+# Create configuration
+config = SchemeConfig(
+    discretization=1e-4,
+    min_alpha=2,
+    max_alpha=60,
+    epsilon_tolerance=1e-3,
+    delta_tolerance=1e-10
+)
+
+# This would be equivalent to experiment 1
+# Uncomment to run if you want to test the direct object interface
+"""
+data_5 = run_experiment(
+    base_params,
+    config,
+    methods_list_1,
+    visualization_config_1,
+    'epsilon_vs_sigma_direct',
+    PlotType.COMBINED,
+    SAVE_DATA,
+    SAVE_PLOTS
+)
+"""

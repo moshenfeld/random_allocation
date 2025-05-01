@@ -1,15 +1,51 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Any, List
+from typing import Callable, Dict, Any, List, Optional, Literal
 
+"""
+Common definitions for privacy parameters, scheme configurations, and experiment configuration.
+"""
+
+#======================= Privacy Parameters & Scheme Config =======================
+@dataclass
+class PrivacyParams:
+    """Parameters common to all privacy schemes"""
+    sigma: float
+    num_steps: int
+    num_selected: int
+    num_epochs: int
+    # Either epsilon or delta must be provided, the other one will be computed
+    epsilon: Optional[float] = None
+    delta: Optional[float] = None
+    
+    def validate(self):
+        """Validate that the parameters are correctly specified"""
+        if self.epsilon is None and self.delta is None:
+            raise ValueError("Either epsilon or delta must be provided")
+        if self.epsilon is not None and self.delta is not None:
+            raise ValueError("Only one of epsilon or delta should be provided")
+
+@dataclass
+class SchemeConfig:
+    """Configuration for privacy schemes"""
+    direction: Literal['add', 'remove', 'both'] = 'both'
+    discretization: float = 1e-4
+    min_alpha: int = 2
+    max_alpha: int = 50 
+    print_alpha: bool = False
+    delta_tolerance: float = 1e-15
+    epsilon_tolerance: float = 1e-3
+    epsilon_upper_bound: float = 100.0 
+
+# Import privacy scheme functions after defining the dataclasses they need
 from random_allocation.other_schemes.local import local_epsilon, local_delta
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_delta_PLD, Poisson_epsilon_RDP, Poisson_delta_RDP
 from random_allocation.other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
+
 from random_allocation.random_allocation_scheme import allocation_epsilon_analytic, allocation_delta_analytic
 from random_allocation.random_allocation_scheme import allocation_epsilon_direct, allocation_delta_direct
 from random_allocation.random_allocation_scheme import allocation_epsilon_RDP_DCO, allocation_delta_RDP_DCO
 from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
 from random_allocation.random_allocation_scheme import allocation_epsilon_combined, allocation_delta_combined
-from random_allocation.random_allocation_scheme import allocation_epsilon_inverse, allocation_delta_inverse
 from random_allocation.random_allocation_scheme import allocation_epsilon_recursive, allocation_delta_recursive
 
 #======================= Direction =======================
@@ -65,7 +101,6 @@ ALLOCATION_ANALYTIC         = f'{ALLOCATION} (Our - {ANALYTIC})'
 ALLOCATION_RDP              = f'{ALLOCATION} (Our - {RDP})'
 ALLOCATION_RDP_DCO          = f'{ALLOCATION} (DCO25 - {RDP})'
 ALLOCATION_DECOMPOSITION    = f'{ALLOCATION} (Our - {DECOMPOSITION})'
-ALLOCATION_INVERSE          = f'{ALLOCATION} (Our - {INVERSE})'
 ALLOCATION_COMBINED         = f'{ALLOCATION} (Our - {COMBINED})'
 ALLOCATION_RECURSIVE         = f'{ALLOCATION} (Our - {RECURSIVE})'
 
@@ -153,14 +188,6 @@ methods_dict = {
         delta_calculator=allocation_delta_combined,
         legend='_{\\mathcal{A}}$ - ' + ALLOCATION_COMBINED,
         marker='s',
-        color=colors_dict[ALLOCATION]
-    ),
-    ALLOCATION_INVERSE: MethodFeatures(
-        name=ALLOCATION_INVERSE,
-        epsilon_calculator=allocation_epsilon_inverse,
-        delta_calculator=allocation_delta_inverse,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_INVERSE,
-        marker='D',
         color=colors_dict[ALLOCATION]
     ),
     ALLOCATION_RECURSIVE: MethodFeatures(

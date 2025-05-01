@@ -64,8 +64,6 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
         min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_RDP]], axis=0)
     if ALLOCATION_DECOMPOSITION in methods:
         min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_DECOMPOSITION]], axis=0)
-    if ALLOCATION_INVERSE in methods:
-        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_INVERSE]], axis=0)
     if ALLOCATION_RECURSIVE in methods:
         min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_RECURSIVE]], axis=0)
     methods_data = data['y data']
@@ -76,9 +74,9 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
     fig = plt.figure(figsize=figsize)
     for method in methods:
         linewidth = 1        if (method == ALLOCATION_DECOMPOSITION or method ==  ALLOCATION_RDP or method ==  ALLOCATION_ANALYTIC
-                                 or method == ALLOCATION_INVERSE or method == ALLOCATION_RECURSIVE) else 2
+                                 or method == ALLOCATION_RECURSIVE) else 2
         linestyle = 'dotted' if (method == ALLOCATION_DECOMPOSITION or method ==  ALLOCATION_RDP or method ==  ALLOCATION_ANALYTIC
-                                 or method == ALLOCATION_INVERSE or method == ALLOCATION_RECURSIVE) else 'solid'
+                                 or method == ALLOCATION_RECURSIVE) else 'solid'
         plt.plot(data['x data'], methods_data[method], label=legend_prefix+legend_map[method], marker=markers_map[method], color=colors_map[method], linewidth=linewidth, linestyle=linestyle, markersize=10, alpha=0.8)
     plt.plot(data['x data'], min_allocation, label='_{\\mathcal{A}}$ - (Our - Combined)', color=colors_dict[ALLOCATION], linewidth=2, alpha=1)
     plt.xlabel(data['x name'], fontsize=20)

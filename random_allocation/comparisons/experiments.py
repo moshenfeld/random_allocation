@@ -1,4 +1,4 @@
-from typing import Dict, Any, Callable, List, Tuple
+from typing import Dict, Any, Callable, List, Tuple, Union
 import inspect
 import time
 import numpy as np
@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import matplotlib.pyplot as plt
 from enum import Enum
+import copy
 
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
@@ -13,49 +14,6 @@ from random_allocation.comparisons.visualization import plot_combined_data, plot
 class PlotType(Enum):
     COMPARISON = 1
     COMBINED = 2
-
-def match_function_args(params_dict: Dict[str, Any],
-                        config_dict: Dict[str, Any],
-                        func: Callable,
-                        x_var: str,
-                        ) -> List[Dict[str, Any]]:
-    """
-    Match the function arguments with the parameters and configuration dictionaries.
-    """
-    params = inspect.signature(func).parameters
-    args = {}
-    for key in params_dict.keys():
-        if key in params and key != x_var:
-            args[key] = params_dict[key]
-    for key in config_dict.keys():
-        if key in params:
-            args[key] = config_dict[key]
-    args_arr = []
-    for x in params_dict[x_var]:
-        args_arr.append(args.copy())
-        if x_var in params:
-            args_arr[-1][x_var] = x
-    return args_arr
-
-def get_x_y_vars(params_dict: Dict[str, Any]) -> Tuple[str, str]:
-    """
-    Get the x and y variables from the parameters dictionary.
-    """
-    x_var = params_dict['x_var']
-    if x_var not in params_dict.keys():
-        raise ValueError(f"{x_var} was defined as the x-axis variable but does not appear in the params_dict.")
-    y_var = params_dict['y_var']
-    if y_var == x_var:
-        raise ValueError(f"{x_var} was chosen as both the x-axis and y-axis variable.")
-    return x_var, y_var
-
-def get_main_var(params_dict: Dict[str, Any]) -> str:
-    """
-    Get the main variable from the parameters dictionary.
-    """
-    if 'main_var' in params_dict:
-        return params_dict['main_var']
-    return params_dict['x_var']
 
 def get_func_dict(methods: list[str],
                   y_var: str
@@ -72,34 +30,75 @@ def clear_all_caches():
     Clear all caches for all modules.
     """
 
-def calc_experiment_data(params_dict: Dict[str, Any],
-                         config_dict: Dict[str, Any],
+def calc_experiment_data(params: PrivacyParams,
+                         config: SchemeConfig,
                          methods: list[str],
-                         )-> Dict[str, Any]:
-    x_var, y_var = get_x_y_vars(params_dict)
+                         x_var: str,
+                         x_values: list[Union[float, int]],
+                         y_var: str,
+                         ) -> Dict[str, Any]:
+    """
+    Calculate experiment data using PrivacyParams and SchemeConfig objects directly.
+    
+    Args:
+        params: Base privacy parameters object
+        config: Scheme configuration object
+        methods: List of methods to use in the experiment
+        x_var: Name of parameter to vary (x-axis)
+        x_values: List of values for the x-axis parameter
+        y_var: Name of result to compute (y-axis: 'epsilon' or 'delta')
+        
+    Returns:
+        Dictionary with the experiment data
+    """
     data = {'y data': {}}
     func_dict = get_func_dict(methods, y_var)
+    
     for method in methods:
         start_time = time.time()
         func = func_dict[method]
         if func is None:
             raise ValueError(f"Method {method} does not have a valid function for {y_var}")
-        args_arr = match_function_args(params_dict, config_dict, func, x_var)
-        data['y data'][method] = np.array([func(**args) for args in args_arr])
+        
+        # Calculate results for each x value
+        results = []
+        for x_value in x_values:
+            # Create a copy of params and set the x_var to the current value
+            param_copy = copy.deepcopy(params)
+            setattr(param_copy, x_var, x_value)
+            
+            # Reset any computed parameter if we're changing one of the input parameters
+            if x_var == 'epsilon' and param_copy.delta is not None:
+                param_copy.delta = None
+            elif x_var == 'delta' and param_copy.epsilon is not None:
+                param_copy.epsilon = None
+            
+            # Call the function with the modified params
+            results.append(func(params=param_copy, config=config))
+        
+        data['y data'][method] = np.array(results)
+        
         if data['y data'][method].ndim > 1:
             data['y data'][method + '- std'] = data['y data'][method][:,1]
             data['y data'][method] = data['y data'][method][:,0]
+        
         end_time = time.time()
         print(f"Calculating {method} took {end_time - start_time:.3f} seconds")
 
     data['x name'] = names_dict[x_var]
     data['y name'] = names_dict[y_var]
-    data['x data'] = params_dict[x_var]
+    data['x data'] = x_values
+    
+    # Build title for the plot
     data['title'] = f"{names_dict[y_var]} as a function of {names_dict[x_var]} \n"
+    
     for var in VARIABLES:
         if var != x_var and var != y_var:
-            data[var] = params_dict[var]
-            data['title'] += f"{names_dict[var]} = {params_dict[var]}, "
+            value = getattr(params, var, None)
+            if value is not None:
+                data[var] = value
+                data['title'] += f"{names_dict[var]} = {value}, "
+    
     return data
 
 def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
@@ -149,16 +148,23 @@ def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_na
     plt.savefig(f'{experiment_name}_plot.png')
     plt.close()
 
-def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
-                  methods: List[str], visualization_config: Dict[str, Any],
-                  experiment_name: str, plot_type: PlotType,
-                  save_data: bool = True, save_plots: bool = True) -> None:
+def run_experiment(
+    params_dict_or_obj: Union[Dict[str, Any], PrivacyParams],
+    config_dict_or_obj: Union[Dict[str, Any], SchemeConfig],
+    methods: List[str], 
+    visualization_config: Dict[str, Any] = None,
+    experiment_name: str = '',
+    plot_type: PlotType = PlotType.COMPARISON,
+    save_data: bool = True, 
+    save_plots: bool = True
+) -> None:
     """
     Run an experiment and handle its results.
     
     Args:
-        params_dict: Dictionary of experiment parameters
-        config_dict: Dictionary of configuration parameters
+        params_dict_or_obj: Either a dictionary of parameters or a PrivacyParams object
+            If dictionary, must contain 'x_var', 'y_var', and x_values
+        config_dict_or_obj: Either a dictionary of configuration values or a SchemeConfig object
         methods: List of methods to use in the experiment
         visualization_config: Additional keyword arguments for the plot function
         experiment_name: Name of the experiment for the output file
@@ -172,12 +178,73 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
     # Get the examples directory path
     examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
     data_file = os.path.join(examples_dir, 'data', f'{experiment_name}.csv')
+    
+    # Convert params_dict and config_dict to objects if they're dictionaries
+    if isinstance(params_dict_or_obj, dict):
+        # Extract x_var, y_var and x_values from the dictionary
+        params_dict = params_dict_or_obj
+        x_var = params_dict.pop('x_var', None)
+        y_var = params_dict.pop('y_var', None)
+        
+        if x_var is None or y_var is None:
+            raise ValueError("params_dict must contain 'x_var' and 'y_var' keys")
+        
+        if x_var not in params_dict:
+            raise ValueError(f"params_dict must contain values for '{x_var}'")
+            
+        x_values = params_dict[x_var]
+        
+        # Create a PrivacyParams object with base values (excluding x_values)
+        base_params = {k: v for k, v in params_dict.items() if not isinstance(v, (list, np.ndarray))}
+        
+        # Use epsilon/delta from params_dict if present
+        epsilon = base_params.get(EPSILON)
+        delta = base_params.get(DELTA)
+        
+        # Create PrivacyParams object with initial values
+        params = PrivacyParams(
+            sigma=base_params.get(SIGMA, 0),
+            num_steps=base_params.get(NUM_STEPS, 0),
+            num_selected=base_params.get(NUM_SELECTED, 0),
+            num_epochs=base_params.get(NUM_EPOCHS, 0),
+            epsilon=epsilon,
+            delta=delta
+        )
+    else:
+        # params_dict_or_obj is already a PrivacyParams object
+        params = params_dict_or_obj
+        
+        # In this case, x_var, y_var, and x_values must be provided separately
+        if not hasattr(params, 'x_var') or not hasattr(params, 'x_values'):
+            raise ValueError("When providing a PrivacyParams object, x_var and x_values must be attributes")
+        
+        x_var = params.x_var
+        y_var = params.y_var
+        x_values = params.x_values
+    
+    # Convert config_dict to SchemeConfig if it's a dictionary
+    if isinstance(config_dict_or_obj, dict):
+        config_dict = config_dict_or_obj
+        config = SchemeConfig(
+            direction=config_dict.get(DIRECTION, 'both'),
+            discretization=config_dict.get(DISCRETIZATION, 1e-4),
+            min_alpha=config_dict.get(MIN_ALPHA, 2),
+            max_alpha=config_dict.get(MAX_ALPHA, 50),
+            print_alpha=config_dict.get('print_alpha', False),
+            delta_tolerance=config_dict.get(DELTA_TOLERANCE, 1e-15),
+            epsilon_tolerance=config_dict.get(EPSILON_TOLERANCE, 1e-3),
+            epsilon_upper_bound=config_dict.get('epsilon_upper_bound', 100.0)
+        )
+    else:
+        # config_dict_or_obj is already a SchemeConfig object
+        config = config_dict_or_obj
+    
     # Data logic:
     # If save_data is True: always recalculate and save
     # If save_data is False: try to read existing data, if not exists - recalculate but don't save
     if save_data:
         print(f"Computing data for {experiment_name}")
-        data = calc_experiment_data(params_dict, config_dict, methods)
+        data = calc_experiment_data(params, config, methods, x_var, x_values, y_var)
         save_experiment_data(data, methods, data_file)
     else:
         if os.path.exists(data_file):
@@ -185,7 +252,7 @@ def run_experiment(params_dict: Dict[str, Any], config_dict: Dict[str, Any],
             data = pd.read_csv(data_file)
         else:
             print(f"Computing data for {experiment_name}")
-            data = calc_experiment_data(params_dict, config_dict, methods)
+            data = calc_experiment_data(params, config, methods, x_var, x_values, y_var)
     
     # Plot logic:
     # If save_plots is True: only save the plot, don't display it
