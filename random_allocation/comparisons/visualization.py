@@ -60,8 +60,8 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
     min_allocation = np.ones_like(data['x data'])*10000
     if ALLOCATION_ANALYTIC in methods:
         min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_ANALYTIC]], axis=0)
-    if ALLOCATION_RDP in methods:
-        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_RDP]], axis=0)
+    if ALLOCATION_DIRECT in methods:
+        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_DIRECT]], axis=0)
     if ALLOCATION_DECOMPOSITION in methods:
         min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_DECOMPOSITION]], axis=0)
     if ALLOCATION_RECURSIVE in methods:
@@ -73,9 +73,9 @@ def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=la
     legend_prefix = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
     fig = plt.figure(figsize=figsize)
     for method in methods:
-        linewidth = 1        if (method == ALLOCATION_DECOMPOSITION or method ==  ALLOCATION_RDP or method ==  ALLOCATION_ANALYTIC
+        linewidth = 1        if (method == ALLOCATION_DECOMPOSITION or method ==  ALLOCATION_DIRECT or method ==  ALLOCATION_ANALYTIC
                                  or method == ALLOCATION_RECURSIVE) else 2
-        linestyle = 'dotted' if (method == ALLOCATION_DECOMPOSITION or method ==  ALLOCATION_RDP or method ==  ALLOCATION_ANALYTIC
+        linestyle = 'dotted' if (method == ALLOCATION_DECOMPOSITION or method ==  ALLOCATION_DIRECT or method ==  ALLOCATION_ANALYTIC
                                  or method == ALLOCATION_RECURSIVE) else 'solid'
         plt.plot(data['x data'], methods_data[method], label=legend_prefix+legend_map[method], marker=markers_map[method], color=colors_map[method], linewidth=linewidth, linestyle=linestyle, markersize=10, alpha=0.8)
     plt.plot(data['x data'], min_allocation, label='_{\\mathcal{A}}$ - (Our - Combined)', color=colors_dict[ALLOCATION], linewidth=2, alpha=1)

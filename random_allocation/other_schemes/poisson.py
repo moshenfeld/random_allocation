@@ -1,8 +1,7 @@
 from typing import List
-import numpy as np
 
 from dp_accounting import pld, dp_event, rdp
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
 
 
 # ==================== PLD ====================

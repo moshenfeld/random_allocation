@@ -27,7 +27,7 @@ params_dict_1 = {
 
 config_1 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_RDP, ALLOCATION_ANALYTIC, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
+methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_ANALYTIC, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
 
 visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 
@@ -55,7 +55,7 @@ params_dict_2 = {
 
 config_2 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_2 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
+methods_list_2 = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
 
 visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
 
@@ -83,7 +83,7 @@ params_dict_3 = {
 
 config_3 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_3 = [POISSON_RDP, ALLOCATION_RDP, POISSON_PLD]
+methods_list_3 = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
 
 visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
 
@@ -111,7 +111,7 @@ params_dict_4 = {
 
 config_4 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_4 = [POISSON_RDP, ALLOCATION_RDP, ALLOCATION_RDP_DCO]
+methods_list_4 = [POISSON_RDP, ALLOCATION_DIRECT, ALLOCATION_RDP_DCO]
 
 visualization_config_4 = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
 

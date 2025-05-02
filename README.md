@@ -16,7 +16,7 @@ Here's a simple example of how to use the package to run experiments:
 
 ```python
 from random_allocation import run_experiment, PlotType
-from random_allocation import ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION
+from random_allocation import ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_DIRECT, ALLOCATION_DECOMPOSITION
 
 # Define experiment parameters
 params_dict = {
@@ -42,7 +42,7 @@ visualization_config = {
 }
 
 # Define methods to compare
-methods = [ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION]
+methods = [ALLOCATION_ANALYTIC, ALLOCATION_DIRECT, ALLOCATION_DECOMPOSITION]
 
 # Run the experiment
 run_experiment(
@@ -74,7 +74,7 @@ The package provides two types of plots:
 
 The package includes several methods for comparison:
 - `ALLOCATION_ANALYTIC`: Our analytic method
-- `ALLOCATION_RDP`: Our RDP-based method
+- `ALLOCATION_DIRECT`: Our RDP-based method
 - `ALLOCATION_DECOMPOSITION`: Our decomposition method
 
 ## License

@@ -39,6 +39,7 @@ class SchemeConfig:
     MC_use_order_stats: bool = True
     MC_use_mean: bool = False
     MC_conf_level: float = 0.99
+    MC_sample_size: int = 500_000
 
 @dataclass
 class MethodFeatures:

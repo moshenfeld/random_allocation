@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
 
 # ==================== Deterministic ====================
 def Gaussian_delta(sigma: float,

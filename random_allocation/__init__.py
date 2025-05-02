@@ -8,7 +8,7 @@ in the context of differential privacy.
 from random_allocation.comparisons.experiments import run_experiment, PlotType
 from random_allocation.comparisons.visualization import plot_comparison, plot_combined_data, plot_as_table
 from random_allocation.comparisons.definitions import (
-    ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_RDP, ALLOCATION_DECOMPOSITION,
+    ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_DIRECT, ALLOCATION_DECOMPOSITION,
     EPSILON, DELTA, VARIABLES, methods_dict, names_dict, colors_dict
 )
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
@@ -36,7 +36,7 @@ __all__ = [
     # Constants and configurations
     'ALLOCATION',
     'ALLOCATION_ANALYTIC',
-    'ALLOCATION_RDP',
+    'ALLOCATION_DIRECT',
     'ALLOCATION_DECOMPOSITION',
     'EPSILON',
     'DELTA',

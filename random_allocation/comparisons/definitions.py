@@ -1,16 +1,10 @@
 from typing import Dict, Any, List
 
-from random_allocation.comparisons.structs import MethodFeatures, PrivacyParams, SchemeConfig
-from random_allocation.other_schemes.local import local_epsilon, local_delta
-from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_delta_PLD, Poisson_epsilon_RDP, Poisson_delta_RDP
-from random_allocation.other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
-
-from random_allocation.random_allocation_scheme import allocation_epsilon_analytic, allocation_delta_analytic
-from random_allocation.random_allocation_scheme import allocation_epsilon_direct, allocation_delta_direct
-from random_allocation.random_allocation_scheme import allocation_epsilon_RDP_DCO, allocation_delta_RDP_DCO
-from random_allocation.random_allocation_scheme import allocation_epsilon_decomposition, allocation_delta_decomposition
-from random_allocation.random_allocation_scheme import allocation_epsilon_combined, allocation_delta_combined
-from random_allocation.random_allocation_scheme import allocation_epsilon_recursive, allocation_delta_recursive
+from random_allocation.comparisons.structs import MethodFeatures
+from random_allocation.other_schemes.local import *
+from random_allocation.other_schemes.poisson import *
+from random_allocation.other_schemes.shuffle import *
+from random_allocation.random_allocation_scheme import *
 """
 Common definitions for privacy parameters, scheme configurations, and experiment configuration.
 """
@@ -49,20 +43,22 @@ DECOMPOSITION = 'Decomposition'
 INVERSE = 'Inverse'
 COMBINED = 'Combined'
 RECURSIVE = 'Recursive'
+LOWER_BOUND = 'Lower Bound'
 
 # ======================= Methods =======================
 POISSON_PLD                 = f'{POISSON} ({PLD})'
 POISSON_RDP                 = f'{POISSON} ({RDP})'
 ALLOCATION_ANALYTIC         = f'{ALLOCATION} (Our - {ANALYTIC})'
-ALLOCATION_RDP              = f'{ALLOCATION} (Our - {RDP})'
+ALLOCATION_DIRECT           = f'{ALLOCATION} (Our - Direct)'
 ALLOCATION_RDP_DCO          = f'{ALLOCATION} (DCO25 - {RDP})'
 ALLOCATION_DECOMPOSITION    = f'{ALLOCATION} (Our - {DECOMPOSITION})'
 ALLOCATION_COMBINED         = f'{ALLOCATION} (Our - {COMBINED})'
-ALLOCATION_RECURSIVE         = f'{ALLOCATION} (Our - {RECURSIVE})'
+ALLOCATION_RECURSIVE        = f'{ALLOCATION} (Our - {RECURSIVE})'
+ALLOCATION_MONTE_CARLO      = f'{ALLOCATION} (CGHKKLMSZ24 - {MONTE_CARLO})'
+ALLOCATION_LOWER_BOUND      = f'{ALLOCATION} (CGHKKLMSZ24 - {LOWER_BOUND})'
+
 
 # ======================= Methods Features =======================
-
-
 
 methods_dict = {
     LOCAL: MethodFeatures(
@@ -105,11 +101,11 @@ methods_dict = {
         marker='P',
         color=colors_dict[ALLOCATION]
     ),
-    ALLOCATION_RDP: MethodFeatures(
-        name=ALLOCATION_RDP,
+    ALLOCATION_DIRECT: MethodFeatures(
+        name=ALLOCATION_DIRECT,
         epsilon_calculator=allocation_epsilon_direct,
         delta_calculator=allocation_delta_direct,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_RDP,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_DIRECT,
         marker='^',
         color=colors_dict[ALLOCATION]
     ),
@@ -143,6 +139,22 @@ methods_dict = {
         delta_calculator=allocation_delta_recursive,
         legend='_{\\mathcal{A}}$ - ' + ALLOCATION_RECURSIVE,
         marker='h',
+        color=colors_dict[ALLOCATION]
+    ),
+    ALLOCATION_MONTE_CARLO: MethodFeatures(
+        name=ALLOCATION_MONTE_CARLO,
+        epsilon_calculator=None,
+        delta_calculator=allocation_delta_MC,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_MONTE_CARLO,
+        marker='D',
+        color=colors_dict[ALLOCATION]
+    ),
+    ALLOCATION_LOWER_BOUND: MethodFeatures(
+        name=ALLOCATION_LOWER_BOUND,
+        epsilon_calculator=None,
+        delta_calculator=allocation_delta_lower_bound,
+        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_LOWER_BOUND,
+        marker='d',
         color=colors_dict[ALLOCATION]
     )
 }
