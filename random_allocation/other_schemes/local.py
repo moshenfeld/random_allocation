@@ -1,7 +1,11 @@
+# Standard library imports
 from __future__ import annotations
+
+# Third-party imports
 import numpy as np
 from scipy import stats
 
+# Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
 

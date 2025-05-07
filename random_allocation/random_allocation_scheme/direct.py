@@ -1,9 +1,13 @@
+# Standard library imports
 from functools import cache
-from numba import jit
-from typing import List, Tuple
-import numpy as np
 import math
+from typing import List, Tuple
 
+# Third-party imports
+from numba import jit
+import numpy as np
+
+# Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig

@@ -1,12 +1,16 @@
-import sys
+# Standard library imports
 import os
+import sys
 
 # Add the correct project root directory to PYTHONPATH
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# Third-party imports
 import numpy as np
+
+# Local application imports
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.experiments import run_experiment, PlotType
 
@@ -27,7 +31,7 @@ params_dict_1 = {
 
 config_1 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_ANALYTIC, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
+methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]#, ALLOCATION_LOWER_BOUND
 
 visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
 

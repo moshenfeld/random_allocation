@@ -1,7 +1,12 @@
+# Standard library imports
 from typing import Any
+
+# Third-party imports
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+# Local application imports
 from random_allocation.comparisons.definitions import *
 
 def plot_comparison(data, log_x_axis = False, log_y_axis = False, format_x=lambda x, _: f'{x:.2f}', format_y=lambda x, _: f'{x:.2f}', figsize=(16, 9)):

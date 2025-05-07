@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "random-allocation"
-version = "0.5.2"
+version = "0.5.3"
 authors = [
     {name = "Moshe Shenfeld", email = "mosheshenfeld@gmail.com"},
 ]
@@ -21,6 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
@@ -28,7 +30,7 @@ dependencies = [
     "scipy>=1.7.0",
     "matplotlib>=3.4.0",
     "numba>=0.60.0",
- ]
+]
 
 [project.optional-dependencies]
 dev = [
@@ -36,10 +38,13 @@ dev = [
     "black>=21.0",
     "flake8>=3.9",
 ]
+examples = [
+    "ipykernel",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/moshenfeld/random_allocation"
 "Bug Tracker" = "https://github.com/moshenfeld/random_allocation/issues"
 
 [tool.setuptools]
-packages = ["random_allocation", "random_allocation.comparisons", "random_allocation.examples", "random_allocation.other_schemes", "random_allocation.random_allocation_scheme"] 
+packages = ["random_allocation", "random_allocation.comparisons", "random_allocation.examples", "random_allocation.other_schemes", "random_allocation.random_allocation_scheme"]

@@ -1,6 +1,10 @@
-import numpy as np
+# Standard library imports
 from typing import Callable
 
+# Third-party imports
+import numpy as np
+
+# Local application imports
 from random_allocation.random_allocation_scheme.direct import log_factorial_range, log_factorial
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
@@ -44,10 +48,9 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
     # Use alpha_orders directly from config or generate if not provided
     alpha_orders = config.allocation_RDP_DCO_alpha_orders
     if alpha_orders is None:
-        small_alpha_orders = np.linspace(1.001, 2, 20)
         alpha_orders = np.arange(2, 202)
         large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-        alpha_orders = np.concatenate((small_alpha_orders, alpha_orders, large_alpha_orders))
+        alpha_orders = np.concatenate((alpha_orders, large_alpha_orders))
 
     # Compute RDP and epsilon values
     if config.direction != 'add':

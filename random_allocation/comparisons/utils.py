@@ -1,7 +1,13 @@
+# Standard library imports
+from enum import Enum, auto
 from typing import Callable, Optional, Tuple, Any, Union
+
+# Third-party imports
 import numpy as np
 from scipy import optimize
-from enum import Enum, auto
+
+# Type definitions
+NumericFunction = Callable[[float], float]
 
 class FunctionType(Enum):
     """Enum for specifying the type of function.
@@ -28,9 +34,6 @@ class BoundType(Enum):
     NONE = auto()       # No specific bound guarantee
     UPPER = auto()      # Guarantee f(x) ≤ y_target
     LOWER = auto()      # Guarantee f(x) ≥ y_target
-
-# Define a type for numeric functions
-NumericFunction = Callable[[float], float]
 
 def search_function(
     func: NumericFunction, 

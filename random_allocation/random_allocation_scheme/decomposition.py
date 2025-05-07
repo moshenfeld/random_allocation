@@ -1,6 +1,10 @@
-# from functools import cache
+# Standard library imports
+# (none)
+
+# Third-party imports
 import numpy as np
 
+# Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.poisson import Poisson_delta_PLD, Poisson_epsilon_PLD, Poisson_PLD
 from random_allocation.other_schemes.local import local_delta

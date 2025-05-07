@@ -1,3 +1,10 @@
+# Standard library imports
+# (none)
+
+# Third-party imports
+# (none)
+
+# Local application imports
 from random_allocation.random_allocation_scheme.analytic import allocation_epsilon_analytic
 from random_allocation.random_allocation_scheme.decomposition import allocation_epsilon_decomposition
 from random_allocation.random_allocation_scheme.direct import allocation_epsilon_direct
@@ -78,4 +85,4 @@ def allocation_epsilon_combined(params: PrivacyParams,
         return epsilon_add
     if config.direction == 'remove':
         return epsilon_remove
-    return max(epsilon_remove, epsilon_add) 
+    return max(epsilon_remove, epsilon_add)

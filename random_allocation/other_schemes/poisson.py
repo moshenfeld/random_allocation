@@ -1,6 +1,10 @@
+# Standard library imports
 from typing import List
 
+# Third-party imports
 from dp_accounting import pld, dp_event, rdp
+
+# Local application imports
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
 
 

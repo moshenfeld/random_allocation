@@ -1,10 +1,13 @@
-from dataclasses import dataclass
-from typing import Callable, Optional, Literal
-import numpy as np
-
 """
 Common definitions for privacy parameters, scheme configurations, and experiment configuration.
 """
+
+# Standard library imports
+from dataclasses import dataclass
+from typing import Callable, Optional, Literal
+
+# Third-party imports
+import numpy as np
 
 @dataclass
 class PrivacyParams:

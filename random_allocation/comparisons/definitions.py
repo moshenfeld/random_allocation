@@ -1,13 +1,16 @@
+"""
+Common definitions for privacy parameters, scheme configurations, and experiment configuration.
+"""
+
+# Standard library imports
 from typing import Dict, Any, List
 
+# Local application imports
 from random_allocation.comparisons.structs import MethodFeatures
 from random_allocation.other_schemes.local import *
 from random_allocation.other_schemes.poisson import *
 from random_allocation.other_schemes.shuffle import *
 from random_allocation.random_allocation_scheme import *
-"""
-Common definitions for privacy parameters, scheme configurations, and experiment configuration.
-"""
 
 #======================= Direction =======================
 ADD    = 'add'
@@ -151,7 +154,7 @@ methods_dict = {
     ),
     ALLOCATION_LOWER_BOUND: MethodFeatures(
         name=ALLOCATION_LOWER_BOUND,
-        epsilon_calculator=None,
+        epsilon_calculator=allocation_epsilon_lower_bound,
         delta_calculator=allocation_delta_lower_bound,
         legend='_{\\mathcal{A}}$ - ' + ALLOCATION_LOWER_BOUND,
         marker='d',

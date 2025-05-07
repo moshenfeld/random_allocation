@@ -1,13 +1,17 @@
-from typing import Dict, Any, Callable, List, Tuple, Union
+# Standard library imports
+import copy
 import inspect
+import os
 import time
+from enum import Enum
+from typing import Dict, Any, Callable, List, Tuple, Union
+
+# Third-party imports
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
-import matplotlib.pyplot as plt
-from enum import Enum
-import copy
 
+# Local application imports
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
 
