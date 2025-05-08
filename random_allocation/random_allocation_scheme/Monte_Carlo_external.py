@@ -62,14 +62,15 @@ OptionalSequence = Optional[Sequence[float]]
 
 
 def inverse_decreasing_function(
-    function, value):
+    function: Callable[[float], float], 
+    value: float) -> float:
   """Returns the smallest x at which function(x) <= value."""
   # A heuristic initial guess of 10 is chosen. This only costs in efficiency.
   search_params = pld.common.BinarySearchParameters(0, np.inf, 10)
-  value = pld.common.inverse_monotone_function(function, value, search_params)
-  if value is None:
+  result = pld.common.inverse_monotone_function(function, value, search_params)
+  if result is None:
     raise ValueError(f'No input x found for {value=}.')
-  return value
+  return result
 
 
 class DeterministicAccountant:
@@ -80,9 +81,9 @@ class DeterministicAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_deltas(self,
-                 sigma,
-                 epsilons,
-                 num_epochs = 1):
+                 sigma: float,
+                 epsilons: Union[float, Sequence[float]],
+                 num_epochs: int = 1) -> List[float]:
     """Returns delta values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -102,9 +103,9 @@ class DeterministicAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_epsilons(self,
-                   sigma,
-                   deltas,
-                   num_epochs = 1):
+                   sigma: float,
+                   deltas: Union[float, Sequence[float]],
+                   num_epochs: int = 1) -> List[float]:
     """Returns epsilon values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -114,16 +115,17 @@ class DeterministicAccountant:
     """
     delta_from_epsilon = lambda epsilon: self.get_deltas(
         sigma, (epsilon,), num_epochs)[0]
+    deltas_seq = [deltas] if isinstance(deltas, (int, float)) else deltas
     return [
         inverse_decreasing_function(delta_from_epsilon, delta)
-        for delta in deltas
+        for delta in deltas_seq
     ]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_sigma(self,
-                epsilon,
-                delta,
-                num_epochs = 1):
+                epsilon: float,
+                delta: float,
+                num_epochs: int = 1) -> float:
     """Returns the scale of the Gaussian noise for (epsilon, delta)-DP."""
     delta_from_sigma = lambda sigma: self.get_deltas(
         sigma, (epsilon,), num_epochs)[0]
@@ -142,16 +144,16 @@ class PoissonPLDAccountant:
   """
 
   def __init__(self,
-               pessimistic_estimate = True):
+               pessimistic_estimate: bool = True):
     self.pessimistic_estimate = pessimistic_estimate
 
   def _get_PLD(
       self,
-      sigma,
-      num_compositions,
-      sampling_prob,
-      discretization = 1e-3,
-  ):
+      sigma: float,
+      num_compositions: int,
+      sampling_prob: float,
+      discretization: float = 1e-3,
+  ) -> pld.privacy_loss_distribution.PrivacyLossDistribution:
     """Returns the composed PLD for ABLQ_P.
 
     Args:
@@ -172,11 +174,11 @@ class PoissonPLDAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_deltas(self,
-                 sigma,
-                 epsilons,
-                 num_steps_per_epoch,
-                 num_epochs = 1,
-                 discretization = 1e-3):
+                 sigma: float,
+                 epsilons: Union[float, Sequence[float]],
+                 num_steps_per_epoch: int,
+                 num_epochs: int = 1,
+                 discretization: float = 1e-3) -> List[float]:
     """Returns delta values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -200,11 +202,11 @@ class PoissonPLDAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_epsilons(self,
-                   sigma,
-                   deltas,
-                   num_steps_per_epoch,
-                   num_epochs = 1,
-                   discretization = 1e-3):
+                   sigma: float,
+                   deltas: Union[float, Sequence[float]],
+                   num_steps_per_epoch: int,
+                   num_epochs: int = 1,
+                   discretization: float = 1e-3) -> List[float]:
     """Returns epsilon values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -221,15 +223,16 @@ class PoissonPLDAccountant:
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch,
         discretization=discretization)
-    return [pl_dist.get_epsilon_for_delta(delta) for delta in deltas]
+    deltas_seq = [deltas] if isinstance(deltas, (int, float)) else deltas
+    return [pl_dist.get_epsilon_for_delta(delta) for delta in deltas_seq]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_sigma(self,
-                epsilon,
-                delta,
-                num_steps_per_epoch,
-                num_epochs = 1,
-                discretization = 1e-3):
+                epsilon: float,
+                delta: float,
+                num_steps_per_epoch: int,
+                num_epochs: int = 1,
+                discretization: float = 1e-3) -> float:
     """Returns the scale of the Gaussian noise for (epsilon, delta)-DP."""
     delta_from_sigma = lambda sigma: self.get_deltas(
         sigma, (epsilon,), num_steps_per_epoch, num_epochs, discretization)[0]
@@ -245,10 +248,10 @@ class PoissonRDPAccountant:
 
   def _get_RDP_accountant(
       self,
-      sigma,
-      num_compositions,
-      sampling_prob
-  ):
+      sigma: float,
+      num_compositions: int,
+      sampling_prob: float
+  ) -> rdp.RdpAccountant:
     """Returns RDP accountant after composition of Poisson subsampled Gaussian.
 
     Args:
@@ -256,7 +259,7 @@ class PoissonRDPAccountant:
       num_compositions: The number of compositions.
       sampling_prob: The sampling probability in each step.
     """
-    accountant = RDP.RdpAccountant()
+    accountant = rdp.RdpAccountant()
     event = dp_accounting.dp_event.PoissonSampledDpEvent(
         sampling_prob, dp_accounting.dp_event.GaussianDpEvent(sigma)
     )
@@ -265,10 +268,10 @@ class PoissonRDPAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_deltas(self,
-                 sigma,
-                 epsilons,
-                 num_steps_per_epoch,
-                 num_epochs = 1):
+                 sigma: float,
+                 epsilons: Union[float, Sequence[float]],
+                 num_steps_per_epoch: int,
+                 num_epochs: int = 1) -> List[float]:
     """Returns delta values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -285,14 +288,15 @@ class PoissonRDPAccountant:
         sigma=sigma,
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch)
-    return [accountant.get_delta(epsilon) for epsilon in epsilons]
+    epsilons_seq = [epsilons] if isinstance(epsilons, (int, float)) else epsilons
+    return [accountant.get_delta(epsilon) for epsilon in epsilons_seq]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_epsilons(self,
-                   sigma,
-                   deltas,
-                   num_steps_per_epoch,
-                   num_epochs = 1):
+                   sigma: float,
+                   deltas: Union[float, Sequence[float]],
+                   num_steps_per_epoch: int,
+                   num_epochs: int = 1) -> List[float]:
     """Returns epsilon values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -306,14 +310,15 @@ class PoissonRDPAccountant:
         sigma=sigma,
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch)
-    return [accountant.get_epsilon(delta) for delta in deltas]
+    deltas_seq = [deltas] if isinstance(deltas, (int, float)) else deltas
+    return [accountant.get_epsilon(delta) for delta in deltas_seq]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_sigma(self,
-                epsilon,
-                delta,
-                num_steps_per_epoch,
-                num_epochs = 1):
+                epsilon: float,
+                delta: float,
+                num_steps_per_epoch: int,
+                num_epochs: int = 1) -> float:
     """Returns the scale of the Gaussian noise for (epsilon, delta)-DP."""
     delta_from_sigma = lambda sigma: self.get_deltas(
         sigma, (epsilon,), num_steps_per_epoch, num_epochs)[0]

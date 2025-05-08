@@ -1,12 +1,12 @@
 # Standard library imports
 from enum import Enum, auto
 import math
-from typing import Callable, Dict, List, Optional, Tuple, Union, TypeVar, Any, cast
+from typing import Callable, Dict, List, Optional, Tuple, Union, TypeVar, Any, cast, TypedDict, Protocol
 
 # Third-party imports
 import numpy as np
 from scipy import integrate
-from scipy.optimize import minimize_scalar
+from scipy.optimize import minimize_scalar, OptimizeResult
 from scipy import optimize
 
 # Removed direct import from RDP_DCO to avoid circular dependency
@@ -79,7 +79,7 @@ def search_function(
     """    
     assert(tolerance > 0) 
     # Define objective function to find the root: f(x) - y_target = 0
-    objective = lambda x: func(x) - y_target
+    objective: NumericFunction = lambda x: func(x) - y_target
     
     # Handle monotonic functions (increasing or decreasing)
     if function_type in [FunctionType.INCREASING, FunctionType.DECREASING]:
@@ -95,7 +95,8 @@ def search_function(
         
         try:
             # Evaluate function at bounds
-            y_min, y_max = func(x_min), func(x_max)
+            y_min: float = func(x_min)
+            y_max: float = func(x_max)
             
             # Check if solution exists within bounds
             if function_type == FunctionType.INCREASING:
@@ -109,7 +110,7 @@ def search_function(
             
             # Use scipy's root_scalar with bracket method
             try:
-                result = optimize.root_scalar(
+                result: optimize.RootResults = optimize.root_scalar(
                     objective, 
                     bracket=bounds, 
                     method='brentq', 
@@ -132,7 +133,7 @@ def search_function(
             if bounds:
                 # If we have bounds, try bracketing method first
                 try:
-                    result = optimize.root_scalar(
+                    result: optimize.RootResults = optimize.root_scalar(
                         objective, 
                         bracket=bounds, 
                         method='brentq', 
@@ -149,7 +150,7 @@ def search_function(
             try:
                 # Use brent method instead of newton to avoid derivative issues
                 # Newton can fail when derivative is zero at the initial point
-                result = optimize.root_scalar(
+                result: optimize.RootResults = optimize.root_scalar(
                     objective, 
                     x0=initial_guess, 
                     method='secant',  # Changed from 'newton' to 'secant'
@@ -163,17 +164,17 @@ def search_function(
                 
             # Fall back to minimizing squared difference
             # This works even when there's no exact solution
-            objective_squared = lambda x: (func(x) - y_target)**2
+            objective_squared: NumericFunction = lambda x: (func(x) - y_target)**2
             
             if bounds:
-                result = minimize_scalar(
+                result: OptimizeResult = minimize_scalar(
                     objective_squared, 
                     bounds=bounds, 
                     method='bounded', 
                     options={'xatol': tolerance}
                 )
             else:
-                result = minimize_scalar(
+                result: OptimizeResult = minimize_scalar(
                     objective_squared, 
                     method='brent', 
                     options={'xtol': tolerance}
@@ -181,7 +182,7 @@ def search_function(
             
             # Check if our solution is good enough
             # Sometimes minimize_scalar finds a local minimum that's not close to y_target
-            x_result = result.x
+            x_result: float = result.x
             if abs(func(x_result) - y_target) <= tolerance:
                 return x_result
             else:
@@ -257,10 +258,10 @@ def adjust_for_sign(
     # - Convert concave to convex by flipping the function
     # - Convert LOWER bound to UPPER bound by flipping the bound check
     
-    transformed_func = func
-    transformed_y_target = y_target
-    transformed_bound_type = bound_type
-    transformed_function_type = function_type
+    transformed_func: NumericFunction = func
+    transformed_y_target: float = y_target
+    transformed_bound_type: BoundType = bound_type
+    transformed_function_type: FunctionType = function_type
     
     # Apply transformations for decreasing and concave functions
     if function_type in [FunctionType.DECREASING, FunctionType.CONCAVE]:
@@ -279,8 +280,8 @@ def adjust_for_sign(
     
     try:
         # Check if we already satisfy the bound
-        y_result = transformed_func(x_result)
-        error = y_result - transformed_y_target
+        y_result: float = transformed_func(x_result)
+        error: float = y_result - transformed_y_target
         
         # If bound is already satisfied, return as is
         if ((transformed_bound_type == BoundType.UPPER and error <= 0) or 
@@ -288,9 +289,9 @@ def adjust_for_sign(
             return x_result
         
         # Now we only need to handle INCREASING and CONVEX functions with UPPER and LOWER bounds
-        adjustment_factor = tolerance
-        max_iterations = 100
-        iterations = 0
+        adjustment_factor: float = tolerance
+        max_iterations: int = 100
+        iterations: int = 0
         
         # Iterative adjustment to satisfy the bound
         while iterations < max_iterations:
@@ -308,8 +309,8 @@ def adjust_for_sign(
                 # For convex functions (U-shape):
                 # The direction depends on which side of the minimum we're on
                 # We determine this by testing if moving left decreases the function value
-                x_test = x_result - adjustment_factor
-                y_test = transformed_func(x_test)
+                x_test: float = x_result - adjustment_factor
+                y_test: float = transformed_func(x_test)
                 
                 if transformed_bound_type == BoundType.UPPER:
                     # Need to decrease function value to satisfy f(x) ≤ y_target
@@ -408,7 +409,7 @@ def search_function_with_bounds(func: NumericFunction,
     
     try:
         # Step 1: Find an initial solution that approximates func(x) = y_target
-        x_result = search_function(func, y_target, initial_guess, bounds, tolerance, function_type)
+        x_result: Optional[float] = search_function(func, y_target, initial_guess, bounds, tolerance, function_type)
         
         # Step 2: If needed, adjust to ensure the desired sign relationship
         return adjust_for_sign(func, x_result, y_target, tolerance, function_type, bound_type)

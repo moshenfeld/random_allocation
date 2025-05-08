@@ -22,6 +22,18 @@ def allocation_epsilon_direct_add(sigma: float,
                                   num_steps: int,
                                   num_epochs: int,
                                   ) -> float:
+    """
+    Compute the epsilon value of the allocation scheme in the add direction.
+    
+    Args:
+        sigma: Gaussian noise scale
+        delta: Target delta value for differential privacy
+        num_steps: Number of steps in the allocation scheme
+        num_epochs: Number of epochs
+        
+    Returns:
+        Computed epsilon value
+    """
     return Gaussian_epsilon(sigma=sigma*math.sqrt(num_steps/(num_epochs)), delta=delta) + (1-1.0/num_steps)/(2*sigma**2)
 
 def allocation_delta_direct_add(sigma: float,
@@ -29,15 +41,34 @@ def allocation_delta_direct_add(sigma: float,
                                 num_steps: int,
                                 num_epochs: int,
                                 ) -> float:
+    """
+    Compute the delta value of the allocation scheme in the add direction.
+    
+    Args:
+        sigma: Gaussian noise scale
+        epsilon: Target epsilon value for differential privacy
+        num_steps: Number of steps in the allocation scheme
+        num_epochs: Number of epochs
+        
+    Returns:
+        Computed delta value
+    """
     return Gaussian_delta(sigma=sigma*math.sqrt(num_steps/(num_epochs)), epsilon=epsilon - (1-1.0/num_steps)/(2*sigma**2))
 
 # ==================== Remove ====================
 @cache
-def generate_partitions(n: int, max_size: int) -> List[List[Tuple[int, ...]]]:
+def generate_partitions(n: int, max_size: int) -> List[Tuple[int, ...]]:
     """
     Generate all integer partitions of [1, ..., n] with a maximum number of elements in the partition.
+    
+    Args:
+        n: The number to partition
+        max_size: The maximum number of elements in each partition
+        
+    Returns:
+        List of partitions, where each partition is a tuple of integers
     """
-    partitions = [[] for _ in range(n + 1)]
+    partitions: List[List[Tuple[int, ...]]] = [[] for _ in range(n + 1)]
     partitions[0].append(())
 
     for i in range(1, n):
@@ -134,21 +165,25 @@ def allocation_RDP_remove(alpha: int, sigma: float, num_steps: int) -> float:
 
 def allocation_epsilon_direct_remove(sigma: float,
                                   delta: float,
-                                  num_steps:int,
-                                  num_epochs:int,
-                                  alpha_orders,
+                                  num_steps: int,
+                                  num_epochs: int,
+                                  alpha_orders: np.ndarray,
                                   print_alpha: bool,
                                   ) -> float:
     """
     Compute the epsilon value of the allocation scheme in the remove direction using Rényi Differential Privacy (RDP).
     This function is based on Lemma 2.4, and utilizes the improvement stated in Claim 6.4.
+    
     Args:       
-        sigma (float): Gaussian noise scale.
-        delta (float): Target delta value for differential privacy.
-        num_steps (int): Number of steps in the allocation scheme.
-        num_epochs (int): Number of epochs.
-        alpha_orders: Array of alpha orders for RDP computation.
-        print_alpha (bool): Whether to print the alpha value used.
+        sigma: Gaussian noise scale
+        delta: Target delta value for differential privacy
+        num_steps: Number of steps in the allocation scheme
+        num_epochs: Number of epochs
+        alpha_orders: Array of alpha orders for RDP computation
+        print_alpha: Whether to print the alpha value used
+        
+    Returns:
+        Computed epsilon value
     """
     alpha = alpha_orders[0]
     alpha_RDP = allocation_RDP_remove(alpha, sigma, num_steps)*num_epochs
@@ -287,6 +322,17 @@ def allocation_RDP_add(sigma: float,
                        num_steps: int, 
                        num_epochs: int,
                        ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Compute the RDP values for the allocation scheme in the add direction.
+    
+    Args:
+        sigma: Gaussian noise scale
+        num_steps: Number of steps in the allocation scheme
+        num_epochs: Number of epochs
+        
+    Returns:
+        Tuple containing (alpha_orders, alpha_RDP) arrays
+    """
     small_alpha_orders = np.linspace(1.001, 2, 20)
     alpha_orders = np.arange(2, 202)
     large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)

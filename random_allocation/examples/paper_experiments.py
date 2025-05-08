@@ -1,6 +1,7 @@
 # Standard library imports
 import os
 import sys
+from typing import Dict, List, Optional, Union, Any, Tuple, cast
 
 # Add the correct project root directory to PYTHONPATH
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -15,11 +16,11 @@ from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.experiments import run_experiment, PlotType
 
 # Configuration
-SAVE_DATA = True  # Set to True to save data to CSV files
-SAVE_PLOTS = True  # Set to True to save plots to files, False to display them interactively
+SAVE_DATA: bool = True  # Set to True to save data to CSV files
+SAVE_PLOTS: bool = True  # Set to True to save plots to files, False to display them interactively
 
 # First experiment - Compare different schemes for varying sigma
-params_dict_1 = {
+params_dict_1: Dict[str, Any] = {
     'x_var': SIGMA,
     'y_var': EPSILON,
     SIGMA: np.exp(np.linspace(np.log(0.2), np.log(5), 20)),
@@ -29,13 +30,13 @@ params_dict_1 = {
     NUM_EPOCHS: 1
 }
 
-config_1 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_1: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_1 = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]#, ALLOCATION_LOWER_BOUND
+methods_list_1: List[str] = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]#, ALLOCATION_LOWER_BOUND
 
-visualization_config_1 = {'log_x_axis': True, 'log_y_axis': True}
+visualization_config_1: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': True, 'log_y_axis': True}
 
-data_1 = run_experiment(
+data_1: Dict[str, Any] = run_experiment(
     params_dict_1, 
     config_1, 
     methods_list_1, 
@@ -47,7 +48,7 @@ data_1 = run_experiment(
 )
 
 # Second experiment - Compare different schemes for varying number of epochs
-params_dict_2 = {
+params_dict_2: Dict[str, Any] = {
     'x_var': NUM_EPOCHS,
     'y_var': EPSILON,
     SIGMA: 1,
@@ -57,13 +58,13 @@ params_dict_2 = {
     NUM_EPOCHS: np.exp(np.linspace(np.log(1), np.log(1001), 10)).astype(int)
 }
 
-config_2 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_2: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_2 = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
+methods_list_2: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
 
-visualization_config_2 = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
+visualization_config_2: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
 
-data_2 = run_experiment(
+data_2: Dict[str, Any] = run_experiment(
     params_dict_2, 
     config_2, 
     methods_list_2, 
@@ -75,7 +76,7 @@ data_2 = run_experiment(
 )
 
 # Third experiment - Compare different schemes for varying number of steps
-params_dict_3 = {
+params_dict_3: Dict[str, Any] = {
     'x_var': NUM_STEPS,
     'y_var': DELTA,
     SIGMA: 0.3,
@@ -85,13 +86,13 @@ params_dict_3 = {
     NUM_EPOCHS: 1
 }
 
-config_3 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_3: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_3 = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
+methods_list_3: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
 
-visualization_config_3 = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
+visualization_config_3: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
 
-data_3 = run_experiment(
+data_3: Dict[str, Any] = run_experiment(
     params_dict_3, 
     config_3, 
     methods_list_3, 
@@ -103,7 +104,7 @@ data_3 = run_experiment(
 )
 
 # Fourth experiment - Compare different schemes for varying number of selected items
-params_dict_4 = {
+params_dict_4: Dict[str, Any] = {
     'x_var': NUM_SELECTED,
     'y_var': EPSILON,
     SIGMA: 1,
@@ -113,13 +114,13 @@ params_dict_4 = {
     NUM_EPOCHS: 1,
 }
 
-config_4 = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_4: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
 
-methods_list_4 = [POISSON_RDP, ALLOCATION_DIRECT, ALLOCATION_RDP_DCO]
+methods_list_4: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, ALLOCATION_RDP_DCO]
 
-visualization_config_4 = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
+visualization_config_4: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
 
-data_4 = run_experiment(
+data_4: Dict[str, Any] = run_experiment(
     params_dict_4, 
     config_4, 
     methods_list_4, 

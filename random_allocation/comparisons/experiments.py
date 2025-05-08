@@ -4,7 +4,7 @@ import inspect
 import os
 import time
 from enum import Enum
-from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, cast
+from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, cast, Collection
 
 # Third-party imports
 import matplotlib.pyplot as plt
@@ -22,6 +22,8 @@ ParamsDict = Dict[str, Any]
 DataDict = Dict[str, Any]
 MethodList = List[str]
 XValues = List[Union[float, int]]
+FormatterFunc = Callable[[float, int], str]
+VisualizationConfig = Dict[str, Union[bool, FormatterFunc]]
 
 class PlotType(Enum):
     COMPARISON = 1
@@ -81,7 +83,7 @@ def calc_experiment_data(params: PrivacyParams,
             raise ValueError(f"Method {method} does not have a valid function for {y_var}")
         
         # Calculate results for each x value
-        results = []
+        results: List[float] = []
         for x_value in x_values:
             # Create a copy of params and set the x_var to the current value
             param_copy = copy.deepcopy(params)
@@ -134,7 +136,7 @@ def save_experiment_data(data: DataDict, methods: MethodList, experiment_name: s
     os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
     # Create DataFrame
-    df_data: Dict[str, Union[List[float], str]] = {'x': data['x data']}
+    df_data: Dict[str, Union[Collection[float], str]] = {'x': data['x data']}
     
     # Save y data for each method
     for method in methods:
@@ -164,7 +166,7 @@ def save_experiment_plot(data: DataDict, methods: MethodList, experiment_name: s
     os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
     # Create and save the plot using plot_comparison
-    plot_comparison(data)
+    fig: Figure = plot_comparison(data)
     plt.savefig(f'{experiment_name}_plot.png')
     plt.close()
 
@@ -172,19 +174,19 @@ def run_experiment(
     params_dict_or_obj: Union[ParamsDict, PrivacyParams],
     config: SchemeConfig,
     methods: MethodList, 
-    visualization_config: Optional[Dict[str, Any]] = None,
+    visualization_config: Optional[VisualizationConfig] = None,
     experiment_name: str = '',
     plot_type: PlotType = PlotType.COMPARISON,
     save_data: bool = True, 
     save_plots: bool = True
-) -> Optional[DataDict]:
+) -> DataDict:
     """
     Run an experiment and handle its results.
     
     Args:
         params_dict_or_obj: Either a dictionary of parameters or a PrivacyParams object
             If dictionary, must contain 'x_var', 'y_var', and x_values
-        config_dict_or_obj: Either a dictionary of configuration values or a SchemeConfig object
+        config: A SchemeConfig object
         methods: List of methods to use in the experiment
         visualization_config: Additional keyword arguments for the plot function
         experiment_name: Name of the experiment for the output file
@@ -193,7 +195,7 @@ def run_experiment(
         save_plots: Whether to save plots to files
         
     Returns:
-        The experiment data dictionary, or None if no data was computed
+        The experiment data dictionary
     """
     # Clear all caches before running the experiment
     clear_all_caches()
@@ -248,6 +250,7 @@ def run_experiment(
     # Data logic:
     # If save_data is True: always recalculate and save
     # If save_data is False: try to read existing data, if not exists - recalculate but don't save
+    data: DataDict
     if save_data:
         print(f"Computing data for {experiment_name}")
         data = calc_experiment_data(params, config, methods, x_var, x_values, y_var)
@@ -255,7 +258,17 @@ def run_experiment(
     else:
         if os.path.exists(data_file):
             print(f"Reading data from {data_file}")
-            data = pd.read_csv(data_file)
+            # Read the CSV and convert to expected DataDict format
+            df = pd.read_csv(data_file)
+            data = {'y data': {}, 'x data': df['x'].tolist()}
+            for method in methods:
+                if method in df.columns:
+                    data['y data'][method] = df[method].values
+                if f"{method}_std" in df.columns:
+                    data['y data'][method + '- std'] = df[f"{method}_std"].values
+            data['title'] = df.get('title', [''])[0] if not df.empty else ''
+            data['x name'] = df.get('x name', [''])[0] if not df.empty else ''
+            data['y name'] = df.get('y name', [''])[0] if not df.empty else ''
         else:
             print(f"Computing data for {experiment_name}")
             data = calc_experiment_data(params, config, methods, x_var, x_values, y_var)
