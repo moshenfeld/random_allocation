@@ -1,8 +1,8 @@
 # Standard library imports
-# (none)
+from typing import Optional, Union, Callable, Dict, Any, List, Tuple, cast
 
 # Third-party imports
-# (none)
+import numpy as np
 
 # Local application imports
 from random_allocation.random_allocation_scheme.Monte_Carlo_external import *

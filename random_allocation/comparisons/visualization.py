@@ -1,17 +1,39 @@
 # Standard library imports
-from typing import Any
+from typing import Any, Dict, List, Callable, Union, Optional, Tuple, TypeVar, cast
 
 # Third-party imports
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 
 # Local application imports
 from random_allocation.comparisons.definitions import *
 
-def plot_comparison(data, log_x_axis = False, log_y_axis = False, format_x=lambda x, _: f'{x:.2f}', format_y=lambda x, _: f'{x:.2f}', figsize=(16, 9)):
+# Type aliases
+DataDict = Dict[str, Any]
+FormatterFunc = Callable[[float, int], str]
+
+def plot_comparison(data: DataDict, 
+                log_x_axis: bool = False, 
+                log_y_axis: bool = False, 
+                format_x: FormatterFunc = lambda x, _: f'{x:.2f}', 
+                format_y: FormatterFunc = lambda x, _: f'{x:.2f}', 
+                figsize: Tuple[int, int] = (16, 9)) -> Figure:
     """
     Create a comparison plot and return the figure.
+    
+    Args:
+        data: Dictionary containing the data to plot
+        log_x_axis: Whether to use logarithmic scale for x-axis
+        log_y_axis: Whether to use logarithmic scale for y-axis
+        format_x: Function to format x-axis labels
+        format_y: Function to format y-axis labels
+        figsize: Size of the figure
+        
+    Returns:
+        The created matplotlib figure
     """
     methods = list(data['y data'].keys())
     #remove keys that end with '- std'
@@ -49,7 +71,16 @@ def plot_comparison(data, log_x_axis = False, log_y_axis = False, format_x=lambd
     plt.legend(fontsize=20)
     return fig
 
-def plot_as_table(data):
+def plot_as_table(data: DataDict) -> DataFrame:
+    """
+    Create a pandas DataFrame table from plot data.
+    
+    Args:
+        data: Dictionary containing the data to tabulate
+        
+    Returns:
+        DataFrame containing the tabulated data
+    """
     methods = list(data['y data'].keys())
     methods_data = data['y data']
     table = pd.DataFrame(methods_data, index=data['x data'])
@@ -57,9 +88,25 @@ def plot_as_table(data):
     table.columns = [method for method in methods]
     return table
 
-def plot_combined_data(data, log_x_axis = False, log_y_axis = False, format_x=lambda x, _: f'{x:.2f}', format_y=lambda x, _: f'{x:.2f}', figsize=(16, 9)):
+def plot_combined_data(data: DataDict, 
+                      log_x_axis: bool = False, 
+                      log_y_axis: bool = False, 
+                      format_x: FormatterFunc = lambda x, _: f'{x:.2f}', 
+                      format_y: FormatterFunc = lambda x, _: f'{x:.2f}', 
+                      figsize: Tuple[int, int] = (16, 9)) -> Figure:
     """
     Create a combined data plot and return the figure.
+    
+    Args:
+        data: Dictionary containing the data to plot
+        log_x_axis: Whether to use logarithmic scale for x-axis
+        log_y_axis: Whether to use logarithmic scale for y-axis
+        format_x: Function to format x-axis labels
+        format_y: Function to format y-axis labels
+        figsize: Size of the figure
+        
+    Returns:
+        The created matplotlib figure
     """
     methods = list(data['y data'].keys())
     min_allocation = np.ones_like(data['x data'])*10000

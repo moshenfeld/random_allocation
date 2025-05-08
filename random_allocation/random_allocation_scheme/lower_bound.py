@@ -1,12 +1,13 @@
 # Standard library imports
-# (none)
+from typing import Optional, Union, Callable, Dict, Any, List, Tuple
 
 # Third-party imports
-# (none)
+import numpy as np
 
 # Local application imports
 from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 
 def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig) -> float:
     """

@@ -1,13 +1,17 @@
 # Standard library imports
-# (none)
+from typing import Optional, Union, Callable, Dict, Any, List, Tuple
 
 # Third-party imports
 import numpy as np
+from dp_accounting.pld.privacy_loss_distribution import PrivacyLossDistribution
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.poisson import Poisson_PLD
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+
+# Type aliases
+NumericFunction = Callable[[float], float]
 
 def allocation_epsilon_recursive(params: PrivacyParams,
                                 config: SchemeConfig = SchemeConfig(),

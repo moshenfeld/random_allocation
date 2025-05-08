@@ -46,7 +46,7 @@ import enum
 import functools
 import math
 import dataclasses
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Optional, Tuple, Dict, List, Union, Any, cast, TypeVar, Iterator
 
 # Third-party imports
 import numpy as np
@@ -54,6 +54,11 @@ from scipy import special
 from scipy import stats
 import dp_accounting
 from dp_accounting import pld, rdp
+
+# Type aliases
+NumericFunction = Callable[[float], float]
+ArrayOrFloat = Union[np.ndarray, float]
+OptionalSequence = Optional[Sequence[float]]
 
 
 def inverse_decreasing_function(
@@ -1303,7 +1308,7 @@ class BnBAccountant:
   the above expectation is same as E_{x ~ P_t} max{0, 1 - exp(epsilon - L(x))},
   by symmetry of all the P_t's. In particular, we can take t = 1.
 
-  Furthermore, for any set E such that L(x) <= epsilon for all x not in E,
+  Furthermore, for any set E such that L(x) <= eps for all x not in E,
   the above expectation is same as
     P(E) * E_{P|E}  max{0, 1 - exp(epsilon - L(x))},
   where P|E is the distribution of P conditioned on the sample being in E.

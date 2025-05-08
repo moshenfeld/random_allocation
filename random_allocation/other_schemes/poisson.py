@@ -1,8 +1,9 @@
 # Standard library imports
-from typing import List
+from typing import List, Optional, Union, Tuple, Dict, Any
 
 # Third-party imports
 from dp_accounting import pld, dp_event, rdp
+import numpy as np
 
 # Local application imports
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
@@ -15,7 +16,7 @@ def Poisson_PLD(sigma: float,
                 sampling_prob: float,
                 discretization: float,
                 direction: str,
-                ) -> pld.privacy_loss_distribution:
+                ) -> pld.privacy_loss_distribution.PrivacyLossDistribution:
     """
     Calculate the privacy loss distribution (PLD) for the Poisson scheme with the Gaussian mechanism.
 

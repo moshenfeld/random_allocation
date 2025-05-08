@@ -4,43 +4,59 @@ import inspect
 import os
 import time
 from enum import Enum
-from typing import Dict, Any, Callable, List, Tuple, Union
+from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, cast
 
 # Third-party imports
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.figure import Figure
 
 # Local application imports
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
 
+# Type variables and aliases
+T = TypeVar('T')
+ParamsDict = Dict[str, Any]
+DataDict = Dict[str, Any]
+MethodList = List[str]
+XValues = List[Union[float, int]]
+
 class PlotType(Enum):
     COMPARISON = 1
     COMBINED = 2
 
-def get_func_dict(methods: list[str],
+def get_func_dict(methods: MethodList,
                   y_var: str
-                  ) -> Dict[str, Any]:
+                  ) -> Dict[str, Optional[Callable[[PrivacyParams, SchemeConfig], float]]]:
     """
     Get the function dictionary for the given methods and y variable.
+    
+    Args:
+        methods: List of method names to retrieve functions for
+        y_var: The variable to compute (either 'epsilon' or 'delta')
+        
+    Returns:
+        Dictionary mapping method names to their corresponding calculator functions
     """
     if y_var == EPSILON:
         return get_features_for_methods(methods, 'epsilon_calculator')
     return get_features_for_methods(methods, 'delta_calculator')
 
-def clear_all_caches():
+def clear_all_caches() -> None:
     """
     Clear all caches for all modules.
     """
+    pass
 
 def calc_experiment_data(params: PrivacyParams,
                          config: SchemeConfig,
-                         methods: list[str],
+                         methods: MethodList,
                          x_var: str,
-                         x_values: list[Union[float, int]],
+                         x_values: XValues,
                          y_var: str,
-                         ) -> Dict[str, Any]:
+                         ) -> DataDict:
     """
     Calculate experiment data using PrivacyParams and SchemeConfig objects directly.
     
@@ -55,7 +71,7 @@ def calc_experiment_data(params: PrivacyParams,
     Returns:
         Dictionary with the experiment data
     """
-    data = {'y data': {}}
+    data: DataDict = {'y data': {}}
     func_dict = get_func_dict(methods, y_var)
     
     for method in methods:
@@ -105,7 +121,7 @@ def calc_experiment_data(params: PrivacyParams,
     
     return data
 
-def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
+def save_experiment_data(data: DataDict, methods: MethodList, experiment_name: str) -> None:
     """
     Save experiment data as a CSV file.
     
@@ -118,7 +134,7 @@ def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_na
     os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
     
     # Create DataFrame
-    df_data = {'x': data['x data']}
+    df_data: Dict[str, Union[List[float], str]] = {'x': data['x data']}
     
     # Save y data for each method
     for method in methods:
@@ -135,7 +151,7 @@ def save_experiment_data(data: Dict[str, Any], methods: List[str], experiment_na
     df = pd.DataFrame(df_data)
     df.to_csv(experiment_name, index=False)
 
-def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_name: str) -> None:
+def save_experiment_plot(data: DataDict, methods: MethodList, experiment_name: str) -> None:
     """
     Save the experiment plot to a file.
     
@@ -153,15 +169,15 @@ def save_experiment_plot(data: Dict[str, Any], methods: List[str], experiment_na
     plt.close()
 
 def run_experiment(
-    params_dict_or_obj: Union[Dict[str, Any], PrivacyParams],
+    params_dict_or_obj: Union[ParamsDict, PrivacyParams],
     config: SchemeConfig,
-    methods: List[str], 
-    visualization_config: Dict[str, Any] = None,
+    methods: MethodList, 
+    visualization_config: Optional[Dict[str, Any]] = None,
     experiment_name: str = '',
     plot_type: PlotType = PlotType.COMPARISON,
     save_data: bool = True, 
     save_plots: bool = True
-) -> None:
+) -> Optional[DataDict]:
     """
     Run an experiment and handle its results.
     
@@ -175,6 +191,9 @@ def run_experiment(
         plot_type: Type of plot to create (COMPARISON or COMBINED)
         save_data: Whether to save data to CSV files
         save_plots: Whether to save plots to files
+        
+    Returns:
+        The experiment data dictionary, or None if no data was computed
     """
     # Clear all caches before running the experiment
     clear_all_caches()
@@ -196,7 +215,7 @@ def run_experiment(
         if x_var not in params_dict:
             raise ValueError(f"params_dict must contain values for '{x_var}'")
             
-        x_values = params_dict[x_var]
+        x_values = cast(XValues, params_dict[x_var])
         
         # Create a PrivacyParams object with base values (excluding x_values)
         base_params = {k: v for k, v in params_dict.items() if not isinstance(v, (list, np.ndarray))}
@@ -249,7 +268,7 @@ def run_experiment(
     
     # Create the appropriate plot based on plot_type
     if plot_type == PlotType.COMPARISON:
-        fig = plot_comparison(data, **visualization_config)
+        fig: Figure = plot_comparison(data, **visualization_config)
     else:  # PlotType.COMBINED
         fig = plot_combined_data(data, **visualization_config)
     

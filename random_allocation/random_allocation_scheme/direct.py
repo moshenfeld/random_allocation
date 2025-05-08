@@ -1,16 +1,20 @@
 # Standard library imports
 from functools import cache
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Union, Callable, TypeVar, Dict, Any, cast
 
 # Third-party imports
 from numba import jit
 import numpy as np
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+
+# Type aliases
+Partition = Tuple[int, ...]
+NumericFunction = Callable[[float], float]
 
 # ==================== Add ====================
 def allocation_epsilon_direct_add(sigma: float,

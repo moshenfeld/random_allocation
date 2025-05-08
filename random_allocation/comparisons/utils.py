@@ -1,12 +1,22 @@
 # Standard library imports
 from enum import Enum, auto
-from typing import Callable, Optional, Tuple, Any, Union
+import math
+from typing import Callable, Dict, List, Optional, Tuple, Union, TypeVar, Any, cast
 
 # Third-party imports
 import numpy as np
+from scipy import integrate
+from scipy.optimize import minimize_scalar
 from scipy import optimize
 
-# Type definitions
+# Removed direct import from RDP_DCO to avoid circular dependency
+# from random_allocation.random_allocation_scheme.RDP_DCO import allocation_RDP_DCO_add
+
+# Type variables
+T = TypeVar('T')
+
+# Type aliases
+BoundsType = Optional[Tuple[float, float]]
 NumericFunction = Callable[[float], float]
 
 class FunctionType(Enum):
@@ -39,7 +49,7 @@ def search_function(
     func: NumericFunction, 
     y_target: float, 
     initial_guess: float = 0.0, 
-    bounds: Optional[Tuple[float, float]] = None, 
+    bounds: BoundsType = None, 
     tolerance: float = 1e-6, 
     function_type: FunctionType = FunctionType.INCREASING
 ) -> Optional[float]:
@@ -92,7 +102,7 @@ def search_function(
                 # For increasing functions, we need y_min ≤ y_target ≤ y_max
                 if y_target < y_min or y_target > y_max:
                     return None
-            else:  # FunctionType.DECREASING
+            else:  # FunctionType.DECLINING
                 # For decreasing functions, we need y_min ≥ y_target ≥ y_max
                 if y_target > y_min or y_target < y_max:
                     return None
@@ -156,14 +166,14 @@ def search_function(
             objective_squared = lambda x: (func(x) - y_target)**2
             
             if bounds:
-                result = optimize.minimize_scalar(
+                result = minimize_scalar(
                     objective_squared, 
                     bounds=bounds, 
                     method='bounded', 
                     options={'xatol': tolerance}
                 )
             else:
-                result = optimize.minimize_scalar(
+                result = minimize_scalar(
                     objective_squared, 
                     method='brent', 
                     options={'xtol': tolerance}
@@ -344,7 +354,7 @@ def adjust_for_sign(
 def search_function_with_bounds(func: NumericFunction,
                                 y_target: float,
                                 initial_guess: float = 0.0,
-                                bounds: Optional[Tuple[float, float]] = None,
+                                bounds: BoundsType = None,
                                 tolerance: float = 1e-6,
                                 function_type: FunctionType = FunctionType.INCREASING, 
                                 bound_type: BoundType = BoundType.UPPER

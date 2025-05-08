@@ -1,12 +1,12 @@
 # Standard library imports
-# (none)
+from typing import Optional, Union, Callable, Dict, List, Tuple, Any
 
 # Third-party imports
 import numpy as np
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
-from random_allocation.other_schemes.local import local_epsilon, FunctionType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
+from random_allocation.other_schemes.local import local_epsilon
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
@@ -16,6 +16,19 @@ def sampling_prob_from_sigma(sigma: float,
                              num_selected: int,
                              local_delta: float,
                              ) -> float:
+    """
+    Calculate the sampling probability for the given parameters.
+    
+    Args:
+        sigma: Noise scale
+        delta: Privacy parameter
+        num_steps: Number of steps
+        num_selected: Number of selected items
+        local_delta: Delta parameter for local randomization
+        
+    Returns:
+        Calculated sampling probability between 0 and 1
+    """
     params = PrivacyParams(sigma=sigma, delta=local_delta, num_steps=num_steps, num_selected=num_selected, num_epochs=1)
     local_epsilon_val = local_epsilon(params=params, config=SchemeConfig())
     if local_epsilon_val is None:
@@ -27,7 +40,7 @@ def sampling_prob_from_sigma(sigma: float,
 
 def allocation_epsilon_analytic(params: PrivacyParams,
                                 config: SchemeConfig = SchemeConfig(),
-                                ) -> float:
+                                ) -> Optional[float]:
     """
     Compute epsilon for the analytic allocation scheme.
     
@@ -36,7 +49,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
         config: Scheme configuration parameters
     
     Returns:
-        Computed epsilon value
+        Computed epsilon value or None if conditions are not met
     """
     params.validate()
     if params.delta is None:
@@ -59,7 +72,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
     )
     
     if sampling_prob > np.sqrt(params.num_selected/params.num_steps):
-        return np.inf
+        return None
         
     Poisson_params = PrivacyParams(
         sigma=params.sigma, 
@@ -102,7 +115,7 @@ def allocation_delta_analytic(params: PrivacyParams,
         delta=None  # This will be set by the optimization function
     )
     
-    def optimization_func(delta):
+    def optimization_func(delta: float) -> float:
         params_copy.delta = delta
         return allocation_epsilon_analytic(params=params_copy, config=config)
     

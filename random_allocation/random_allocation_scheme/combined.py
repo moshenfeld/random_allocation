@@ -1,14 +1,17 @@
 # Standard library imports
-# (none)
+from typing import List, Dict, Tuple, Optional, Union, Callable, Any, cast
 
 # Third-party imports
-# (none)
+import numpy as np
 
 # Local application imports
-from random_allocation.random_allocation_scheme.analytic import allocation_epsilon_analytic
-from random_allocation.random_allocation_scheme.decomposition import allocation_epsilon_decomposition
-from random_allocation.random_allocation_scheme.direct import allocation_epsilon_direct
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.random_allocation_scheme.analytic import allocation_epsilon_analytic, allocation_delta_analytic
+from random_allocation.random_allocation_scheme.direct import allocation_epsilon_direct, allocation_delta_direct
+from random_allocation.random_allocation_scheme.RDP_DCO import allocation_epsilon_RDP_DCO, allocation_delta_RDP_DCO
+from random_allocation.random_allocation_scheme.recursive import allocation_epsilon_recursive, allocation_delta_recursive
+from random_allocation.random_allocation_scheme.decomposition import allocation_epsilon_decomposition, allocation_delta_decomposition
+from random_allocation.random_allocation_scheme.Monte_Carlo import allocation_delta_MC
 
 def allocation_delta_combined(params: PrivacyParams,
                              config: SchemeConfig = SchemeConfig(),

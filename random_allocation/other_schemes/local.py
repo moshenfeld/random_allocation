@@ -1,12 +1,13 @@
 # Standard library imports
 from __future__ import annotations
+from typing import Optional, Union, Callable, Dict, List, Tuple, Any
 
 # Third-party imports
 import numpy as np
 from scipy import stats
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
 
 # ==================== Deterministic ====================

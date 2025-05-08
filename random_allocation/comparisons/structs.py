@@ -4,10 +4,15 @@ Common definitions for privacy parameters, scheme configurations, and experiment
 
 # Standard library imports
 from dataclasses import dataclass
-from typing import Callable, Optional, Literal
+from typing import Callable, Optional, Literal, Union, Any, Dict, List, TypeVar, cast
 
 # Third-party imports
 import numpy as np
+
+# Type aliases for calculator functions
+T = TypeVar('T', bound=float)
+EpsilonCalculator = Callable[[Any, Any], float]
+DeltaCalculator = Callable[[Any, Any], float]
 
 @dataclass
 class PrivacyParams:
@@ -20,7 +25,7 @@ class PrivacyParams:
     epsilon: Optional[float] = None
     delta: Optional[float] = None
     
-    def validate(self):
+    def validate(self) -> None:
         """Validate that the parameters are correctly specified"""
         if self.epsilon is None and self.delta is None:
             raise ValueError("Either epsilon or delta must be provided")
@@ -32,9 +37,9 @@ class SchemeConfig:
     """Configuration for privacy schemes"""
     direction: Literal['add', 'remove', 'both'] = 'both'
     discretization: float = 1e-4
-    allocation_direct_alpha_orders: np.ndarray = None  # Will be set in __post_init__
-    allocation_RDP_DCO_alpha_orders: np.ndarray = None  # Will be set in __post_init__
-    Poisson_alpha_orders: np.ndarray = None  # Will be set in __post_init__
+    allocation_direct_alpha_orders: Optional[np.ndarray] = None  # Will be set in __post_init__
+    allocation_RDP_DCO_alpha_orders: Optional[np.ndarray] = None  # Will be set in __post_init__
+    Poisson_alpha_orders: Optional[np.ndarray] = None  # Will be set in __post_init__
     print_alpha: bool = False
     delta_tolerance: float = 1e-15
     epsilon_tolerance: float = 1e-3
@@ -50,8 +55,8 @@ class MethodFeatures:
     Container for all features associated with a method.
     """
     name: str
-    epsilon_calculator: Callable
-    delta_calculator: Callable
+    epsilon_calculator: Optional[EpsilonCalculator]
+    delta_calculator: Optional[DeltaCalculator]
     legend: str
     marker: str
     color: str

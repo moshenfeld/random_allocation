@@ -3,67 +3,73 @@ Common definitions for privacy parameters, scheme configurations, and experiment
 """
 
 # Standard library imports
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Callable, Union, Tuple, TypeVar, cast
 
 # Local application imports
-from random_allocation.comparisons.structs import MethodFeatures
+from random_allocation.comparisons.structs import MethodFeatures, EpsilonCalculator, DeltaCalculator, PrivacyParams, SchemeConfig
 from random_allocation.other_schemes.local import *
 from random_allocation.other_schemes.poisson import *
 from random_allocation.other_schemes.shuffle import *
 from random_allocation.random_allocation_scheme import *
 
+# Type aliases
+MethodName = str
+FeatureName = str
+FeatureValue = Union[str, Callable[..., float], None]
+FeaturesDict = Dict[MethodName, FeatureValue]
+
 #======================= Direction =======================
-ADD    = 'add'
-REMOVE = 'remove'
-BOTH   = 'both'
+ADD: str = 'add'
+REMOVE: str = 'remove'
+BOTH: str = 'both'
 
 #======================= Variables =======================
-EPSILON = 'epsilon'
-DELTA = 'delta'
-SIGMA = 'sigma'
-NUM_STEPS = 'num_steps'
-NUM_SELECTED = 'num_selected'
-NUM_EPOCHS = 'num_epochs'
-VARIABLES = [EPSILON, DELTA, SIGMA, NUM_STEPS, NUM_SELECTED, NUM_EPOCHS]
+EPSILON: str = 'epsilon'
+DELTA: str = 'delta'
+SIGMA: str = 'sigma'
+NUM_STEPS: str = 'num_steps'
+NUM_SELECTED: str = 'num_selected'
+NUM_EPOCHS: str = 'num_epochs'
+VARIABLES: List[str] = [EPSILON, DELTA, SIGMA, NUM_STEPS, NUM_SELECTED, NUM_EPOCHS]
 
-names_dict = {EPSILON: '$\\varepsilon$', DELTA: '$\\delta$', SIGMA: '$\\sigma$', NUM_STEPS: '$t$', NUM_SELECTED: '$k$',
+names_dict: Dict[str, str] = {EPSILON: '$\\varepsilon$', DELTA: '$\\delta$', SIGMA: '$\\sigma$', NUM_STEPS: '$t$', NUM_SELECTED: '$k$',
               NUM_EPOCHS: '$E$'}
 
 # ======================= Schemes =======================
-LOCAL = 'Local'
-POISSON = 'Poisson'
-ALLOCATION = 'Allocation'
-SHUFFLE = 'Shuffle'
+LOCAL: str = 'Local'
+POISSON: str = 'Poisson'
+ALLOCATION: str = 'Allocation'
+SHUFFLE: str = 'Shuffle'
 
-colors_dict = {LOCAL: '#FF0000', POISSON: '#2BB22C', ALLOCATION: '#157DED', SHUFFLE: '#FF00FF'}
+colors_dict: Dict[str, str] = {LOCAL: '#FF0000', POISSON: '#2BB22C', ALLOCATION: '#157DED', SHUFFLE: '#FF00FF'}
 
 # ======================= Computation =======================
-ANALYTIC = 'Analytic'
-MONTE_CARLO = 'Monte Carlo'
-PLD = 'PLD'
-RDP = 'RDP'
-DECOMPOSITION = 'Decomposition'
-INVERSE = 'Inverse'
-COMBINED = 'Combined'
-RECURSIVE = 'Recursive'
-LOWER_BOUND = 'Lower Bound'
+ANALYTIC: str = 'Analytic'
+MONTE_CARLO: str = 'Monte Carlo'
+PLD: str = 'PLD'
+RDP: str = 'RDP'
+DECOMPOSITION: str = 'Decomposition'
+INVERSE: str = 'Inverse'
+COMBINED: str = 'Combined'
+RECURSIVE: str = 'Recursive'
+LOWER_BOUND: str = 'Lower Bound'
 
 # ======================= Methods =======================
-POISSON_PLD                 = f'{POISSON} ({PLD})'
-POISSON_RDP                 = f'{POISSON} ({RDP})'
-ALLOCATION_ANALYTIC         = f'{ALLOCATION} (Our - {ANALYTIC})'
-ALLOCATION_DIRECT           = f'{ALLOCATION} (Our - Direct)'
-ALLOCATION_RDP_DCO          = f'{ALLOCATION} (DCO25 - {RDP})'
-ALLOCATION_DECOMPOSITION    = f'{ALLOCATION} (Our - {DECOMPOSITION})'
-ALLOCATION_COMBINED         = f'{ALLOCATION} (Our - {COMBINED})'
-ALLOCATION_RECURSIVE        = f'{ALLOCATION} (Our - {RECURSIVE})'
-ALLOCATION_MONTE_CARLO      = f'{ALLOCATION} (CGHKKLMSZ24 - {MONTE_CARLO})'
-ALLOCATION_LOWER_BOUND      = f'{ALLOCATION} (CGHKKLMSZ24 - {LOWER_BOUND})'
+POISSON_PLD: str                 = f'{POISSON} ({PLD})'
+POISSON_RDP: str                 = f'{POISSON} ({RDP})'
+ALLOCATION_ANALYTIC: str         = f'{ALLOCATION} (Our - {ANALYTIC})'
+ALLOCATION_DIRECT: str           = f'{ALLOCATION} (Our - Direct)'
+ALLOCATION_RDP_DCO: str          = f'{ALLOCATION} (DCO25 - {RDP})'
+ALLOCATION_DECOMPOSITION: str    = f'{ALLOCATION} (Our - {DECOMPOSITION})'
+ALLOCATION_COMBINED: str         = f'{ALLOCATION} (Our - {COMBINED})'
+ALLOCATION_RECURSIVE: str        = f'{ALLOCATION} (Our - {RECURSIVE})'
+ALLOCATION_MONTE_CARLO: str      = f'{ALLOCATION} (CGHKKLMSZ24 - {MONTE_CARLO})'
+ALLOCATION_LOWER_BOUND: str      = f'{ALLOCATION} (CGHKKLMSZ24 - {LOWER_BOUND})'
 
 
 # ======================= Methods Features =======================
 
-methods_dict = {
+methods_dict: Dict[str, MethodFeatures] = {
     LOCAL: MethodFeatures(
         name=LOCAL,
         epsilon_calculator=local_epsilon,
@@ -162,7 +168,7 @@ methods_dict = {
     )
 }
 
-def get_features_for_methods(methods: List[str], feature: str) -> Dict[str, Any]:
+def get_features_for_methods(methods: List[MethodName], feature: FeatureName) -> Dict[MethodName, FeatureValue]:
     """
     Extract a specific feature for a list of methods using the global methods_dict.
     

@@ -11,6 +11,8 @@ dependencies:
   - pytest>=6.0
   - black>=21.0
   - flake8>=3.9
+  - mypy>=1.0.0
   - pip
   - pip:
     - dp_accounting>=0.4.4
+    - types-setuptools

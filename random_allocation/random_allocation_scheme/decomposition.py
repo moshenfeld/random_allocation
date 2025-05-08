@@ -1,17 +1,21 @@
 # Standard library imports
-# (none)
+from typing import Optional, Union, Callable, Dict, Any, List, Tuple
 
 # Third-party imports
 import numpy as np
+from dp_accounting.pld.privacy_loss_distribution import PrivacyLossDistribution
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.poisson import Poisson_delta_PLD, Poisson_epsilon_PLD, Poisson_PLD
 from random_allocation.other_schemes.local import local_delta
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
+# Type aliases
+NumericFunction = Callable[[float], float]
+
 # ==================== Add ====================
-def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, Poisson_PLD_obj) -> float:
+def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, Poisson_PLD_obj: PrivacyLossDistribution) -> float:
     lambda_val = 1 - (1-1.0/num_steps)**num_steps
     # use one of two identical formulas to avoid numerical instability
     if epsilon < 1:

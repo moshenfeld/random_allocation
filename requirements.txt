@@ -8,6 +8,8 @@ numba>=0.60.0
 pytest>=6.0
 black>=21.0
 flake8>=3.9
+mypy>=1.0.0
+types-setuptools
 
 # Optional: for Jupyter notebooks in examples
 ipykernel
