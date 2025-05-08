@@ -24,7 +24,8 @@ def run_mypy(include_paths: Optional[List[str]] = None) -> Tuple[str, int]:
     # Add configurations
     cmd.extend([
         "--show-column-numbers",
-        "--pretty"
+        "--pretty",
+        "--config-file=.mypy.ini"  # Explicitly use the mypy.ini config file
     ])
     
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -33,6 +34,12 @@ def run_mypy(include_paths: Optional[List[str]] = None) -> Tuple[str, int]:
 def analyze_results(mypy_output: str) -> Dict[str, int]:
     """Analyze mypy output and calculate types per module."""
     modules: Dict[str, int] = {}
+    
+    # Modules to ignore based on .mypy.ini configuration
+    ignored_modules = [
+        "random_allocation.random_allocation_scheme.Monte_Carlo_external",
+        "random_allocation.other_schemes.shuffle_external"
+    ]
     
     for line in mypy_output.split('\n'):
         if ':' not in line:
@@ -48,6 +55,10 @@ def analyze_results(mypy_output: str) -> Dict[str, int]:
             module_name = module_path
         else:
             continue
+            
+        # Skip modules that should be ignored
+        if module_name in ignored_modules or any(module_name.endswith("_external") for module in ignored_modules if "_external" in module):
+            continue
         
         # Count errors per module
         modules[module_name] = modules.get(module_name, 0) + 1
@@ -58,11 +69,22 @@ def get_all_modules() -> Set[str]:
     """Find all Python modules in the project."""
     modules = set()
     
+    # Modules to ignore based on .mypy.ini configuration
+    ignored_modules = [
+        "random_allocation.random_allocation_scheme.Monte_Carlo_external",
+        "random_allocation.other_schemes.shuffle_external"
+    ]
+    
     for root, _, files in os.walk("random_allocation"):
         for file in files:
             if file.endswith(".py") and not file.startswith("__"):
                 module_path = os.path.join(root, file)
                 module_name = module_path.replace('/', '.').replace('.py', '')
+                
+                # Skip modules that should be ignored
+                if module_name in ignored_modules or any(module_name.endswith("_external") for module in ignored_modules if "_external" in module):
+                    continue
+                    
                 modules.add(module_name)
     
     return modules

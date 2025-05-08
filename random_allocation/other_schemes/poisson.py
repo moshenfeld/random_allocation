@@ -1,9 +1,10 @@
 # Standard library imports
-from typing import List, Optional, Union, Tuple, Dict, Any
+from typing import List, Optional, Union, Tuple, Dict, Any, cast
 
 # Third-party imports
 from dp_accounting import pld, dp_event, rdp
 import numpy as np
+from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
@@ -71,7 +72,7 @@ def Poisson_delta_PLD(params: PrivacyParams,
         discretization=config.discretization, 
         direction=config.direction
     )
-    return PLD.get_delta_for_epsilon(params.epsilon)
+    return float(PLD.get_delta_for_epsilon(params.epsilon))
 
 def Poisson_epsilon_PLD(params: PrivacyParams,
                         config: SchemeConfig = SchemeConfig(),
@@ -99,14 +100,14 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
         discretization=config.discretization, 
         direction=config.direction
     )
-    return PLD.get_epsilon_for_delta(params.delta)
+    return float(PLD.get_epsilon_for_delta(params.delta))
 
 # ==================== RDP ====================
 def Poisson_RDP(sigma: float,
                 num_steps: int,
                 num_epochs: int,
                 sampling_prob: float,
-                alpha_orders: List[float],
+                alpha_orders: Optional[List[float]] = None,
                 ) -> rdp.RdpAccountant:
     """
     Create an RDP accountant for the Poisson scheme with the Gaussian mechanism.
@@ -116,7 +117,7 @@ def Poisson_RDP(sigma: float,
     - num_steps: The number of steps in each epoch.
     - num_epochs: The number of epochs.
     - sampling_prob: The probability of sampling.
-    - alpha_orders: The list of alpha orders for rdp.
+    - alpha_orders: The list of alpha orders for rdp. If None, defaults will be used by RdpAccountant.
     """
     accountant = rdp.RdpAccountant(alpha_orders)
     event = dp_event.PoissonSampledDpEvent(sampling_prob, dp_event.GaussianDpEvent(sigma))
@@ -151,9 +152,9 @@ def Poisson_delta_RDP(params: PrivacyParams,
         delta, used_alpha = accountant.get_delta_and_optimal_order(params.epsilon)
         print(f'sigma: {params.sigma}, num_steps: {params.num_steps}, num_epochs: {params.num_epochs}, '
               f'sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
-        return delta
+        return float(delta)
     
-    return accountant.get_delta(params.epsilon)
+    return float(accountant.get_delta(params.epsilon))
 
 def Poisson_epsilon_RDP(params: PrivacyParams,
                         config: SchemeConfig = SchemeConfig(),
@@ -185,6 +186,6 @@ def Poisson_epsilon_RDP(params: PrivacyParams,
         epsilon, used_alpha = accountant.get_epsilon_and_optimal_order(params.delta)
         print(f'sigma: {params.sigma}, num_steps: {params.num_steps}, num_epochs: {params.num_epochs}, '
               f'sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
-        return epsilon
+        return float(epsilon)
     
-    return accountant.get_epsilon(params.delta)
+    return float(accountant.get_epsilon(params.delta))

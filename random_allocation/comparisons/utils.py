@@ -110,13 +110,13 @@ def search_function(
             
             # Use scipy's root_scalar with bracket method
             try:
-                result: optimize.RootResults = optimize.root_scalar(
+                root_result: optimize.RootResults = optimize.root_scalar(
                     objective, 
                     bracket=bounds, 
                     method='brentq', 
                     rtol=tolerance
                 )
-                return result.root if result.converged else None
+                return root_result.root if root_result.converged else None
             except ValueError as e:
                 # This can happen if the bracket doesn't contain a root despite our checks
                 # This might indicate the function isn't truly monotonic
@@ -133,14 +133,14 @@ def search_function(
             if bounds:
                 # If we have bounds, try bracketing method first
                 try:
-                    result: optimize.RootResults = optimize.root_scalar(
+                    bracket_result: optimize.RootResults = optimize.root_scalar(
                         objective, 
                         bracket=bounds, 
                         method='brentq', 
                         rtol=tolerance
                     )
-                    if result.converged:
-                        return result.root
+                    if bracket_result.converged:
+                        return float(bracket_result.root)
                 except ValueError:
                     # Bracketing failed, so there might not be a root within bounds
                     # or there might be multiple roots - continue to other methods
@@ -150,14 +150,14 @@ def search_function(
             try:
                 # Use brent method instead of newton to avoid derivative issues
                 # Newton can fail when derivative is zero at the initial point
-                result: optimize.RootResults = optimize.root_scalar(
+                secant_result: optimize.RootResults = optimize.root_scalar(
                     objective, 
                     x0=initial_guess, 
                     method='secant',  # Changed from 'newton' to 'secant'
                     rtol=tolerance
                 )
-                if result.converged:
-                    return result.root
+                if secant_result.converged:
+                    return float(secant_result.root)
             except (ValueError, RuntimeError):
                 # Method failed, continue to minimization approach
                 pass
@@ -167,24 +167,25 @@ def search_function(
             objective_squared: NumericFunction = lambda x: (func(x) - y_target)**2
             
             if bounds:
-                result: OptimizeResult = minimize_scalar(
+                min_result: OptimizeResult = minimize_scalar(
                     objective_squared, 
                     bounds=bounds, 
                     method='bounded', 
                     options={'xatol': tolerance}
                 )
             else:
-                result: OptimizeResult = minimize_scalar(
+                min_scalar_result: OptimizeResult = minimize_scalar(
                     objective_squared, 
                     method='brent', 
                     options={'xtol': tolerance}
                 )
+                min_result = min_scalar_result
             
             # Check if our solution is good enough
             # Sometimes minimize_scalar finds a local minimum that's not close to y_target
-            x_result: float = result.x
+            x_result: float = float(min_result.x)
             if abs(func(x_result) - y_target) <= tolerance:
-                return x_result
+                return float(x_result)  # Explicitly cast to float to avoid returning Any
             else:
                 # No suitable solution found
                 return None

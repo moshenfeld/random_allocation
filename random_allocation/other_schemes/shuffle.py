@@ -55,7 +55,7 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
     
     local_epsilon_val = local_epsilon(params=local_params, config=config)
     if local_epsilon_val is None or local_epsilon_val > 10:
-        return det_eps
+        return float(det_eps) if det_eps is not None else float('inf')
     
     epsilon = numericalanalysis(
         n=params.num_steps, 
@@ -70,7 +70,9 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
         local_delta = params.delta/(2*params.num_steps*(np.exp(epsilon)+1)*(1+np.exp(local_epsilon_val)/2))
         local_params.delta = local_delta
         local_epsilon_val = local_epsilon(params=local_params, config=config)
-        
+        if local_epsilon_val is None:
+            local_epsilon_val = float('inf')  # Use infinity for None values
+            
         epsilon = numericalanalysis(
             n=params.num_steps, 
             epsorig=local_epsilon_val, 
@@ -84,10 +86,11 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
         if delta_bnd < params.delta:
             break
     
-    if epsilon > det_eps:
-        return det_eps
+    if epsilon > det_eps and det_eps is not None:
+        return float(det_eps)
     
-    return epsilon
+    # Return epsilon but ensure it's a float
+    return float(epsilon)
 
 def shuffle_delta_analytic(params: PrivacyParams,
                            config: SchemeConfig = SchemeConfig(),
@@ -118,14 +121,20 @@ def shuffle_delta_analytic(params: PrivacyParams,
         delta=None  # This will be set by the optimization function
     )
     
-    def optimization_func(delta):
-        params_copy.delta = delta
-        return shuffle_epsilon_analytic(params=params_copy, config=config, step=step)
-    
-    return search_function_with_bounds(
-        func=optimization_func, 
+    result = search_function_with_bounds(
+        func=lambda delta: shuffle_epsilon_analytic(params=PrivacyParams(
+            sigma=params.sigma,
+            num_steps=params.num_steps,
+            num_selected=params.num_selected,
+            num_epochs=params.num_epochs,
+            epsilon=None,
+            delta=delta
+        ), config=config, step=step), 
         y_target=params.epsilon, 
         bounds=(config.delta_tolerance, 1-config.delta_tolerance),
         tolerance=config.delta_tolerance, 
         function_type=FunctionType.DECREASING
     )
+    
+    # Handle the case where search_function_with_bounds returns None
+    return 1.0 if result is None else float(result)

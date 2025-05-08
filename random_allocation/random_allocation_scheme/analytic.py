@@ -36,11 +36,11 @@ def sampling_prob_from_sigma(sigma: float,
     gamma = np.cosh(local_epsilon_val)*np.sqrt(2*num_selected*np.log(num_selected/delta)/num_steps)
     if gamma > 1 - num_selected/num_steps:
         return 1.0
-    return np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1)
+    return float(np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1))
 
 def allocation_epsilon_analytic(params: PrivacyParams,
                                 config: SchemeConfig = SchemeConfig(),
-                                ) -> Optional[float]:
+                                ) -> float:
     """
     Compute epsilon for the analytic allocation scheme.
     
@@ -49,7 +49,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
         config: Scheme configuration parameters
     
     Returns:
-        Computed epsilon value or None if conditions are not met
+        Computed epsilon value or np.inf if conditions are not met
     """
     params.validate()
     if params.delta is None:
@@ -72,7 +72,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
     )
     
     if sampling_prob > np.sqrt(params.num_selected/params.num_steps):
-        return None
+        return float(np.inf)
         
     Poisson_params = PrivacyParams(
         sigma=params.sigma, 
@@ -86,7 +86,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
         sampling_prob=sampling_prob
     )
     
-    return epsilon
+    return float(epsilon)
 
 def allocation_delta_analytic(params: PrivacyParams,
                               config: SchemeConfig = SchemeConfig(),
@@ -105,24 +105,20 @@ def allocation_delta_analytic(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    # Create a copy of params with epsilon=None to use in optimization function
-    params_copy = PrivacyParams(
-        sigma=params.sigma,
-        num_steps=params.num_steps,
-        num_selected=params.num_selected,
-        num_epochs=params.num_epochs,
-        epsilon=None,
-        delta=None  # This will be set by the optimization function
-    )
-    
-    def optimization_func(delta: float) -> float:
-        params_copy.delta = delta
-        return allocation_epsilon_analytic(params=params_copy, config=config)
-    
-    return search_function_with_bounds(
-        func=optimization_func, 
+    result = search_function_with_bounds(
+        func=lambda delta: allocation_epsilon_analytic(params=PrivacyParams(
+            sigma=params.sigma,
+            num_steps=params.num_steps,
+            num_selected=params.num_selected,
+            num_epochs=params.num_epochs,
+            epsilon=None,
+            delta=delta
+        ), config=config), 
         y_target=params.epsilon, 
         bounds=(config.delta_tolerance, 1-config.delta_tolerance),
         tolerance=config.delta_tolerance, 
         function_type=FunctionType.DECREASING
     )
+    
+    # Handle case where search function returns None
+    return 1.0 if result is None else float(result)

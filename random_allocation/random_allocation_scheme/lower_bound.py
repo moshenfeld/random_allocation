@@ -27,15 +27,18 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig) ->
     assert(params.num_selected == 1)
     bnb_accountant = BnBAccountant()
     
-    return bnb_accountant.get_deltas_lower_bound(
+    # Convert the return value to float to ensure type consistency
+    result = bnb_accountant.get_deltas_lower_bound(
         params.sigma, 
         (params.epsilon), 
         params.num_steps, 
         params.num_epochs
     )[0]
+    
+    return float(result)
 
 def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig) -> float:
-    return 0
+    return 0.0
 #     """
 #     Compute a lower bound on epsilon for the allocation scheme.
     

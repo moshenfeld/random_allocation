@@ -57,6 +57,8 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+disallow_untyped_imports = false
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "random_allocation.*"

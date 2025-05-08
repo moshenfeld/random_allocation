@@ -40,37 +40,27 @@ For Shuffle batch samplers, the analysis uses a "cube" set to establish a lower
 bound on the hockey stick divergence.
 """
 
-# Standard library imports
 import collections
-import enum
 import functools
 import math
-import dataclasses
-from typing import Callable, Sequence, Optional, Tuple, Dict, List, Union, Any, cast, TypeVar, Iterator
+from typing import Callable, Sequence
 
-# Third-party imports
-import numpy as np
-from scipy import special
-from scipy import stats
 import dp_accounting
-from dp_accounting import pld, rdp
-
-# Type aliases
-NumericFunction = Callable[[float], float]
-ArrayOrFloat = Union[np.ndarray, float]
-OptionalSequence = Optional[Sequence[float]]
+from dp_accounting import pld
+from dp_accounting import rdp
+import numpy as np
+from scipy import stats
 
 
 def inverse_decreasing_function(
-    function: Callable[[float], float], 
-    value: float) -> float:
+    function, value):
   """Returns the smallest x at which function(x) <= value."""
   # A heuristic initial guess of 10 is chosen. This only costs in efficiency.
   search_params = pld.common.BinarySearchParameters(0, np.inf, 10)
-  result = pld.common.inverse_monotone_function(function, value, search_params)
-  if result is None:
+  value = pld.common.inverse_monotone_function(function, value, search_params)
+  if value is None:
     raise ValueError(f'No input x found for {value=}.')
-  return result
+  return value
 
 
 class DeterministicAccountant:
@@ -81,9 +71,9 @@ class DeterministicAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_deltas(self,
-                 sigma: float,
-                 epsilons: Union[float, Sequence[float]],
-                 num_epochs: int = 1) -> List[float]:
+                 sigma,
+                 epsilons,
+                 num_epochs = 1):
     """Returns delta values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -103,9 +93,9 @@ class DeterministicAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_epsilons(self,
-                   sigma: float,
-                   deltas: Union[float, Sequence[float]],
-                   num_epochs: int = 1) -> List[float]:
+                   sigma,
+                   deltas,
+                   num_epochs = 1):
     """Returns epsilon values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -115,17 +105,16 @@ class DeterministicAccountant:
     """
     delta_from_epsilon = lambda epsilon: self.get_deltas(
         sigma, (epsilon,), num_epochs)[0]
-    deltas_seq = [deltas] if isinstance(deltas, (int, float)) else deltas
     return [
         inverse_decreasing_function(delta_from_epsilon, delta)
-        for delta in deltas_seq
+        for delta in deltas
     ]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_sigma(self,
-                epsilon: float,
-                delta: float,
-                num_epochs: int = 1) -> float:
+                epsilon,
+                delta,
+                num_epochs = 1):
     """Returns the scale of the Gaussian noise for (epsilon, delta)-DP."""
     delta_from_sigma = lambda sigma: self.get_deltas(
         sigma, (epsilon,), num_epochs)[0]
@@ -144,16 +133,16 @@ class PoissonPLDAccountant:
   """
 
   def __init__(self,
-               pessimistic_estimate: bool = True):
+               pessimistic_estimate = True):
     self.pessimistic_estimate = pessimistic_estimate
 
-  def _get_PLD(
+  def _get_pld(
       self,
-      sigma: float,
-      num_compositions: int,
-      sampling_prob: float,
-      discretization: float = 1e-3,
-  ) -> pld.privacy_loss_distribution.PrivacyLossDistribution:
+      sigma,
+      num_compositions,
+      sampling_prob,
+      discretization = 1e-3,
+  ):
     """Returns the composed PLD for ABLQ_P.
 
     Args:
@@ -163,7 +152,7 @@ class PoissonPLDAccountant:
       discretization: The discretization interval to be used in computing the
         privacy loss distribution.
     """
-    pl_dist = pld.privacy_loss_distribution.from_Gaussian_mechanism(
+    pl_dist = pld.privacy_loss_distribution.from_gaussian_mechanism(
         sigma,
         pessimistic_estimate=self.pessimistic_estimate,
         value_discretization_interval=discretization,
@@ -174,11 +163,11 @@ class PoissonPLDAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_deltas(self,
-                 sigma: float,
-                 epsilons: Union[float, Sequence[float]],
-                 num_steps_per_epoch: int,
-                 num_epochs: int = 1,
-                 discretization: float = 1e-3) -> List[float]:
+                 sigma,
+                 epsilons,
+                 num_steps_per_epoch,
+                 num_epochs = 1,
+                 discretization = 1e-3):
     """Returns delta values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -193,7 +182,7 @@ class PoissonPLDAccountant:
     Returns:
       A list of hockey stick divergence estimates corresponding to each epsilon.
     """
-    pl_dist = self._get_PLD(
+    pl_dist = self._get_pld(
         sigma=sigma,
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch,
@@ -202,11 +191,11 @@ class PoissonPLDAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_epsilons(self,
-                   sigma: float,
-                   deltas: Union[float, Sequence[float]],
-                   num_steps_per_epoch: int,
-                   num_epochs: int = 1,
-                   discretization: float = 1e-3) -> List[float]:
+                   sigma,
+                   deltas,
+                   num_steps_per_epoch,
+                   num_epochs = 1,
+                   discretization = 1e-3):
     """Returns epsilon values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -218,21 +207,20 @@ class PoissonPLDAccountant:
       discretization: The discretization interval to be used in computing the
         privacy loss distribution.
     """
-    pl_dist = self._get_PLD(
+    pl_dist = self._get_pld(
         sigma=sigma,
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch,
         discretization=discretization)
-    deltas_seq = [deltas] if isinstance(deltas, (int, float)) else deltas
-    return [pl_dist.get_epsilon_for_delta(delta) for delta in deltas_seq]
+    return [pl_dist.get_epsilon_for_delta(delta) for delta in deltas]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_sigma(self,
-                epsilon: float,
-                delta: float,
-                num_steps_per_epoch: int,
-                num_epochs: int = 1,
-                discretization: float = 1e-3) -> float:
+                epsilon,
+                delta,
+                num_steps_per_epoch,
+                num_epochs = 1,
+                discretization = 1e-3):
     """Returns the scale of the Gaussian noise for (epsilon, delta)-DP."""
     delta_from_sigma = lambda sigma: self.get_deltas(
         sigma, (epsilon,), num_steps_per_epoch, num_epochs, discretization)[0]
@@ -246,12 +234,12 @@ class PoissonRDPAccountant:
   def __init__(self):
     pass
 
-  def _get_RDP_accountant(
+  def _get_rdp_accountant(
       self,
-      sigma: float,
-      num_compositions: int,
-      sampling_prob: float
-  ) -> rdp.RdpAccountant:
+      sigma,
+      num_compositions,
+      sampling_prob
+  ):
     """Returns RDP accountant after composition of Poisson subsampled Gaussian.
 
     Args:
@@ -268,10 +256,10 @@ class PoissonRDPAccountant:
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_deltas(self,
-                 sigma: float,
-                 epsilons: Union[float, Sequence[float]],
-                 num_steps_per_epoch: int,
-                 num_epochs: int = 1) -> List[float]:
+                 sigma,
+                 epsilons,
+                 num_steps_per_epoch,
+                 num_epochs = 1):
     """Returns delta values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -284,19 +272,18 @@ class PoissonRDPAccountant:
     Returns:
       A list of hockey stick divergence estimates corresponding to each epsilon.
     """
-    accountant = self._get_RDP_accountant(
+    accountant = self._get_rdp_accountant(
         sigma=sigma,
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch)
-    epsilons_seq = [epsilons] if isinstance(epsilons, (int, float)) else epsilons
-    return [accountant.get_delta(epsilon) for epsilon in epsilons_seq]
+    return [accountant.get_delta(epsilon) for epsilon in epsilons]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_epsilons(self,
-                   sigma: float,
-                   deltas: Union[float, Sequence[float]],
-                   num_steps_per_epoch: int,
-                   num_epochs: int = 1) -> List[float]:
+                   sigma,
+                   deltas,
+                   num_steps_per_epoch,
+                   num_epochs = 1):
     """Returns epsilon values for which (epsilon, delta)-DP is satisfied.
 
     Args:
@@ -306,19 +293,18 @@ class PoissonRDPAccountant:
         probability is set to be 1 / num_steps_per_epoch.
       num_epochs: The number of epochs.
     """
-    accountant = self._get_RDP_accountant(
+    accountant = self._get_rdp_accountant(
         sigma=sigma,
         num_compositions=num_steps_per_epoch * num_epochs,
         sampling_prob=1.0/num_steps_per_epoch)
-    deltas_seq = [deltas] if isinstance(deltas, (int, float)) else deltas
-    return [accountant.get_epsilon(delta) for delta in deltas_seq]
+    return [accountant.get_epsilon(delta) for delta in deltas]
 
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def get_sigma(self,
-                epsilon: float,
-                delta: float,
-                num_steps_per_epoch: int,
-                num_epochs: int = 1) -> float:
+                epsilon,
+                delta,
+                num_steps_per_epoch,
+                num_epochs = 1):
     """Returns the scale of the Gaussian noise for (epsilon, delta)-DP."""
     delta_from_sigma = lambda sigma: self.get_deltas(
         sigma, (epsilon,), num_steps_per_epoch, num_epochs)[0]
@@ -480,7 +466,7 @@ class ShuffleAccountant:
         sigma, (epsilon,), num_steps, caps, verbose=False)[0]
     return inverse_decreasing_function(delta_from_sigma, delta)
 
-  def _get_single_epoch_PLD(
+  def _get_single_epoch_pld(
       self,
       sigma,
       num_steps,
@@ -592,12 +578,12 @@ class ShuffleAccountant:
       pmf[rounded_priv_loss] += prob
 
     return pld.privacy_loss_distribution.PrivacyLossDistribution(
-        pld.PLD_pmf.SparsePLDPmf(
+        pld.pld_pmf.SparsePLDPmf(
             pmf, discretization, infinity_mass, pessimistic_estimate
         )
     )
 
-  def _get_multi_epoch_PLD(
+  def _get_multi_epoch_pld(
       self,
       sigma,
       num_steps_per_epoch,
@@ -623,7 +609,7 @@ class ShuffleAccountant:
       verbose: When True, intermediate computations of the single-epoch PLD
         construction are printed.
     """
-    pl_dist = self._get_single_epoch_PLD(
+    pl_dist = self._get_single_epoch_pld(
         sigma, num_steps_per_epoch, discretization, pessimistic_estimate,
         log_truncation_mass - math.log(num_epochs), verbose)
     return pl_dist.self_compose(num_epochs)
@@ -667,7 +653,7 @@ class ShuffleAccountant:
           sigma / math.sqrt(num_epochs), epsilons, num_steps_per_epoch,
           verbose=verbose
       )
-    pl_dist = self._get_multi_epoch_PLD(
+    pl_dist = self._get_multi_epoch_pld(
         sigma, num_steps_per_epoch, num_epochs, discretization,
         pessimistic_estimate, log_truncation_mass, verbose)
     return list(pl_dist.get_delta_for_epsilon(epsilons))
@@ -710,7 +696,7 @@ class ShuffleAccountant:
       return self.get_epsilons_single_epoch(
           sigma / math.sqrt(num_epochs), deltas, num_steps_per_epoch,
       )
-    pl_dist = self._get_multi_epoch_PLD(
+    pl_dist = self._get_multi_epoch_pld(
         sigma, num_steps_per_epoch, num_epochs, discretization,
         pessimistic_estimate, log_truncation_mass, verbose)
     return [pl_dist.get_epsilon_for_delta(delta) for delta in deltas]
@@ -731,8 +717,8 @@ class ShuffleAccountant:
         discretization, pessimistic_estimate, log_truncation_mass,
         verbose=False)[0]
     return inverse_decreasing_function(delta_from_sigma, delta)
-  
-  # coding=utf-8
+
+# coding=utf-8
 # Copyright 2024 The Google Research Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -987,7 +973,7 @@ Link: https://arxiv.org/abs/2412.16802
 For the Balls and Bins batch sampler, the analysis is performed using Monte
 Carlo sampling to get an estimate and an upper confidence bound on the hockey
 stick divergence. Additionally a lower bound is obtained using ideas similar to
-that for the Shuffle batch sampler in `py`.
+that for the Shuffle batch sampler in `dpsgd_bounds.py`.
 """
 
 import enum
@@ -997,7 +983,6 @@ from typing import Sequence
 import numpy as np
 from scipy import special
 from scipy import stats
-
 
 class MaxOfGaussians:
   """Class for max of i.i.d. Gaussian random variables.
@@ -1118,7 +1103,7 @@ class MaxOfGaussians:
       return self.isf(sf_values)
 
 
-def sample_Gaussians_conditioned_on_max_value(
+def sample_gaussians_conditioned_on_max_value(
     sigma, dim, max_values
 ):
   """Samples from high dimensional Gaussian conditioned on max value.
@@ -1144,7 +1129,7 @@ def sample_Gaussians_conditioned_on_max_value(
   return stats.norm.ppf(random_seed_values, scale=sigma)
 
 
-def sample_Gaussians_conditioned_on_min_max_value(
+def sample_gaussians_conditioned_on_min_max_value(
     sigma, min_max_value, dim, sample_size
 ):
   """Samples from high-dimensional Gaussian conditioned on being "out of box".
@@ -1168,7 +1153,7 @@ def sample_Gaussians_conditioned_on_min_max_value(
 
   # 2. Sample coordinates with values at most the corresponding max value,
   # with shape = (sample_size, dim)
-  samples = sample_Gaussians_conditioned_on_max_value(sigma, dim, max_values)
+  samples = sample_gaussians_conditioned_on_max_value(sigma, dim, max_values)
 
   # 3. Insert the max values in a random coordinate within each row.
   row_indices = np.arange(sample_size)
@@ -1313,7 +1298,7 @@ class BnBAccountant:
   the above expectation is same as E_{x ~ P_t} max{0, 1 - exp(epsilon - L(x))},
   by symmetry of all the P_t's. In particular, we can take t = 1.
 
-  Furthermore, for any set E such that L(x) <= eps for all x not in E,
+  Furthermore, for any set E such that L(x) <= epsilon for all x not in E,
   the above expectation is same as
     P(E) * E_{P|E}  max{0, 1 - exp(epsilon - L(x))},
   where P|E is the distribution of P conditioned on the sample being in E.
@@ -1333,7 +1318,7 @@ class BnBAccountant:
 
   def __init__(self, max_memory_limit = int(1e8)):
     self.max_memory_limit = max_memory_limit
-    self.lower_bound_accountant = ShuffleAccountant(
+    self.lower_bound_accountant = dpsgd_bounds.ShuffleAccountant(
         mean_upper=1.0, mean_lower=0.0,
     )
 
@@ -1484,7 +1469,7 @@ class BnBAccountant:
       else:
         # Guaranteed to be in the single epoch case at this point.
         max_values = importance_threshold * np.ones(sample_size)
-        samples = sample_Gaussians_conditioned_on_max_value(
+        samples = sample_gaussians_conditioned_on_max_value(
             sigma, num_steps_per_epoch, max_values
         )
     else:  # Case: adjacency_type == AdjacencyType.REMOVE
@@ -1497,7 +1482,7 @@ class BnBAccountant:
         )
       else:
         # Guaranteed to be in the single epoch case at this point.
-        samples = sample_Gaussians_conditioned_on_min_max_value(
+        samples = sample_gaussians_conditioned_on_min_max_value(
             sigma, importance_threshold, num_steps_per_epoch, sample_size
         ) + first_basis_vector
 
@@ -1661,7 +1646,7 @@ class BnBAccountant:
       f = lambda privacy_losses: hockey_stick_divergence_from_privacy_loss(
           epsilon, privacy_losses)  # pylint: disable=cell-var-from-loop
 
-      hsd_estimates.append(get_monte_carlo_estimate_with_scaling(
+      hsd_estimates.append(mce.get_monte_carlo_estimate_with_scaling(
           sampler, f, scaling_factor, sample_size, max_batch_size
       ))
     return hsd_estimates
@@ -1765,7 +1750,7 @@ class BnBAccountant:
     for epsilon in epsilons:
       f = lambda privacy_losses: hockey_stick_divergence_from_privacy_loss(
           epsilon, privacy_losses)  # pylint: disable=cell-var-from-loop
-      hsd_estimates.append(get_monte_carlo_estimate_with_scaling(
+      hsd_estimates.append(mce.get_monte_carlo_estimate_with_scaling(
           sampler, f, scaling_factor, sample_size, max_batch_size
       ))
     return hsd_estimates

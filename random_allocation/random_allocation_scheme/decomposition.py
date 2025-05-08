@@ -23,7 +23,7 @@ def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, 
     else:
         lambda_new = lambda_val*np.exp(-epsilon) / (lambda_val*np.exp(-epsilon) + (1-lambda_val))
     epsilon_new = -np.log(1-lambda_val*(1-np.exp(-epsilon)))
-    return Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new
+    return float(Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new)
 
 def allocation_delta_decomposition_add(params: PrivacyParams,
                                        config: SchemeConfig,
@@ -70,7 +70,7 @@ def allocation_epsilon_decomposition_add(params: PrivacyParams,
         direction='add'
     )
     
-    optimization_func = lambda eps: Poisson_PLD_obj.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))
+    optimization_func = lambda eps: float(Poisson_PLD_obj.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps)))))
     
     epsilon = search_function_with_bounds(
         func=optimization_func, 
@@ -81,7 +81,7 @@ def allocation_epsilon_decomposition_add(params: PrivacyParams,
     )
     
     if epsilon is None:
-        return np.inf
+        return float(np.inf)
     
     lower_bound = max(0, (epsilon-config.epsilon_tolerance)/2)
     upper_bound = min((epsilon + config.epsilon_tolerance)*2, config.epsilon_upper_bound)
@@ -100,7 +100,7 @@ def allocation_epsilon_decomposition_add(params: PrivacyParams,
         function_type=FunctionType.DECREASING
     )
     
-    return np.inf if epsilon is None else epsilon
+    return float(np.inf) if epsilon is None else float(epsilon)
 
 # ==================== Remove ====================
 def allocation_delta_decomposition_remove(params: PrivacyParams,
@@ -124,7 +124,7 @@ def allocation_delta_decomposition_remove(params: PrivacyParams,
     )
     delta_Poisson = Poisson_delta_PLD(params=Poisson_params, config=config)
     
-    return delta_Poisson / lambda_val
+    return float(delta_Poisson / lambda_val)
 
 def allocation_epsilon_decomposition_remove(params: PrivacyParams,
                                             config: SchemeConfig,
@@ -155,7 +155,7 @@ def allocation_epsilon_decomposition_remove(params: PrivacyParams,
     else:
         amplified_epsilon = epsilon_Poisson + np.log(factor + (1-factor)*np.exp(-epsilon_Poisson))
     
-    return amplified_epsilon
+    return float(amplified_epsilon)
 
 # ==================== Both ====================
 def allocation_epsilon_decomposition(params: PrivacyParams,
@@ -175,17 +175,25 @@ def allocation_epsilon_decomposition(params: PrivacyParams,
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
         
+    epsilon_remove: Optional[float] = None
     if config.direction != 'add':
         epsilon_remove = allocation_epsilon_decomposition_remove(params=params, config=config)
     
+    epsilon_add: Optional[float] = None
     if config.direction != 'remove':
         epsilon_add = allocation_epsilon_decomposition_add(params=params, config=config)
     
     if config.direction == 'add':
+        assert epsilon_add is not None, "epsilon_add should be defined"
         return epsilon_add
     if config.direction == 'remove':
+        assert epsilon_remove is not None, "epsilon_remove should be defined"
         return epsilon_remove
-    return max(epsilon_remove, epsilon_add)
+        
+    # Both directions - both should be defined
+    assert epsilon_add is not None, "epsilon_add should be defined"
+    assert epsilon_remove is not None, "epsilon_remove should be defined"
+    return float(max(epsilon_remove, epsilon_add))
 
 def allocation_delta_decomposition(params: PrivacyParams,
                                    config: SchemeConfig = SchemeConfig(),
@@ -204,14 +212,22 @@ def allocation_delta_decomposition(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
         
+    delta_remove: Optional[float] = None
     if config.direction != 'add':
         delta_remove = allocation_delta_decomposition_remove(params=params, config=config)
     
+    delta_add: Optional[float] = None
     if config.direction != 'remove':
         delta_add = allocation_delta_decomposition_add(params=params, config=config)
     
     if config.direction == 'add':
+        assert delta_add is not None, "delta_add should be defined"
         return delta_add
     if config.direction == 'remove':
+        assert delta_remove is not None, "delta_remove should be defined"
         return delta_remove
-    return max(delta_add, delta_remove)
+        
+    # Both directions - both should be defined
+    assert delta_add is not None, "delta_add should be defined"
+    assert delta_remove is not None, "delta_remove should be defined"
+    return float(max(delta_add, delta_remove))

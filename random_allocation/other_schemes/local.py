@@ -4,7 +4,7 @@ from typing import Optional, Union, Callable, Dict, List, Tuple, Any
 
 # Third-party imports
 import numpy as np
-from scipy import stats
+from scipy import stats  # type: ignore # Missing stubs for scipy
 
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
@@ -21,9 +21,11 @@ def Gaussian_delta(sigma: float,
     - sigma: The standard deviation of the Gaussian mechanism.
     - epsilon: The privacy parameter.
     """
-    upper_cdfs = stats.norm.cdf(0.5 / sigma - sigma * epsilon)
-    lower_log_cdfs = stats.norm.logcdf(-0.5 / sigma - sigma * epsilon)
-    return upper_cdfs - np.exp(epsilon + lower_log_cdfs)
+    upper_cdfs = float(stats.norm.cdf(0.5 / sigma - sigma * epsilon))
+    lower_log_cdfs = float(stats.norm.logcdf(-0.5 / sigma - sigma * epsilon))
+    # Ensure the result is float by using explicit float conversion
+    result = float(upper_cdfs - np.exp(epsilon + lower_log_cdfs))
+    return result
 
 def Gaussian_epsilon(sigma: float,
                      delta: float,
@@ -47,7 +49,7 @@ def Gaussian_epsilon(sigma: float,
     optimization_func = lambda eps: Gaussian_delta(sigma=sigma, epsilon=eps)
     epsilon = search_function_with_bounds(func=optimization_func, y_target=delta, bounds=(0, epsilon_upper_bound),
                                           tolerance=epsilon_tolerance, function_type=FunctionType.DECREASING)
-    return np.inf if epsilon is None else epsilon
+    return np.inf if epsilon is None else float(epsilon)
 
 # ==================== Local ====================
 def local_delta(params: PrivacyParams,

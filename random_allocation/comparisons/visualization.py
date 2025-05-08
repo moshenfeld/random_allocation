@@ -47,7 +47,10 @@ def plot_comparison(data: DataDict,
     legend_prefix: str = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
     fig: Figure = plt.figure(figsize=figsize)
     for method in filtered_methods:
-        plt.plot(data['x data'], methods_data[method], label=legend_prefix+legend_map[method], marker=markers_map[method], color=colors_map[method], linewidth=2.5, markersize=12, alpha=0.8)
+        legend_value = legend_map.get(method, "")
+        if legend_value is None:
+            legend_value = ""
+        plt.plot(data['x data'], methods_data[method], label=legend_prefix + str(legend_value), marker=markers_map[method], color=colors_map[method], linewidth=2.5, markersize=12, alpha=0.8)
         if method + '- std' in methods:
             plt.fill_between(data['x data'], np.clip(methods_data[method] - methods_data[method + '- std'], 0, 1),  np.clip(methods_data[method] + methods_data[method + '- std'], 0, 1), color=colors_map[method], alpha=0.1)
     plt.xlabel(data['x name'], fontsize=20)
@@ -129,11 +132,14 @@ def plot_combined_data(data: DataDict,
     ax: Axes = fig.add_subplot(111)
     
     for method in methods:
+        legend_value = legend_map.get(method, "")
+        if legend_value is None:
+            legend_value = ""
         linewidth: float = 1 if (method == ALLOCATION_DECOMPOSITION or method == ALLOCATION_DIRECT or method == ALLOCATION_ANALYTIC
                              or method == ALLOCATION_RECURSIVE) else 2
         linestyle: str = 'dotted' if (method == ALLOCATION_DECOMPOSITION or method == ALLOCATION_DIRECT or method == ALLOCATION_ANALYTIC
                              or method == ALLOCATION_RECURSIVE) else 'solid'
-        ax.plot(data['x data'], methods_data[method], label=legend_prefix+legend_map[method], marker=markers_map[method], 
+        ax.plot(data['x data'], methods_data[method], label=legend_prefix + str(legend_value), marker=markers_map[method], 
                color=colors_map[method], linewidth=linewidth, linestyle=linestyle, markersize=10, alpha=0.8)
     
     ax.plot(data['x data'], min_allocation, label='_{\\mathcal{A}}$ - (Our - Combined)', color=colors_dict[ALLOCATION], linewidth=2, alpha=1)

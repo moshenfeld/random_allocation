@@ -1,12 +1,9 @@
 # For licensing see accompanying LICENSE file.
 # Copyright (C) 2020 Apple Inc. All Rights Reserved.
 
-# Standard library imports
-import math
-
-# Third-party imports
-import numpy as np
 import scipy.stats as stats
+import math
+import numpy as np
 
 # This document contains 4 computations: 2 empirical and 2 theoretical.
 # 1. Empirical analysis

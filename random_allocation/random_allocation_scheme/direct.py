@@ -1,11 +1,12 @@
 # Standard library imports
-from functools import cache
+from functools import lru_cache
 import math
 from typing import List, Tuple, Optional, Union, Callable, TypeVar, Dict, Any, cast
 
 # Third-party imports
 from numba import jit
 import numpy as np
+from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
@@ -34,7 +35,8 @@ def allocation_epsilon_direct_add(sigma: float,
     Returns:
         Computed epsilon value
     """
-    return Gaussian_epsilon(sigma=sigma*math.sqrt(num_steps/(num_epochs)), delta=delta) + (1-1.0/num_steps)/(2*sigma**2)
+    result = Gaussian_epsilon(sigma=sigma*math.sqrt(num_steps/(num_epochs)), delta=delta) + (1-1.0/num_steps)/(2*sigma**2)
+    return float(result)
 
 def allocation_delta_direct_add(sigma: float,
                                 epsilon: float,
@@ -53,10 +55,11 @@ def allocation_delta_direct_add(sigma: float,
     Returns:
         Computed delta value
     """
-    return Gaussian_delta(sigma=sigma*math.sqrt(num_steps/(num_epochs)), epsilon=epsilon - (1-1.0/num_steps)/(2*sigma**2))
+    result = Gaussian_delta(sigma=sigma*math.sqrt(num_steps/(num_epochs)), epsilon=epsilon - (1-1.0/num_steps)/(2*sigma**2))
+    return float(result)
 
 # ==================== Remove ====================
-@cache
+@lru_cache(maxsize=None)
 def generate_partitions(n: int, max_size: int) -> List[Tuple[int, ...]]:
     """
     Generate all integer partitions of [1, ..., n] with a maximum number of elements in the partition.
@@ -68,6 +71,10 @@ def generate_partitions(n: int, max_size: int) -> List[Tuple[int, ...]]:
     Returns:
         List of partitions, where each partition is a tuple of integers
     """
+    # Convert n to int to handle cases where it's passed as numpy.float64
+    n = int(n)
+    max_size = int(max_size)
+    
     partitions: List[List[Tuple[int, ...]]] = [[] for _ in range(n + 1)]
     partitions[0].append(())
 
@@ -86,7 +93,7 @@ def log_factorial(n: int) -> float:
     """
     if n <= 1:
         return 0.0
-    return np.sum(np.log(np.arange(1, n + 1)))
+    return float(np.sum(np.log(np.arange(1, n + 1))))
 
 @jit(nopython=True, cache=True)
 def log_factorial_range(n: int, m: int) -> float:
@@ -95,7 +102,7 @@ def log_factorial_range(n: int, m: int) -> float:
     """
     if n <= 1:
         return 0.0
-    return np.sum(np.log(np.arange(n - m + 1, n + 1)))
+    return float(np.sum(np.log(np.arange(n - m + 1, n + 1))))
 
 @jit(nopython=True, cache=True)
 def calc_partition_sum_square(arr: Tuple[int, ...]) -> float:
@@ -105,7 +112,7 @@ def calc_partition_sum_square(arr: Tuple[int, ...]) -> float:
     result = 0.0
     for x in arr:
         result += x * x
-    return result
+    return float(result)
 
 @jit(nopython=True, cache=True)
 def calc_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
@@ -116,7 +123,7 @@ def calc_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
     log_prod_factorial = 0.0
     for p in partition:
         log_prod_factorial += log_factorial(n=p)
-    return log_factorial(n=n) - log_prod_factorial
+    return float(log_factorial(n=n) - log_prod_factorial)
 
 @jit(nopython=True, cache=True)
 def calc_counts_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
@@ -126,7 +133,7 @@ def calc_counts_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
     sum_partition = sum(partition)
 
     # Count frequencies
-    counts = np.zeros(sum_partition + 1, dtype=np.int64)
+    counts = np.zeros(sum_partition + 1, dtype=np.int64)  # type: np.ndarray
     for x in partition:
         counts[x] += 1
     sum_counts = sum(counts)
@@ -137,7 +144,7 @@ def calc_counts_log_multinomial(partition: Tuple[int, ...], n: int) -> float:
         if counts[i] > 0:
             log_counts_factorial += log_factorial(n=counts[i])
 
-    return log_factorial_range(n=n, m=sum_counts) - log_counts_factorial
+    return float(log_factorial_range(n=n, m=sum_counts) - log_counts_factorial)
 
 @jit(nopython=True, cache=True)
 def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sigma: float) -> float:
@@ -147,27 +154,32 @@ def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sig
     counts_log_multinomial = calc_counts_log_multinomial(partition=partition, n=num_steps)
     partition_log_multinomial = calc_log_multinomial(partition=partition, n=alpha)
     partition_sum_square = calc_partition_sum_square(arr=partition) / (2 * sigma**2)
-    return counts_log_multinomial + partition_log_multinomial + partition_sum_square
+    return float(counts_log_multinomial + partition_log_multinomial + partition_sum_square)
 
-@cache
+@lru_cache(maxsize=None)
 def allocation_RDP_remove(alpha: int, sigma: float, num_steps: int) -> float:
     """
     Compute the RDP of the allocation scheme in the emove direction.
     This function is based on the first part of Corollary 6.2,
     """
+    # Convert alpha to int to handle cases where it's passed as numpy.float64
+    alpha = int(alpha)
+    num_steps = int(num_steps)
+    
     partitions = generate_partitions(n=alpha, max_size=num_steps)
     exp_terms = [compute_exp_term(partition=partition, alpha=alpha, num_steps=num_steps, sigma=sigma) for partition in partitions]
 
     max_val = max(exp_terms)
     log_sum = np.log(sum(np.exp(term - max_val) for term in exp_terms))
 
-    return (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)
+    result = (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)
+    return float(result)
 
 def allocation_epsilon_direct_remove(sigma: float,
                                   delta: float,
                                   num_steps: int,
                                   num_epochs: int,
-                                  alpha_orders: np.ndarray,
+                                  alpha_orders: List[float],
                                   print_alpha: bool,
                                   ) -> float:
     """
@@ -179,12 +191,15 @@ def allocation_epsilon_direct_remove(sigma: float,
         delta: Target delta value for differential privacy
         num_steps: Number of steps in the allocation scheme
         num_epochs: Number of epochs
-        alpha_orders: Array of alpha orders for RDP computation
+        alpha_orders: List of alpha orders for RDP computation
         print_alpha: Whether to print the alpha value used
         
     Returns:
         Computed epsilon value
     """
+    # Ensure alpha_orders has at least one element
+    assert len(alpha_orders) > 0, "alpha_orders must have at least one element"
+    
     alpha = alpha_orders[0]
     alpha_RDP = allocation_RDP_remove(alpha, sigma, num_steps)*num_epochs
     epsilon = alpha_RDP + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
@@ -203,17 +218,18 @@ def allocation_epsilon_direct_remove(sigma: float,
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
     if used_alpha == alpha_orders[0]:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+        
     if print_alpha:
-        print(f'sigma: {sigma}, delta: {delta}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
-    return epsilon
+        print(f'sigma: {sigma}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
+    
+    return float(epsilon)
 
 # ==================== Both ====================
 def allocation_epsilon_direct(params: PrivacyParams,
                            config: SchemeConfig = SchemeConfig(),
                            ) -> float:
     """
-    Compute the epsilon value of the allocation scheme using Rényi Differential Privacy (RDP).
-    This function can compute epsilon for both the add and remove directions, or maximum of both.
+    Compute epsilon for the direct allocation scheme.
     
     Args:
         params: Privacy parameters (must include delta)
@@ -225,33 +241,37 @@ def allocation_epsilon_direct(params: PrivacyParams,
     params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
-    
+
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
-    
+
     if config.direction != 'add':
-        epsilon_remove = allocation_epsilon_direct_remove(
-            sigma=params.sigma, 
-            delta=params.delta, 
-            num_steps=num_steps_per_round,
-            num_epochs=num_rounds*params.num_epochs, 
-            alpha_orders=config.allocation_direct_alpha_orders, 
-            print_alpha=config.print_alpha
-        )
-    
+        if config.allocation_direct_alpha_orders is None:
+            raise ValueError("allocation_direct_alpha_orders must be provided in SchemeConfig for 'remove' direction")
+        epsilon_remove = allocation_epsilon_direct_remove(sigma=params.sigma, 
+            delta=params.delta,
+            num_steps=num_steps_per_round, 
+            num_epochs=params.num_epochs*num_rounds,
+            alpha_orders=config.allocation_direct_alpha_orders,
+            print_alpha=config.print_alpha)
     if config.direction != 'remove':
-        epsilon_add = allocation_epsilon_direct_add(
-            sigma=params.sigma, 
-            delta=params.delta, 
+        epsilon_add = allocation_epsilon_direct_add(sigma=params.sigma,
+            delta=params.delta,
             num_steps=num_steps_per_round,
-            num_epochs=num_rounds*params.num_epochs
-        )
-    
+            num_epochs=params.num_epochs*num_rounds)
+        
     if config.direction == 'add':
+        assert epsilon_add is not None, "epsilon_add should be defined"
         return epsilon_add
     if config.direction == 'remove':
+        assert epsilon_remove is not None, "epsilon_remove should be defined"
         return epsilon_remove
-    return max(epsilon_remove, epsilon_add)
+        
+    # Both directions - both should be defined
+    assert epsilon_add is not None, "epsilon_add should be defined"
+    assert epsilon_remove is not None, "epsilon_remove should be defined"
+    return float(max(epsilon_remove, epsilon_add))
+
 
 def allocation_delta_direct(params: PrivacyParams,
                          config: SchemeConfig = SchemeConfig(),
@@ -272,34 +292,37 @@ def allocation_delta_direct(params: PrivacyParams,
         raise ValueError("Epsilon must be provided to compute delta")
     
     if config.direction != 'add':
-        # Create a copy of params with epsilon=None to use in optimization function
-        params_copy = PrivacyParams(
-            sigma=params.sigma,
-            num_steps=params.num_steps,
-            num_selected=params.num_selected,
-            num_epochs=params.num_epochs,
-            epsilon=None,
-            delta=None  # This will be set by the optimization function
+        if config.allocation_direct_alpha_orders is None:
+            raise ValueError("allocation_direct_alpha_orders must be provided in SchemeConfig for 'remove' or 'both' direction")
+            
+        # Create a remove-specific config for optimization
+        remove_config = SchemeConfig(
+            direction='remove',
+            allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
+            print_alpha=False,
+            delta_tolerance=config.delta_tolerance
         )
         
-        def optimization_func(delta):
-            params_copy.delta = delta
-            # Use 'remove' specifically for this optimization
-            remove_config = SchemeConfig(
-                direction='remove',
-                allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
-                print_alpha=False,
-                delta_tolerance=config.delta_tolerance
-            )
-            return allocation_epsilon_direct(params=params_copy, config=remove_config)
-            
-        delta_remove = search_function_with_bounds(
-            func=optimization_func, 
+        result = search_function_with_bounds(
+            func=lambda delta: allocation_epsilon_direct(params=PrivacyParams(
+                sigma=params.sigma,
+                num_steps=params.num_steps,
+                num_selected=params.num_selected,
+                num_epochs=params.num_epochs,
+                epsilon=None,
+                delta=delta
+            ), config=remove_config), 
             y_target=params.epsilon, 
             bounds=(config.delta_tolerance, 1-config.delta_tolerance), 
             tolerance=config.delta_tolerance,
             function_type=FunctionType.DECREASING
         )
+        
+        # Handle case where search function returns None
+        if result is None:
+            delta_remove = 1.0
+        else:
+            delta_remove = result
     
     if config.direction != 'remove':
         num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
@@ -312,10 +335,15 @@ def allocation_delta_direct(params: PrivacyParams,
         )
     
     if config.direction == 'add':
-        return delta_add
+        assert 'delta_add' in locals(), "Failed to compute delta_add"
+        return float(delta_add)
     if config.direction == 'remove':
-        return delta_remove
-    return max(delta_add, delta_remove)
+        assert 'delta_remove' in locals(), "Failed to compute delta_remove"
+        return float(delta_remove)
+    
+    # Both directions, return max
+    assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
+    return float(max(float(delta_add), float(delta_remove)))
 
 # ==================== RDP based Add ====================
 def allocation_RDP_add(sigma: float, 
@@ -362,7 +390,7 @@ def allocation_epsilon_RDP_add(sigma: float,
     # Compute RDP and epsilon values
     alpha_orders, alpha_RDP = allocation_RDP_add(sigma, num_steps, num_epochs)
     alpha_epsilons = alpha_RDP + np.log1p(-1 / alpha_orders) - np.log(delta * alpha_orders) / (alpha_orders - 1)
-    epsilon = np.min(alpha_epsilons)
+    epsilon = float(np.min(alpha_epsilons))
     used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
 
     # Check for potential alpha overflow or underflow
@@ -401,7 +429,7 @@ def allocation_delta_RDP_add(sigma: float,
     # Compute RDP and epsilon values
     alpha_orders, alpha_RDP = allocation_RDP_add(sigma, num_steps_per_round, num_epochs*num_rounds)
     alpha_deltas = np.exp((alpha_orders-1) * (alpha_RDP - epsilon))*(1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
-    delta = np.min(alpha_deltas)
+    delta = float(np.min(alpha_deltas))
     used_alpha = alpha_orders[np.argmin(alpha_deltas)]
 
     # Check for potential alpha overflow or underflow

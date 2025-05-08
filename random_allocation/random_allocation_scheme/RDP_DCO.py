@@ -77,53 +77,50 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
         raise ValueError("Delta must be provided to compute epsilon")
     
     # Use alpha_orders directly from config or generate if not provided
-    alpha_orders: Optional[NDArray[np.float64]] = config.allocation_RDP_DCO_alpha_orders
-    if alpha_orders is None:
+    alpha_orders_np: Optional[FloatArray] = None
+    if config.allocation_RDP_DCO_alpha_orders is not None:
+        alpha_orders_np = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
+    
+    if alpha_orders_np is None:
         medium_alpha = np.arange(2, 202)
         large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-        alpha_orders = np.concatenate((medium_alpha, large_alpha_orders))
-
-    # Initialize variables
-    epsilon_remove: float = float('inf')
-    epsilon_add: float = float('inf')
-    used_alpha_remove: float = 0.0
-    used_alpha_add: float = 0.0
+        alpha_orders_np = np.concatenate((medium_alpha, large_alpha_orders))
 
     # Compute RDP and epsilon values
     if config.direction != 'add':
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_remove(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
-            for alpha in alpha_orders])
-        alpha_epsilons = alpha_RDP + np.log1p(-1/alpha_orders) - np.log(params.delta * alpha_orders)/(alpha_orders-1)
+            for alpha in alpha_orders_np])
+        alpha_epsilons = alpha_RDP + np.log1p(-1/alpha_orders_np) - np.log(params.delta * alpha_orders_np)/(alpha_orders_np-1)
         epsilon_remove = float(np.min(alpha_epsilons))
-        used_alpha_remove = float(alpha_orders[np.argmin(alpha_epsilons)])
+        used_alpha_remove = float(alpha_orders_np[np.argmin(alpha_epsilons)])
     
     if config.direction != 'remove':
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_add(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
-            for alpha in alpha_orders])
-        alpha_epsilons = alpha_RDP + np.log1p(-1/alpha_orders) - np.log(params.delta * alpha_orders)/(alpha_orders-1)
+            for alpha in alpha_orders_np])
+        alpha_epsilons = alpha_RDP + np.log1p(-1/alpha_orders_np) - np.log(params.delta * alpha_orders_np)/(alpha_orders_np-1)
         epsilon_add = float(np.min(alpha_epsilons))
-        used_alpha_add = float(alpha_orders[np.argmin(alpha_epsilons)])
+        used_alpha_add = float(alpha_orders_np[np.argmin(alpha_epsilons)])
 
     # Determine the epsilon and used alpha based on the direction
-    epsilon: float
-    used_alpha: float
-    
     if config.direction == 'add':
+        assert 'epsilon_add' in locals() and 'used_alpha_add' in locals(), "Failed to compute epsilon_add"
         epsilon = epsilon_add
         used_alpha = used_alpha_add
     elif config.direction == 'remove':
+        assert 'epsilon_remove' in locals() and 'used_alpha_remove' in locals(), "Failed to compute epsilon_remove"
         epsilon = epsilon_remove
         used_alpha = used_alpha_remove
     else:
+        assert 'epsilon_add' in locals() and 'epsilon_remove' in locals(), "Failed to compute either epsilon_add or epsilon_remove"
         epsilon = max(epsilon_add, epsilon_remove)
         used_alpha = used_alpha_add if epsilon_add > epsilon_remove else used_alpha_remove
 
     # Check for potential alpha overflow or underflow
-    if used_alpha == alpha_orders[-1]:
+    if used_alpha == alpha_orders_np[-1]:
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
+    if used_alpha == alpha_orders_np[0]:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
     
     # Print debug info if requested
@@ -151,56 +148,53 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
         raise ValueError("Epsilon must be provided to compute delta")
     
     # Use alpha_orders directly from config or generate if not provided
-    alpha_orders: Optional[NDArray[np.float64]] = config.allocation_RDP_DCO_alpha_orders
-    if alpha_orders is None:
+    alpha_orders_np: Optional[FloatArray] = None
+    if config.allocation_RDP_DCO_alpha_orders is not None:
+        alpha_orders_np = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
+    
+    if alpha_orders_np is None:
         small_alpha_orders = np.linspace(1.001, 2, 20)
         medium_alpha_orders = np.arange(2, 202)
         large_alpha_orders = np.exp(np.linspace(np.log(202), np.log(10_000), 50)).astype(int)
-        alpha_orders = np.concatenate((small_alpha_orders, medium_alpha_orders, large_alpha_orders))
-
-    # Initialize variables
-    delta_remove: float = 1.0
-    delta_add: float = 1.0
-    used_alpha_remove: float = 0.0
-    used_alpha_add: float = 0.0
+        alpha_orders_np = np.concatenate((small_alpha_orders, medium_alpha_orders, large_alpha_orders))
 
     # Compute RDP and delta values
     if config.direction != 'add':
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_remove(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
-            for alpha in alpha_orders])
-        alpha_deltas = np.exp((alpha_orders-1) * (alpha_RDP - params.epsilon)) * \
-                       (1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
+            for alpha in alpha_orders_np])
+        alpha_deltas = np.exp((alpha_orders_np-1) * (alpha_RDP - params.epsilon)) * \
+                       (1-1/alpha_orders_np)**alpha_orders_np / (alpha_orders_np-1)
         delta_remove = float(np.min(alpha_deltas))
-        used_alpha_remove = float(alpha_orders[np.argmin(alpha_deltas)])
+        used_alpha_remove = float(alpha_orders_np[np.argmin(alpha_deltas)])
     
     if config.direction != 'remove':
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_add(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
-            for alpha in alpha_orders])
-        alpha_deltas = np.exp((alpha_orders-1) * (alpha_RDP - params.epsilon)) * \
-                       (1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
+            for alpha in alpha_orders_np])
+        alpha_deltas = np.exp((alpha_orders_np-1) * (alpha_RDP - params.epsilon)) * \
+                       (1-1/alpha_orders_np)**alpha_orders_np / (alpha_orders_np-1)
         delta_add = float(np.min(alpha_deltas))
-        used_alpha_add = float(alpha_orders[np.argmin(alpha_deltas)])
+        used_alpha_add = float(alpha_orders_np[np.argmin(alpha_deltas)])
 
     # Determine the delta and used alpha based on the direction
-    delta: float
-    used_alpha: float
-    
     if config.direction == 'add':
+        assert 'delta_add' in locals() and 'used_alpha_add' in locals(), "Failed to compute delta_add"
         delta = delta_add
         used_alpha = used_alpha_add
     elif config.direction == 'remove':
+        assert 'delta_remove' in locals() and 'used_alpha_remove' in locals(), "Failed to compute delta_remove"
         delta = delta_remove
         used_alpha = used_alpha_remove
     else:
+        assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
         delta = max(delta_add, delta_remove)
         used_alpha = used_alpha_add if delta_add > delta_remove else used_alpha_remove
 
     # Check for potential alpha overflow or underflow
-    if used_alpha == alpha_orders[-1]:
+    if used_alpha == alpha_orders_np[-1]:
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
+    if used_alpha == alpha_orders_np[0]:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
     
     # Print debug info if requested

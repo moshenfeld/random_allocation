@@ -1,7 +1,7 @@
 # Standard library imports
 import os
 import sys
-from typing import Dict, List, Optional, Union, Any, Tuple, cast
+from typing import Dict, List, Optional, Union, Any, Tuple, cast, Callable
 
 # Add the correct project root directory to PYTHONPATH
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -30,11 +30,15 @@ params_dict_1: Dict[str, Any] = {
     NUM_EPOCHS: 1
 }
 
-config_1: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_1: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=cast(List[int], list(np.arange(2, 61).astype(int))))
 
 methods_list_1: List[str] = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]#, ALLOCATION_LOWER_BOUND
 
-visualization_config_1: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': True, 'log_y_axis': True}
+visualization_config_1: Dict[str, Union[bool, Callable[[float, int], str]]] = {
+    'log_x_axis': True, 
+    'log_y_axis': True, 
+    'format_x': lambda x, _: f'{x:.2f}'
+}
 
 data_1: Dict[str, Any] = run_experiment(
     params_dict_1, 
@@ -58,11 +62,15 @@ params_dict_2: Dict[str, Any] = {
     NUM_EPOCHS: np.exp(np.linspace(np.log(1), np.log(1001), 10)).astype(int)
 }
 
-config_2: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_2: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=cast(List[int], list(np.arange(2, 61).astype(int))))
 
 methods_list_2: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
 
-visualization_config_2: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': True, 'log_y_axis': False, 'format_x': lambda x, _: x}
+visualization_config_2: Dict[str, Union[bool, Callable[[float, int], str]]] = {
+    'log_x_axis': True, 
+    'log_y_axis': False, 
+    'format_x': lambda x, _: str(int(x))
+}
 
 data_2: Dict[str, Any] = run_experiment(
     params_dict_2, 
@@ -86,11 +94,15 @@ params_dict_3: Dict[str, Any] = {
     NUM_EPOCHS: 1
 }
 
-config_3: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_3: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=cast(List[int], list(np.arange(2, 61).astype(int))))
 
 methods_list_3: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
 
-visualization_config_3: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': False, 'log_y_axis': True, 'format_x': lambda x, _: int(x)}
+visualization_config_3: Dict[str, Union[bool, Callable[[float, int], str]]] = {
+    'log_x_axis': False, 
+    'log_y_axis': True, 
+    'format_x': lambda x, _: str(int(x))
+}
 
 data_3: Dict[str, Any] = run_experiment(
     params_dict_3, 
@@ -114,11 +126,15 @@ params_dict_4: Dict[str, Any] = {
     NUM_EPOCHS: 1,
 }
 
-config_4: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=np.arange(2, 61))
+config_4: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=cast(List[int], list(np.arange(2, 61).astype(int))))
 
 methods_list_4: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, ALLOCATION_RDP_DCO]
 
-visualization_config_4: Dict[str, Union[bool, Callable[[float, int], str]]] = {'log_x_axis': True, 'log_y_axis': True, 'format_x': lambda x, _: x}
+visualization_config_4: Dict[str, Union[bool, Callable[[float, int], str]]] = {
+    'log_x_axis': True, 
+    'log_y_axis': True, 
+    'format_x': lambda x, _: str(int(x))
+}
 
 data_4: Dict[str, Any] = run_experiment(
     params_dict_4, 
