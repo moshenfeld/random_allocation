@@ -38,33 +38,40 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig) ->
     return float(result)
 
 def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig) -> float:
-    return 0.0
-#     """
-#     Compute a lower bound on epsilon for the allocation scheme.
+    # return 0.0
+    """
+    Compute a lower bound on epsilon for the allocation scheme.
     
-#     Args:
-#         params: Privacy parameters (must include delta)
-#         config: Scheme configuration parameters
+    Args:
+        params: Privacy parameters (must include delta)
+        config: Scheme configuration parameters
     
-#     Returns:
-#         Lower bound on epsilon
-#     """
-#     params.validate()
-#     if params.delta is None:
-#         raise ValueError("Delta must be provided to compute epsilon")
+    Returns:
+        Lower bound on epsilon
+    """
+    params.validate()
+    if params.delta is None:
+        raise ValueError("Delta must be provided to compute epsilon")
     
-#     assert(params.num_selected == 1)
-#     #find the epsilon that gives the delta using binary search    
-#     optimization_func = lambda eps: allocation_delta_lower_bound(
-#         epsilon=eps, 
-#         num_steps=num_steps_per_round,
-#         Poisson_PLD_obj=Poisson_PLD_obj
-#     )
+    assert(params.num_selected == 1)
+    #find the epsilon that gives the delta using binary search    
+    optimization_func = lambda eps: allocation_delta_lower_bound(
+        PrivacyParams(
+            sigma=params.sigma,
+            epsilon=eps,
+            delta=params.delta,
+            num_steps=params.num_steps,
+            num_epochs=params.num_epochs,
+            num_selected=params.num_selected
+        ),
+        config=config
+    )
     
-#     epsilon = search_function_with_bounds(
-#         func=optimization_func, 
-#         y_target=params.delta, 
-#         bounds=(0, config.epsilon_upper_bound),
-#         tolerance=config.epsilon_tolerance, 
-#         function_type=FunctionType.DECREASING
-#     )
+    epsilon = search_function_with_bounds(
+        func=optimization_func, 
+        y_target=params.delta, 
+        bounds=(0, config.epsilon_upper_bound),
+        tolerance=config.epsilon_tolerance, 
+        function_type=FunctionType.DECREASING
+    )
+    return epsilon if epsilon is not None else np.inf

@@ -1318,7 +1318,7 @@ class BnBAccountant:
 
   def __init__(self, max_memory_limit = int(1e8)):
     self.max_memory_limit = max_memory_limit
-    self.lower_bound_accountant = dpsgd_bounds.ShuffleAccountant(
+    self.lower_bound_accountant = ShuffleAccountant(
         mean_upper=1.0, mean_lower=0.0,
     )
 
@@ -1646,7 +1646,7 @@ class BnBAccountant:
       f = lambda privacy_losses: hockey_stick_divergence_from_privacy_loss(
           epsilon, privacy_losses)  # pylint: disable=cell-var-from-loop
 
-      hsd_estimates.append(mce.get_monte_carlo_estimate_with_scaling(
+      hsd_estimates.append(get_monte_carlo_estimate_with_scaling(
           sampler, f, scaling_factor, sample_size, max_batch_size
       ))
     return hsd_estimates
@@ -1750,7 +1750,7 @@ class BnBAccountant:
     for epsilon in epsilons:
       f = lambda privacy_losses: hockey_stick_divergence_from_privacy_loss(
           epsilon, privacy_losses)  # pylint: disable=cell-var-from-loop
-      hsd_estimates.append(mce.get_monte_carlo_estimate_with_scaling(
+      hsd_estimates.append(get_monte_carlo_estimate_with_scaling(
           sampler, f, scaling_factor, sample_size, max_batch_size
       ))
     return hsd_estimates

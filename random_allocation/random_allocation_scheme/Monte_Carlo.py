@@ -25,7 +25,14 @@ def Monte_Carlo_estimation(params: PrivacyParams,
     """
     bnb_accountant = BnBAccountant()
     if config.MC_use_order_stats:
-        order_stats_encoding = (1, 100, 1, 100, 500, 10, 500, 1000, 50)
+        if params.num_steps < 100:
+            order_stats_encoding = (1, params.num_steps, 1)
+        elif params.num_steps < 500:
+            order_stats_encoding = (1, 100, 1, 100, params.num_steps, 10)
+        elif params.num_steps < 1000:
+            order_stats_encoding = (1, 100, 1, 100, 500, 10, 500, params.num_steps, 50)
+        else:
+            order_stats_encoding = (1, 100, 1, 100, 500, 10, 500, 1000, 50, 1000, params.num_steps, 100)
         order_stats_seq = get_order_stats_seq_from_encoding(order_stats_encoding, params.num_steps)
         delta_estimate = bnb_accountant.estimate_order_stats_deltas(
             params.sigma, 
@@ -72,18 +79,23 @@ def allocation_delta_MC(params: PrivacyParams, config: SchemeConfig) -> float:
     
     assert(params.num_selected == 1)
     
-    if config.direction != 'add':
-        delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
-    if config.direction != 'remove':
-        delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
+    # if config.direction != 'add':
+    #     delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
+    # if config.direction != 'remove':
+    #     delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
+    
+    # if config.direction == 'add':
+    #     assert 'delta_add' in locals(), "Failed to compute delta_add"
+    #     return delta_add
+    # if config.direction == 'remove':
+    #     assert 'delta_remove' in locals(), "Failed to compute delta_remove"
+    #     return delta_remove
+    # # Both directions, return max
+    # assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
+    # return max(delta_add, delta_remove)
     
     if config.direction == 'add':
-        assert 'delta_add' in locals(), "Failed to compute delta_add"
-        return delta_add
-    if config.direction == 'remove':
-        assert 'delta_remove' in locals(), "Failed to compute delta_remove"
-        return delta_remove
+        return Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
+    return Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
     
-    # Both directions, return max
-    assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
-    return max(delta_add, delta_remove)
+
