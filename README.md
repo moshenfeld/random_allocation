@@ -70,6 +70,22 @@ The package provides two types of plots:
 - `PlotType.COMPARISON`: For comparing different methods
 - `PlotType.COMBINED`: For showing combined results
 
+## Testing
+
+The project includes a test suite to ensure code functionality is maintained during refactoring. The tests are located in the `tests` directory and can be run using:
+
+```bash
+# Run all tests
+python -m unittest discover tests
+
+# Run a specific test file
+python -m unittest tests.basic_tests
+```
+
+The test suite includes basic "smoke tests" for all main functions, ensuring they run without errors when given reasonable parameters. If you're refactoring code, run these tests to make sure you haven't broken any functionality.
+
+For more information about the test suite, see [tests/README.md](tests/README.md).
+
 ## Available Methods
 
 The package includes several methods for comparison:

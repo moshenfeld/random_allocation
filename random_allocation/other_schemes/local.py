@@ -42,8 +42,12 @@ def Gaussian_epsilon(sigma: float,
     Returns:
     - The calculated epsilon value or infinity if not found.
     """
+    # Assert invariants that should always be true
+    assert sigma > 0, f"sigma must be positive, got {sigma}"
+    assert 0 < delta < 1, f"delta must be between 0 and 1, got {delta}"
+    
     # Compute the analytic upper bound for epsilon
-    epsilon_upper_bound = 1/(2*sigma**2) + np.sqrt(2*np.log(sigma/delta*np.sqrt(2/np.pi)))/sigma
+    epsilon_upper_bound = 1/(2*sigma**2) + np.sqrt(2*np.log(sigma/(delta*np.sqrt(2/np.pi))))/sigma
 
     # Find the epsilon value using binary search
     optimization_func = lambda eps: Gaussian_delta(sigma=sigma, epsilon=eps)
@@ -63,8 +67,7 @@ def local_delta(params: PrivacyParams,
     - config: Configuration parameters (not used for this calculation)
     """
     params.validate()
-    if params.epsilon is None:
-        raise ValueError("Epsilon must be provided to compute delta")
+    assert params.epsilon is not None, "Epsilon must be provided to compute delta"
         
     return Gaussian_delta(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
                          epsilon=params.epsilon)
@@ -80,8 +83,7 @@ def local_epsilon(params: PrivacyParams,
     - config: Configuration parameters
     """
     params.validate()
-    if params.delta is None:
-        raise ValueError("Delta must be provided to compute epsilon")
+    assert params.delta is not None, "Delta must be provided to compute epsilon"
     
     return Gaussian_epsilon(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
                            delta=params.delta, 

@@ -27,12 +27,37 @@ class PrivacyParams:
     epsilon: Optional[float] = None
     delta: Optional[float] = None
     
+    def __post_init__(self):
+        """Convert values to appropriate types and validate"""
+        # Ensure proper types
+        self.sigma = float(self.sigma)
+        self.num_steps = int(self.num_steps)
+        self.num_selected = int(self.num_selected)
+        self.num_epochs = int(self.num_epochs)
+        
+        if self.epsilon is not None:
+            self.epsilon = float(self.epsilon)
+        if self.delta is not None:
+            self.delta = float(self.delta)
+    
     def validate(self) -> None:
         """Validate that the parameters are correctly specified"""
-        if self.epsilon is None and self.delta is None:
-            raise ValueError("Either epsilon or delta must be provided")
-        if self.epsilon is not None and self.delta is not None:
-            raise ValueError("Only one of epsilon or delta should be provided")
+        # Fundamental constraints that should be enforced by programming logic
+        assert self.epsilon is None or self.delta is None, "Only one of epsilon or delta should be provided"
+        assert not (self.epsilon is None and self.delta is None), "Either epsilon or delta must be provided"
+        
+        # Value constraints that should never be violated in normal usage
+        assert self.sigma > 0, f"sigma must be positive, got {self.sigma}"
+        assert self.num_steps > 0, f"num_steps must be positive, got {self.num_steps}"
+        assert self.num_selected > 0, f"num_selected must be positive, got {self.num_selected}"
+        assert self.num_selected <= self.num_steps, f"num_selected must not exceed num_steps, got {self.num_selected} > {self.num_steps}"
+        assert self.num_epochs > 0, f"num_epochs must be positive, got {self.num_epochs}"
+        
+        # Parameter value constraints
+        if self.epsilon is not None:
+            assert self.epsilon > 0, f"epsilon must be positive, got {self.epsilon}"
+        if self.delta is not None:
+            assert 0 < self.delta < 1, f"delta must be between 0 and 1, got {self.delta}"
 
 @dataclass
 class SchemeConfig:

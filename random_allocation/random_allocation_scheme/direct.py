@@ -159,21 +159,27 @@ def compute_exp_term(partition: Tuple[int, ...], alpha: int, num_steps: int, sig
 @lru_cache(maxsize=None)
 def allocation_RDP_remove(alpha: int, sigma: float, num_steps: int) -> float:
     """
-    Compute the RDP of the allocation scheme in the emove direction.
-    This function is based on the first part of Corollary 6.2,
-    """
-    # Convert alpha to int to handle cases where it's passed as numpy.float64
-    alpha = int(alpha)
-    num_steps = int(num_steps)
+    Compute the RDP value of the allocation scheme in the remove direction for a given alpha.
     
+    Args:
+        alpha: Alpha order for RDP
+        sigma: Gaussian noise scale
+        num_steps: Number of steps in the allocation scheme
+        
+    Returns:
+        Computed RDP value
+    """
+    assert isinstance(alpha, int), "alpha must be an integer"
+    assert isinstance(num_steps, int), "num_steps must be an integer"
+    assert alpha > 1, "alpha must be > 1"
+        
     partitions = generate_partitions(n=alpha, max_size=num_steps)
     exp_terms = [compute_exp_term(partition=partition, alpha=alpha, num_steps=num_steps, sigma=sigma) for partition in partitions]
 
     max_val = max(exp_terms)
     log_sum = np.log(sum(np.exp(term - max_val) for term in exp_terms))
 
-    result = (log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha-1)
-    return float(result)
+    return float((log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha - 1))
 
 def allocation_epsilon_direct_remove(sigma: float,
                                   delta: float,
