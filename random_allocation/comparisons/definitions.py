@@ -3,10 +3,11 @@ Common definitions for privacy parameters, scheme configurations, and experiment
 """
 
 # Standard library imports
+from enum import Enum
 from typing import Dict, Any, List, Optional, Callable, Union, Tuple, TypeVar, cast
 
 # Local application imports
-from random_allocation.comparisons.structs import MethodFeatures, EpsilonCalculator, DeltaCalculator, PrivacyParams, SchemeConfig
+from random_allocation.comparisons.structs import MethodFeatures, EpsilonCalculator, DeltaCalculator, PrivacyParams, SchemeConfig, Direction
 from random_allocation.other_schemes.local import *
 from random_allocation.other_schemes.poisson import *
 from random_allocation.other_schemes.shuffle import *
@@ -17,11 +18,6 @@ MethodName = str
 FeatureName = str
 FeatureValue = Union[str, Callable[..., float], None]
 FeaturesDict = Dict[MethodName, FeatureValue]
-
-#======================= Direction =======================
-ADD: str = 'add'
-REMOVE: str = 'remove'
-BOTH: str = 'both'
 
 #======================= Variables =======================
 EPSILON: str = 'epsilon'

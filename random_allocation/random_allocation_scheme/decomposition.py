@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Optional, Union, Callable, Dict, Any, List, Tuple
+from typing import Optional, Union, Callable, Dict, Any, List, Tuple, Literal
 
 # Third-party imports
 import numpy as np
@@ -9,7 +9,7 @@ from dp_accounting.pld.privacy_loss_distribution import PrivacyLossDistribution
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.poisson import Poisson_delta_PLD, Poisson_epsilon_PLD, Poisson_PLD
 from random_allocation.other_schemes.local import local_delta
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 
 # Type aliases
 NumericFunction = Callable[[float], float]
@@ -159,7 +159,8 @@ def allocation_epsilon_decomposition_remove(params: PrivacyParams,
 
 # ==================== Both ====================
 def allocation_epsilon_decomposition(params: PrivacyParams,
-                                     config: SchemeConfig = SchemeConfig(),
+                                     config: SchemeConfig,
+                                     direction: Direction = Direction.BOTH,
                                      ) -> float:
     """
     Compute epsilon for the decomposition allocation scheme.
@@ -167,6 +168,7 @@ def allocation_epsilon_decomposition(params: PrivacyParams,
     Args:
         params: Privacy parameters (must include delta)
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed epsilon value
@@ -176,17 +178,17 @@ def allocation_epsilon_decomposition(params: PrivacyParams,
         raise ValueError("Delta must be provided to compute epsilon")
         
     epsilon_remove: Optional[float] = None
-    if config.direction != 'add':
+    if direction != Direction.ADD:
         epsilon_remove = allocation_epsilon_decomposition_remove(params=params, config=config)
     
     epsilon_add: Optional[float] = None
-    if config.direction != 'remove':
+    if direction != Direction.REMOVE:
         epsilon_add = allocation_epsilon_decomposition_add(params=params, config=config)
     
-    if config.direction == 'add':
+    if direction == Direction.ADD:
         assert epsilon_add is not None, "epsilon_add should be defined"
         return epsilon_add
-    if config.direction == 'remove':
+    if direction == Direction.REMOVE:
         assert epsilon_remove is not None, "epsilon_remove should be defined"
         return epsilon_remove
         
@@ -196,7 +198,8 @@ def allocation_epsilon_decomposition(params: PrivacyParams,
     return float(max(epsilon_remove, epsilon_add))
 
 def allocation_delta_decomposition(params: PrivacyParams,
-                                   config: SchemeConfig = SchemeConfig(),
+                                   config: SchemeConfig,
+                                   direction: Direction = Direction.BOTH,
                                    ) -> float:
     """
     Compute delta for the decomposition allocation scheme.
@@ -204,6 +207,7 @@ def allocation_delta_decomposition(params: PrivacyParams,
     Args:
         params: Privacy parameters (must include epsilon)
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed delta value
@@ -211,22 +215,22 @@ def allocation_delta_decomposition(params: PrivacyParams,
     params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
-        
+    
     delta_remove: Optional[float] = None
-    if config.direction != 'add':
+    if direction != Direction.ADD:
         delta_remove = allocation_delta_decomposition_remove(params=params, config=config)
     
     delta_add: Optional[float] = None
-    if config.direction != 'remove':
+    if direction != Direction.REMOVE:
         delta_add = allocation_delta_decomposition_add(params=params, config=config)
     
-    if config.direction == 'add':
+    if direction == Direction.ADD:
         assert delta_add is not None, "delta_add should be defined"
         return delta_add
-    if config.direction == 'remove':
+    if direction == Direction.REMOVE:
         assert delta_remove is not None, "delta_remove should be defined"
         return delta_remove
-        
+    
     # Both directions - both should be defined
     assert delta_add is not None, "delta_add should be defined"
     assert delta_remove is not None, "delta_remove should be defined"

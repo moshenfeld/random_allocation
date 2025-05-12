@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Optional, Union, Callable, Dict, Any, List, Tuple, cast
+from typing import Optional, Union, Callable, Dict, Any, List, Tuple, cast, Literal
 
 # Third-party imports
 import numpy as np
@@ -25,6 +25,8 @@ def Monte_Carlo_estimation(params: PrivacyParams,
     """
     bnb_accountant = BnBAccountant()
     if config.MC_use_order_stats:
+        # Define order_stats_encoding with a flexible type
+        order_stats_encoding: Tuple[int, ...]
         if params.num_steps < 100:
             order_stats_encoding = (1, params.num_steps, 1)
         elif params.num_steps < 500:
@@ -60,15 +62,16 @@ def Monte_Carlo_estimation(params: PrivacyParams,
         # Ensure we return a float, not Any
         return float(delta_estimate.get_upper_confidence_bound(1-config.MC_conf_level))
 
-def allocation_delta_MC(params: PrivacyParams, config: SchemeConfig) -> float:
+def allocation_delta_MC(params: PrivacyParams, 
+                      config: SchemeConfig,
+                      direction: Literal['add', 'remove', 'both'] = 'both') -> float:
     """
     Compute delta using Monte Carlo simulation for the allocation scheme.
     
     Args:
         params: Privacy parameters (must include epsilon)
         config: Scheme configuration parameters
-        use_order_stats: Whether to use order statistics
-        use_mean: Whether to use mean or upper confidence bound
+        direction: The direction of privacy. Can be 'add', 'remove', or 'both'.
     
     Returns:
         Computed delta value
@@ -79,23 +82,23 @@ def allocation_delta_MC(params: PrivacyParams, config: SchemeConfig) -> float:
     
     assert(params.num_selected == 1)
     
-    # if config.direction != 'add':
-    #     delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
-    # if config.direction != 'remove':
-    #     delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
+    # Variables that will be defined conditionally
+    delta_add: float  # type annotation without initialization
+    delta_remove: float  # type annotation without initialization
     
-    # if config.direction == 'add':
-    #     assert 'delta_add' in locals(), "Failed to compute delta_add"
-    #     return delta_add
-    # if config.direction == 'remove':
-    #     assert 'delta_remove' in locals(), "Failed to compute delta_remove"
-    #     return delta_remove
-    # # Both directions, return max
-    # assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
-    # return max(delta_add, delta_remove)
+    if direction != 'add':
+        delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
+    if direction != 'remove':
+        delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
     
-    if config.direction == 'add':
-        return Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
-    return Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
+    if direction == 'add':
+        assert 'delta_add' in locals(), "Failed to compute delta_add"
+        return delta_add
+    if direction == 'remove':
+        assert 'delta_remove' in locals(), "Failed to compute delta_remove"
+        return delta_remove
+    # Both directions, return max
+    assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
+    return max(delta_add, delta_remove)
     
 

@@ -37,7 +37,7 @@ All functions should include parameter and return type annotations:
 
 ```python
 def allocation_epsilon_analytic(params: PrivacyParams,
-                              config: SchemeConfig = SchemeConfig(),
+                              config: SchemeConfig,
                               ) -> Optional[float]:
     """
     Compute epsilon for the analytic allocation scheme.

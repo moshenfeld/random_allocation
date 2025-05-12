@@ -7,12 +7,12 @@ import numpy as np
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.shuffle_external import numericalanalysis
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.other_schemes.local import local_epsilon
 
 def shuffle_epsilon_analytic(params: PrivacyParams,
-                             config: SchemeConfig = SchemeConfig(),
-                             step: float = 100,
+                             config: SchemeConfig,
+                             direction: Direction = Direction.BOTH,
                              ) -> float:
     """
     Calculate the epsilon value for the shuffle scheme.
@@ -20,7 +20,7 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
     Parameters:
     - params: Privacy parameters
     - config: Scheme configuration parameters
-    - step: Step size for numerical analysis
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
     params.validate()
     if params.delta is None:
@@ -40,7 +40,7 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
         num_selected=params.num_selected,
         num_epochs=params.num_epochs
     )
-    det_eps = local_epsilon(params=temp_params, config=config)
+    det_eps = local_epsilon(params=temp_params, config=config, direction=direction)
     
     # Create params for the local delta
     local_delta = params.delta*delta_split/(2*params.num_steps*(np.exp(2)+1)*(1+np.exp(2)/2))
@@ -53,7 +53,7 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
         num_epochs=1
     )
     
-    local_epsilon_val = local_epsilon(params=local_params, config=config)
+    local_epsilon_val = local_epsilon(params=local_params, config=config, direction=direction)
     if local_epsilon_val is None or local_epsilon_val > 10:
         return float(det_eps) if det_eps is not None else float('inf')
     
@@ -62,14 +62,14 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
         epsorig=local_epsilon_val, 
         delta=params.delta*(1-delta_split), 
         num_iterations=params.num_epochs,
-        step=step, 
+        step=config.shuffle_step, 
         upperbound=True
     )
     
     for _ in range(5):
         local_delta = params.delta/(2*params.num_steps*(np.exp(epsilon)+1)*(1+np.exp(local_epsilon_val)/2))
         local_params.delta = local_delta
-        local_epsilon_val = local_epsilon(params=local_params, config=config)
+        local_epsilon_val = local_epsilon(params=local_params, config=config, direction=direction)
         if local_epsilon_val is None:
             local_epsilon_val = float('inf')  # Use infinity for None values
             
@@ -78,7 +78,7 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
             epsorig=local_epsilon_val, 
             delta=params.delta*(1-delta_split),
             num_iterations=params.num_epochs, 
-            step=step, 
+            step=config.shuffle_step, 
             upperbound=True
         )
         
@@ -93,8 +93,8 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
     return float(epsilon)
 
 def shuffle_delta_analytic(params: PrivacyParams,
-                           config: SchemeConfig = SchemeConfig(),
-                           step: float = 100,
+                           config: SchemeConfig,
+                           direction: Direction = Direction.BOTH,
                            ) -> float:
     """
     Calculate the delta value for the shuffle scheme.
@@ -102,7 +102,7 @@ def shuffle_delta_analytic(params: PrivacyParams,
     Parameters:
     - params: Privacy parameters
     - config: Scheme configuration parameters
-    - step: Step size for numerical analysis
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
     params.validate()
     if params.epsilon is None:
@@ -129,7 +129,7 @@ def shuffle_delta_analytic(params: PrivacyParams,
             num_epochs=params.num_epochs,
             epsilon=None,
             delta=delta
-        ), config=config, step=step), 
+        ), config=config, direction=direction), 
         y_target=params.epsilon, 
         bounds=(config.delta_tolerance, 1-config.delta_tolerance),
         tolerance=config.delta_tolerance, 

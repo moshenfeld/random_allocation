@@ -1,7 +1,7 @@
 # Standard library imports
 from functools import lru_cache
 import math
-from typing import List, Tuple, Optional, Union, Callable, TypeVar, Dict, Any, cast
+from typing import List, Tuple, Optional, Union, Callable, TypeVar, Dict, Any, cast, Literal
 
 # Third-party imports
 from numba import jit
@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 
 # Type aliases
 Partition = Tuple[int, ...]
@@ -185,8 +185,8 @@ def allocation_epsilon_direct_remove(sigma: float,
                                   delta: float,
                                   num_steps: int,
                                   num_epochs: int,
-                                  alpha_orders: List[float],
-                                  print_alpha: bool,
+                                  alpha_orders: List[int],
+                                  print_alpha: bool = False,
                                   ) -> float:
     """
     Compute the epsilon value of the allocation scheme in the remove direction using Rényi Differential Privacy (RDP).
@@ -198,7 +198,7 @@ def allocation_epsilon_direct_remove(sigma: float,
         num_steps: Number of steps in the allocation scheme
         num_epochs: Number of epochs
         alpha_orders: List of alpha orders for RDP computation
-        print_alpha: Whether to print the alpha value used
+        print_alpha: Whether to print the alpha value used (default: False)
         
     Returns:
         Computed epsilon value
@@ -207,11 +207,11 @@ def allocation_epsilon_direct_remove(sigma: float,
     assert len(alpha_orders) > 0, "alpha_orders must have at least one element"
     
     alpha = alpha_orders[0]
-    alpha_RDP = allocation_RDP_remove(alpha, sigma, num_steps)*num_epochs
+    alpha_RDP = allocation_RDP_remove(alpha=alpha, sigma=sigma, num_steps=num_steps) * num_epochs
     epsilon = alpha_RDP + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
     used_alpha = alpha
     for alpha in alpha_orders:
-        alpha_RDP = allocation_RDP_remove(alpha, sigma, num_steps)*num_epochs
+        alpha_RDP = allocation_RDP_remove(alpha=alpha, sigma=sigma, num_steps=num_steps) * num_epochs
         if alpha_RDP > epsilon:
             break
         else:
@@ -232,7 +232,8 @@ def allocation_epsilon_direct_remove(sigma: float,
 
 # ==================== Both ====================
 def allocation_epsilon_direct(params: PrivacyParams,
-                           config: SchemeConfig = SchemeConfig(),
+                           config: SchemeConfig,
+                           direction: Direction = Direction.BOTH,
                            ) -> float:
     """
     Compute epsilon for the direct allocation scheme.
@@ -240,6 +241,7 @@ def allocation_epsilon_direct(params: PrivacyParams,
     Args:
         params: Privacy parameters (must include delta)
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed epsilon value
@@ -251,25 +253,29 @@ def allocation_epsilon_direct(params: PrivacyParams,
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
 
-    if config.direction != 'add':
+    if direction != Direction.ADD:
         if config.allocation_direct_alpha_orders is None:
             raise ValueError("allocation_direct_alpha_orders must be provided in SchemeConfig for 'remove' direction")
-        epsilon_remove = allocation_epsilon_direct_remove(sigma=params.sigma, 
+        epsilon_remove = allocation_epsilon_direct_remove(
+            sigma=params.sigma, 
             delta=params.delta,
             num_steps=num_steps_per_round, 
             num_epochs=params.num_epochs*num_rounds,
             alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=config.print_alpha)
-    if config.direction != 'remove':
-        epsilon_add = allocation_epsilon_direct_add(sigma=params.sigma,
+            print_alpha=config.print_alpha
+        )
+    if direction != Direction.REMOVE:
+        epsilon_add = allocation_epsilon_direct_add(
+            sigma=params.sigma,
             delta=params.delta,
             num_steps=num_steps_per_round,
-            num_epochs=params.num_epochs*num_rounds)
+            num_epochs=params.num_epochs*num_rounds
+        )
         
-    if config.direction == 'add':
+    if direction == Direction.ADD:
         assert epsilon_add is not None, "epsilon_add should be defined"
         return epsilon_add
-    if config.direction == 'remove':
+    if direction == Direction.REMOVE:
         assert epsilon_remove is not None, "epsilon_remove should be defined"
         return epsilon_remove
         
@@ -280,7 +286,8 @@ def allocation_epsilon_direct(params: PrivacyParams,
 
 
 def allocation_delta_direct(params: PrivacyParams,
-                         config: SchemeConfig = SchemeConfig(),
+                         config: SchemeConfig,
+                         direction: Direction = Direction.BOTH,
                          ) -> float:
     """
     Compute the delta value of the allocation scheme using Rényi Differential Privacy (RDP).
@@ -289,6 +296,7 @@ def allocation_delta_direct(params: PrivacyParams,
     Args:
         params: Privacy parameters (must include epsilon)
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed delta value
@@ -297,29 +305,27 @@ def allocation_delta_direct(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    if config.direction != 'add':
+    if direction != Direction.ADD:
         if config.allocation_direct_alpha_orders is None:
             raise ValueError("allocation_direct_alpha_orders must be provided in SchemeConfig for 'remove' or 'both' direction")
-            
-        # Create a remove-specific config for optimization
-        remove_config = SchemeConfig(
-            direction='remove',
-            allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=False,
-            delta_tolerance=config.delta_tolerance
-        )
         
+        # Use the search_function_with_bounds for REMOVE direction
+        # Create a temporary PrivacyParams object with delta as variable
         result = search_function_with_bounds(
-            func=lambda delta: allocation_epsilon_direct(params=PrivacyParams(
-                sigma=params.sigma,
-                num_steps=params.num_steps,
-                num_selected=params.num_selected,
-                num_epochs=params.num_epochs,
-                epsilon=None,
-                delta=delta
-            ), config=remove_config), 
-            y_target=params.epsilon, 
-            bounds=(config.delta_tolerance, 1-config.delta_tolerance), 
+            func=lambda delta: allocation_epsilon_direct(
+                params=PrivacyParams(
+                    sigma=params.sigma,
+                    num_steps=params.num_steps,
+                    num_selected=params.num_selected,
+                    num_epochs=params.num_epochs,
+                    epsilon=None,
+                    delta=delta
+                ),
+                config=config,  # Use the original config
+                direction=Direction.REMOVE,
+            ),
+            y_target=params.epsilon,
+            bounds=(config.delta_tolerance, 1-config.delta_tolerance),
             tolerance=config.delta_tolerance,
             function_type=FunctionType.DECREASING
         )
@@ -330,26 +336,24 @@ def allocation_delta_direct(params: PrivacyParams,
         else:
             delta_remove = result
     
-    if config.direction != 'remove':
+    if direction != Direction.REMOVE:
+        # Directly calculate delta for the ADD direction
         num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
         num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
         delta_add = allocation_delta_direct_add(
-            sigma=params.sigma, 
-            epsilon=params.epsilon, 
+            sigma=params.sigma,
+            epsilon=params.epsilon,
             num_steps=num_steps_per_round,
             num_epochs=params.num_epochs*num_rounds
         )
     
-    if config.direction == 'add':
-        assert 'delta_add' in locals(), "Failed to compute delta_add"
+    if direction == Direction.ADD:
         return float(delta_add)
-    if config.direction == 'remove':
-        assert 'delta_remove' in locals(), "Failed to compute delta_remove"
+    if direction == Direction.REMOVE:
         return float(delta_remove)
     
-    # Both directions, return max
-    assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
-    return float(max(float(delta_add), float(delta_remove)))
+    # Both directions
+    return float(max(delta_remove, delta_add))
 
 # ==================== RDP based Add ====================
 def allocation_RDP_add(sigma: float, 

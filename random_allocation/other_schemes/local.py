@@ -8,7 +8,7 @@ from scipy import stats  # type: ignore # Missing stubs for scipy
 
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
-from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig, Direction
 
 # ==================== Deterministic ====================
 def Gaussian_delta(sigma: float,
@@ -57,14 +57,16 @@ def Gaussian_epsilon(sigma: float,
 
 # ==================== Local ====================
 def local_delta(params: PrivacyParams,
-                config: SchemeConfig = SchemeConfig(),
+                config: SchemeConfig,
+                direction: Direction = Direction.BOTH,
                 ) -> float:
     """
     Calculate the privacy profile in case the index where each element is used is public (no amplification).
 
     Parameters:
     - params: PrivacyParams containing sigma, epsilon, num_selected, and num_epochs
-    - config: Configuration parameters (not used for this calculation)
+    - config: Configuration parameters
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
     params.validate()
     assert params.epsilon is not None, "Epsilon must be provided to compute delta"
@@ -73,7 +75,8 @@ def local_delta(params: PrivacyParams,
                          epsilon=params.epsilon)
 
 def local_epsilon(params: PrivacyParams,
-                  config: SchemeConfig = SchemeConfig(),
+                  config: SchemeConfig,
+                  direction: Direction = Direction.BOTH,
                   ) -> float:
     """
     Calculate the local epsilon value based on sigma, delta, number of selections, and epochs.
@@ -81,6 +84,7 @@ def local_epsilon(params: PrivacyParams,
     Parameters:
     - params: PrivacyParams containing sigma, delta, num_selected, and num_epochs
     - config: Configuration parameters
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
     params.validate()
     assert params.delta is not None, "Delta must be provided to compute epsilon"

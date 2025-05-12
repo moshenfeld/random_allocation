@@ -19,8 +19,15 @@ def run_command(cmd: list, name: str) -> bool:
     print(f"{'-' * 80}")
     
     start_time = time.time()
-    result = subprocess.run(cmd, text=True)
+    # Capture output to display it properly
+    result = subprocess.run(cmd, text=True, capture_output=True)
     elapsed_time = time.time() - start_time
+    
+    # Always print the output so that test failures are visible
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr)
     
     print(f"\n{'-' * 80}")
     if result.returncode == 0:

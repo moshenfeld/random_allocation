@@ -6,7 +6,7 @@ import numpy as np
 
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
-from random_allocation.other_schemes.local import local_epsilon
+from random_allocation.other_schemes.local import local_epsilon, Direction
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
@@ -15,6 +15,7 @@ def sampling_prob_from_sigma(sigma: float,
                              num_steps: int,
                              num_selected: int,
                              local_delta: float,
+                             direction: Direction = Direction.BOTH,
                              ) -> float:
     """
     Calculate the sampling probability for the given parameters.
@@ -25,12 +26,13 @@ def sampling_prob_from_sigma(sigma: float,
         num_steps: Number of steps
         num_selected: Number of selected items
         local_delta: Delta parameter for local randomization
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
         
     Returns:
         Calculated sampling probability between 0 and 1
     """
     params = PrivacyParams(sigma=sigma, delta=local_delta, num_steps=num_steps, num_selected=num_selected, num_epochs=1)
-    local_epsilon_val = local_epsilon(params=params, config=SchemeConfig())
+    local_epsilon_val = local_epsilon(params=params, config=SchemeConfig(), direction=direction)
     if local_epsilon_val is None:
         return 1.0
     gamma = np.cosh(local_epsilon_val)*np.sqrt(2*num_selected*np.log(num_selected/delta)/num_steps)
@@ -39,7 +41,8 @@ def sampling_prob_from_sigma(sigma: float,
     return float(np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1))
 
 def allocation_epsilon_analytic(params: PrivacyParams,
-                                config: SchemeConfig = SchemeConfig(),
+                                config: SchemeConfig,
+                                direction: Direction = Direction.BOTH,
                                 ) -> float:
     """
     Compute epsilon for the analytic allocation scheme.
@@ -47,6 +50,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
     Args:
         params: Privacy parameters
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed epsilon value or np.inf if conditions are not met
@@ -68,7 +72,8 @@ def allocation_epsilon_analytic(params: PrivacyParams,
         delta=large_sampling_prob_delta, 
         num_steps=params.num_steps,
         num_selected=params.num_selected, 
-        local_delta=local_delta
+        local_delta=local_delta,
+        direction=direction
     )
     
     if sampling_prob > np.sqrt(params.num_selected/params.num_steps):
@@ -81,15 +86,18 @@ def allocation_epsilon_analytic(params: PrivacyParams,
         num_selected=params.num_selected, 
         num_epochs=params.num_epochs
     )
-    epsilon = Poisson_epsilon_PLD(params=Poisson_params,
+    epsilon = Poisson_epsilon_PLD(
+        params=Poisson_params,
         config=config,
-        sampling_prob=sampling_prob
+        sampling_prob=sampling_prob,
+        direction=direction
     )
     
     return float(epsilon)
 
 def allocation_delta_analytic(params: PrivacyParams,
-                              config: SchemeConfig = SchemeConfig(),
+                              config: SchemeConfig,
+                              direction: Direction = Direction.BOTH,
                               ) -> float:
     """
     Compute delta for the analytic allocation scheme.
@@ -97,6 +105,7 @@ def allocation_delta_analytic(params: PrivacyParams,
     Args:
         params: Privacy parameters
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
         
     Returns:
         Computed delta value
@@ -113,7 +122,7 @@ def allocation_delta_analytic(params: PrivacyParams,
             num_epochs=params.num_epochs,
             epsilon=None,
             delta=delta
-        ), config=config), 
+        ), config=config, direction=direction), 
         y_target=params.epsilon, 
         bounds=(config.delta_tolerance, 1-config.delta_tolerance),
         tolerance=config.delta_tolerance, 

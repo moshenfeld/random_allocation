@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import Direction
 
 
 # ==================== PLD ====================
@@ -47,8 +48,9 @@ def Poisson_PLD(sigma: float,
     return PLD_single.self_compose(num_steps*num_epochs)
 
 def Poisson_delta_PLD(params: PrivacyParams,
-                      config: SchemeConfig = SchemeConfig(),
+                      config: SchemeConfig,
                       sampling_prob: float = 0.0,
+                      direction: Direction = Direction.BOTH,
                       ) -> float:
     """
     Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on pld.
@@ -56,6 +58,8 @@ def Poisson_delta_PLD(params: PrivacyParams,
     Parameters:
     - params: Privacy parameters
     - config: Scheme configuration
+    - sampling_prob: The probability of sampling
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
     params.validate()
     if params.epsilon is None:
@@ -70,13 +74,14 @@ def Poisson_delta_PLD(params: PrivacyParams,
         num_epochs=params.num_epochs, 
         sampling_prob=sampling_prob,
         discretization=config.discretization, 
-        direction=config.direction
+        direction=direction.value
     )
     return float(PLD.get_delta_for_epsilon(params.epsilon))
 
 def Poisson_epsilon_PLD(params: PrivacyParams,
-                        config: SchemeConfig = SchemeConfig(),
+                        config: SchemeConfig,
                         sampling_prob: float = 0.0,
+                        direction: Direction = Direction.BOTH,
                         ) -> float:
     """
     Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on pld.
@@ -84,6 +89,8 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
     Parameters:
     - params: Privacy parameters
     - config: Scheme configuration
+    - sampling_prob: The probability of sampling
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
     params.validate()
     if params.delta is None:
@@ -98,7 +105,7 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
         num_epochs=params.num_epochs, 
         sampling_prob=sampling_prob,
         discretization=config.discretization, 
-        direction=config.direction
+        direction=direction.value
     )
     return float(PLD.get_epsilon_for_delta(params.delta))
 
@@ -125,7 +132,8 @@ def Poisson_RDP(sigma: float,
     return accountant
 
 def Poisson_delta_RDP(params: PrivacyParams,
-                      config: SchemeConfig = SchemeConfig(),
+                      config: SchemeConfig,
+                      direction: Direction = Direction.BOTH,
                       ) -> float:
     """
     Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on rdp.
@@ -133,7 +141,9 @@ def Poisson_delta_RDP(params: PrivacyParams,
     Parameters:
     - params: Privacy parameters
     - config: Scheme configuration
+    - direction: The direction of privacy. Currently only BOTH is supported.
     """
+    assert direction == Direction.BOTH, "Poisson RDP only supports Direction.BOTH"
     params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
@@ -157,8 +167,9 @@ def Poisson_delta_RDP(params: PrivacyParams,
     return float(accountant.get_delta(params.epsilon))
 
 def Poisson_epsilon_RDP(params: PrivacyParams,
-                        config: SchemeConfig = SchemeConfig(),
+                        config: SchemeConfig,
                         sampling_prob: float = 0.0,
+                        direction: Direction = Direction.BOTH,
                         ) -> float:
     """
     Calculate the epsilon value for the Poisson scheme with the Gaussian mechanism based on rdp.
@@ -166,7 +177,10 @@ def Poisson_epsilon_RDP(params: PrivacyParams,
     Parameters:
     - params: Privacy parameters
     - config: Scheme configuration
+    - sampling_prob: The probability of sampling
+    - direction: The direction of privacy. Currently only BOTH is supported.
     """
+    assert direction == Direction.BOTH, "Poisson RDP only supports Direction.BOTH"
     params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")

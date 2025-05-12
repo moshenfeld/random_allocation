@@ -4,7 +4,7 @@ import inspect
 import os
 import time
 from enum import Enum
-from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, cast, Collection, Mapping
+from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, cast, Collection, Mapping, Literal
 
 # Third-party imports
 import matplotlib.pyplot as plt
@@ -59,45 +59,70 @@ def calc_experiment_data(params: PrivacyParams,
                          x_var: str,
                          x_values: XValues,
                          y_var: str,
+                         direction: Direction = Direction.BOTH
                          ) -> DataDict:
     """
-    Calculate experiment data using PrivacyParams and SchemeConfig objects directly.
+    Calculate data for the experiment.
     
     Args:
-        params: Base privacy parameters object
-        config: Scheme configuration object
+        params: Base privacy parameters
+        config: Scheme configuration parameters
         methods: List of methods to use in the experiment
-        x_var: Name of parameter to vary (x-axis)
-        x_values: List of values for the x-axis parameter
-        y_var: Name of result to compute (y-axis: 'epsilon' or 'delta')
-        
-    Returns:
-        Dictionary with the experiment data
-    """
-    data: DataDict = {'y data': {}}
-    func_dict = get_func_dict(methods, y_var)
+        x_var: The variable to vary (x-axis)
+        x_values: Values for the x variable
+        y_var: The variable to calculate (y-axis)
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
+    Returns:
+        A dictionary containing the experiment data
+    """
+    funcs_dict = get_func_dict(methods, y_var)
+    
+    # Initialize data dictionary to store results
+    data: DataDict = {'y data': {}}
+    
+    # For each method
     for method in methods:
-        start_time = time.time()
-        func = func_dict[method]
-        if func is None:
-            raise ValueError(f"Method {method} does not have a valid function for {y_var}")
+        # Skip if method not found in function dictionary
+        if method not in funcs_dict or funcs_dict[method] is None:
+            print(f"Warning: Method {method} not found in function dictionary or is None. Skipping...")
+            continue
+            
+        # Use a more specific type annotation that includes expected parameters
+        func = funcs_dict[method]
+        assert func is not None, f"Function for method {method} should not be None at this point"
         
-        # Calculate results for each x value
+        start_time = time.time()
+        print(f"Calculating {method}...")
+        
+        # List to store function results for each x value
         results: List[float] = []
+        
+        # Process each x value
         for x_value in x_values:
-            # Create a copy of params and set the x_var to the current value
-            param_copy = copy.deepcopy(params)
+            # Make a copy of params to modify for this specific case
+            param_copy = copy.copy(params)
+            
+            # Update the param with the current x_value for variable x_var
             setattr(param_copy, x_var, x_value)
             
-            # Reset any computed parameter if we're changing one of the input parameters
-            if x_var == 'epsilon' and param_copy.delta is not None:
-                param_copy.delta = None
-            elif x_var == 'delta' and param_copy.epsilon is not None:
+            # Make sure we have the correct parameter set for the calculation
+            # If we're calculating epsilon, we need delta provided (and vice versa)
+            if y_var == 'epsilon':
+                # We're calculating epsilon, so make sure delta is set and epsilon is None
+                if param_copy.delta is None:
+                    raise ValueError(f"Delta must be provided to compute epsilon")
                 param_copy.epsilon = None
+            elif y_var == 'delta':
+                # We're calculating delta, so make sure epsilon is set and delta is None
+                if param_copy.epsilon is None:
+                    raise ValueError(f"Epsilon must be provided to compute delta")
+                param_copy.delta = None
             
             # Call the function with the modified params and ensure result is a float
-            result = func(param_copy, config)
+            # Use type ignore to bypass the unexpected keyword argument errors
+            result = func(params=param_copy, config=config, direction=direction)  # type: ignore
+            
             # Handle None or Optional return values by converting to float
             if result is None:
                 # Default to 0.0 if None is returned, or raise an error if preferred
@@ -187,7 +212,8 @@ def run_experiment(
     experiment_name: str = '',
     plot_type: PlotType = PlotType.COMPARISON,
     save_data: bool = True, 
-    save_plots: bool = True
+    save_plots: bool = True,
+    direction: Direction = Direction.BOTH
 ) -> DataDict:
     """
     Run an experiment and handle its results.
@@ -202,6 +228,7 @@ def run_experiment(
         plot_type: Type of plot to create (COMPARISON or COMBINED)
         save_data: Whether to save data to CSV files
         save_plots: Whether to save plots to files
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
         
     Returns:
         The experiment data dictionary
@@ -248,7 +275,7 @@ def run_experiment(
     data: DataDict
     if save_data:
         print(f"Computing data for {experiment_name}")
-        data = calc_experiment_data(params, config, methods, x_var, x_values, y_var)
+        data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
         save_experiment_data(data, methods, data_file)
     else:
         if os.path.exists(data_file):
@@ -266,7 +293,7 @@ def run_experiment(
             data['y name'] = df.get('y name', [''])[0] if not df.empty else ''
         else:
             print(f"Computing data for {experiment_name}")
-            data = calc_experiment_data(params, config, methods, x_var, x_values, y_var)
+            data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
     
     # Plot logic:
     # If save_plots is True: only save the plot, don't display it

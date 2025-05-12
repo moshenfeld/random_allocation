@@ -4,6 +4,7 @@ Common definitions for privacy parameters, scheme configurations, and experiment
 
 # Standard library imports
 from dataclasses import dataclass
+from enum import Enum
 from typing import Callable, Optional, Literal, Union, Any, Dict, List, TypeVar, cast
 
 # Third-party imports
@@ -15,6 +16,12 @@ import numpy as np
 T = TypeVar('T', bound=float)
 EpsilonCalculator = Callable[[Any, Any], Union[float, Optional[float]]]
 DeltaCalculator = Callable[[Any, Any], Union[float, Optional[float]]]
+
+class Direction(Enum):
+    """Enum for direction of privacy analysis"""
+    ADD = 'add'
+    REMOVE = 'remove'
+    BOTH = 'both'
 
 @dataclass
 class PrivacyParams:
@@ -62,9 +69,8 @@ class PrivacyParams:
 @dataclass
 class SchemeConfig:
     """Configuration for privacy schemes"""
-    direction: Literal['add', 'remove', 'both'] = 'both'
     discretization: float = 1e-4
-    allocation_direct_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
+    allocation_direct_alpha_orders: Optional[List[int]] = None  # Will be set in __post_init__
     allocation_RDP_DCO_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
     Poisson_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
     print_alpha: bool = False
@@ -75,6 +81,7 @@ class SchemeConfig:
     MC_use_mean: bool = False
     MC_conf_level: float = 0.99
     MC_sample_size: int = 500_000
+    shuffle_step: float = 100.0
 
 @dataclass
 class MethodFeatures:

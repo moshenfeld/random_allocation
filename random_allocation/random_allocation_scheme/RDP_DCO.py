@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Callable, List, Union, Optional, Tuple, Dict, Any, cast
+from typing import Callable, List, Union, Optional, Tuple, Dict, Any, cast, Literal
 
 # Third-party imports
 import numpy as np
@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.random_allocation_scheme.direct import log_factorial_range, log_factorial
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 
 # Type alias for numpy float arrays
 FloatArray = NDArray[np.float64]
@@ -59,7 +59,8 @@ def allocation_RDP_DCO_add(sigma: float,
 
 # ==================== Both ====================
 def allocation_epsilon_RDP_DCO(params: PrivacyParams, 
-                               config: SchemeConfig = SchemeConfig(),
+                               config: SchemeConfig,
+                               direction: Direction = Direction.BOTH,
                                ) -> float:
     """
     Compute epsilon for the RDP-DCO allocation scheme.
@@ -67,6 +68,7 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
     Args:
         params: Privacy parameters
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed epsilon value
@@ -77,13 +79,19 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
     
     # Use alpha_orders directly from config or generate if not provided
     if config.allocation_RDP_DCO_alpha_orders is not None:
+        alpha_orders: NDArray[np.float64] = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
         assert np.all(alpha_orders >= 2), f"All alpha values must be >= 2 for RDP_DCO. Found min value: {np.min(alpha_orders)}"
-        alpha_orders = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
     else:
         alpha_orders = np.concatenate((np.arange(2, 202), np.exp(np.linspace(np.log(202), np.log(10_000), 50))))
     
+    # Variables that will be defined conditionally
+    epsilon_add: float  # type annotation without initialization
+    epsilon_remove: float  # type annotation without initialization
+    used_alpha_add: float  # type annotation without initialization
+    used_alpha_remove: float  # type annotation without initialization
+    
     # Compute RDP and epsilon values
-    if config.direction != 'add':
+    if direction != Direction.ADD:
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_remove(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
             for alpha in alpha_orders])
@@ -91,7 +99,7 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
         epsilon_remove = float(np.min(alpha_epsilons))
         used_alpha_remove = float(alpha_orders[np.argmin(alpha_epsilons)])
     
-    if config.direction != 'remove':
+    if direction != Direction.REMOVE:
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_add(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
             for alpha in alpha_orders])
@@ -100,11 +108,11 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
         used_alpha_add = float(alpha_orders[np.argmin(alpha_epsilons)])
 
     # Determine the epsilon and used alpha based on the direction
-    if config.direction == 'add':
+    if direction == Direction.ADD:
         assert 'epsilon_add' in locals() and 'used_alpha_add' in locals(), "Failed to compute epsilon_add"
         epsilon = epsilon_add
         used_alpha = used_alpha_add
-    elif config.direction == 'remove':
+    elif direction == Direction.REMOVE:
         assert 'epsilon_remove' in locals() and 'used_alpha_remove' in locals(), "Failed to compute epsilon_remove"
         epsilon = epsilon_remove
         used_alpha = used_alpha_remove
@@ -118,8 +126,8 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
     if used_alpha == alpha_orders[0]:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
-    
-    # Print debug info if requested
+
+    # Print debug info if requested, but avoid overflow/underflow warnings
     if config.print_alpha:
         print(f'sigma: {params.sigma}, delta: {params.delta}, num_steps: {params.num_steps}, '
               f'num_selected: {params.num_selected}, num_epochs: {params.num_epochs}, used_alpha: {used_alpha}')
@@ -127,7 +135,8 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
     return epsilon
 
 def allocation_delta_RDP_DCO(params: PrivacyParams,
-                             config: SchemeConfig = SchemeConfig(),
+                             config: SchemeConfig,
+                             direction: Direction = Direction.BOTH,
                              ) -> float:
     """
     Compute delta for the RDP-DCO allocation scheme.
@@ -135,6 +144,7 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
     Args:
         params: Privacy parameters
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
         
     Returns:
         Computed delta value
@@ -145,13 +155,19 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
     
     # Use alpha_orders directly from config or generate if not provided
     if config.allocation_RDP_DCO_alpha_orders is not None:
+        alpha_orders: NDArray[np.float64] = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
         assert np.all(alpha_orders >= 2), f"All alpha values must be >= 2 for RDP_DCO. Found min value: {np.min(alpha_orders)}"
-        alpha_orders = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
     else:
         alpha_orders = np.concatenate((np.arange(2, 202), np.exp(np.linspace(np.log(202), np.log(10_000), 50))))
     
+    # Variables that will be defined conditionally
+    delta_add: float  # type annotation without initialization
+    delta_remove: float  # type annotation without initialization
+    used_alpha_add: float  # type annotation without initialization
+    used_alpha_remove: float  # type annotation without initialization
+    
     # Compute RDP and delta values using log-space calculations
-    if config.direction != 'add':
+    if direction != Direction.ADD:
         # Compute RDP values
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_remove(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
@@ -166,7 +182,7 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
         delta_remove = float(np.exp(log_alpha_deltas[min_log_delta_idx]))
         used_alpha_remove = float(alpha_orders[min_log_delta_idx])
     
-    if config.direction != 'remove':
+    if direction != Direction.REMOVE:
         # Compute RDP values
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_add(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
@@ -182,11 +198,11 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
         used_alpha_add = float(alpha_orders[min_log_delta_idx])
 
     # Determine the delta and used alpha based on the direction
-    if config.direction == 'add':
+    if direction == Direction.ADD:
         assert 'delta_add' in locals() and 'used_alpha_add' in locals(), "Failed to compute delta_add"
         delta = delta_add
         used_alpha = used_alpha_add
-    elif config.direction == 'remove':
+    elif direction == Direction.REMOVE:
         assert 'delta_remove' in locals() and 'used_alpha_remove' in locals(), "Failed to compute delta_remove"
         delta = delta_remove
         used_alpha = used_alpha_remove
@@ -200,8 +216,8 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
         print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
     if used_alpha == alpha_orders[0]:
         print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
-    
-    # Print debug info if requested
+
+    # Print debug info if requested, but avoid overflow/underflow warnings
     if config.print_alpha:
         print(f'sigma: {params.sigma}, epsilon: {params.epsilon}, num_steps: {params.num_steps}, '
               f'num_selected: {params.num_selected}, num_epochs: {params.num_epochs}, used_alpha: {used_alpha}')
