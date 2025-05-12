@@ -5,6 +5,7 @@ Release tests for the Random Allocation project.
 This script runs all tests that should pass before a release, including:
 1. Basic functionality tests
 2. Type checking
+3. Data handler tests
 """
 
 import os
@@ -54,6 +55,10 @@ def main() -> None:
         {
             "name": "Type Checking",
             "cmd": [sys.executable, os.path.join(project_root, "tests", "check_types.py")]
+        },
+        {
+            "name": "Data Handler Tests",
+            "cmd": [sys.executable, os.path.join(project_root, "tests", "data_handler_tests.py")]
         }
     ]
     

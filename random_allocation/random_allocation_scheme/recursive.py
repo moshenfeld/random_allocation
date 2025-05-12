@@ -90,14 +90,14 @@ def allocation_epsilon_recursive(params: PrivacyParams,
     
     if direction == Direction.ADD:
         assert 'epsilon_add' in locals(), "Failed to compute epsilon_add"
-        return epsilon_add
+        return float(epsilon_add)
     if direction == Direction.REMOVE:
         assert 'epsilon_remove' in locals(), "Failed to compute epsilon_remove"
-        return epsilon_remove
+        return float(epsilon_remove)
     
     # Both directions, return max of the two
     assert 'epsilon_add' in locals() and 'epsilon_remove' in locals(), "Failed to compute either epsilon_add or epsilon_remove"
-    return max(epsilon_add, epsilon_remove)
+    return float(max(epsilon_add, epsilon_remove))
 
 def allocation_delta_recursive(params: PrivacyParams,
                                config: SchemeConfig = SchemeConfig(),

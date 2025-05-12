@@ -131,7 +131,11 @@ def main() -> None:
     
     print_report(error_counts, all_modules)
     
-    sys.exit(0)  # Don't fail CI for now
+    # Exit with error code if type errors are found
+    if error_counts:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 if __name__ == "__main__":
     main() 

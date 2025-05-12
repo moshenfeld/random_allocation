@@ -6,7 +6,7 @@ import numpy as np
 
 # Local application imports
 from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 
 def Monte_Carlo_estimation(params: PrivacyParams,
                            config: SchemeConfig,
@@ -64,14 +64,14 @@ def Monte_Carlo_estimation(params: PrivacyParams,
 
 def allocation_delta_MC(params: PrivacyParams, 
                       config: SchemeConfig,
-                      direction: Literal['add', 'remove', 'both'] = 'both') -> float:
+                      direction: Direction = Direction.BOTH) -> float:
     """
     Compute delta using Monte Carlo simulation for the allocation scheme.
     
     Args:
         params: Privacy parameters (must include epsilon)
         config: Scheme configuration parameters
-        direction: The direction of privacy. Can be 'add', 'remove', or 'both'.
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed delta value
@@ -80,25 +80,24 @@ def allocation_delta_MC(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    assert(params.num_selected == 1)
+    assert params.num_selected == 1, "Monte Carlo only supports num_selected=1"
     
     # Variables that will be defined conditionally
     delta_add: float  # type annotation without initialization
     delta_remove: float  # type annotation without initialization
     
-    if direction != 'add':
+    if direction != Direction.ADD:
         delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
-    if direction != 'remove':
+    if direction != Direction.REMOVE:
         delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
     
-    if direction == 'add':
+    if direction == Direction.ADD:
         assert 'delta_add' in locals(), "Failed to compute delta_add"
         return delta_add
-    if direction == 'remove':
+    if direction == Direction.REMOVE:
         assert 'delta_remove' in locals(), "Failed to compute delta_remove"
         return delta_remove
+    
     # Both directions, return max
     assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
-    return max(delta_add, delta_remove)
-    
-
+    return float(max(delta_add, delta_remove))

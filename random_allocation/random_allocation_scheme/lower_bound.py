@@ -6,16 +6,17 @@ import numpy as np
 
 # Local application imports
 from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 
-def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig) -> float:
+def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute a lower bound on delta for the allocation scheme.
     
     Args:
         params: Privacy parameters (must include epsilon)
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Lower bound on delta
@@ -24,7 +25,7 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig) ->
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    assert(params.num_selected == 1)
+    assert params.num_selected == 1, "Lower bound only supports num_selected=1"
     bnb_accountant = BnBAccountant()
     
     # Convert the return value to float to ensure type consistency
@@ -37,7 +38,7 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig) ->
     
     return float(result)
 
-def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig) -> float:
+def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     # return 0.0
     """
     Compute a lower bound on epsilon for the allocation scheme.
@@ -45,6 +46,7 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig) 
     Args:
         params: Privacy parameters (must include delta)
         config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Lower bound on epsilon
@@ -53,7 +55,7 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig) 
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
-    assert(params.num_selected == 1)
+    assert params.num_selected == 1, "Lower bound only supports num_selected=1"
     #find the epsilon that gives the delta using binary search    
     optimization_func = lambda eps: allocation_delta_lower_bound(
         PrivacyParams(
@@ -64,7 +66,8 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig) 
             num_epochs=params.num_epochs,
             num_selected=params.num_selected
         ),
-        config=config
+        config=config,
+        direction=direction
     )
     
     epsilon = search_function_with_bounds(

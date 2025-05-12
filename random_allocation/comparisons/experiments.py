@@ -16,6 +16,7 @@ from matplotlib.figure import Figure
 # Local application imports
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
+from random_allocation.comparisons.data_handler import save_experiment_data, load_experiment_data
 
 # Type variables and aliases
 T = TypeVar('T')
@@ -157,36 +158,6 @@ def calc_experiment_data(params: PrivacyParams,
     
     return data
 
-def save_experiment_data(data: DataDict, methods: MethodList, experiment_name: str) -> None:
-    """
-    Save experiment data as a CSV file.
-    
-    Args:
-        data: The experiment data dictionary
-        methods: List of methods used in the experiment
-        experiment_name: Name of the experiment for the output file (full path)
-    """
-    # Create data directory if it doesn't exist
-    os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
-    
-    # Create DataFrame
-    df_data: Dict[str, Union[Collection[float], str]] = {'x': data['x data']}
-    
-    # Save y data for each method
-    for method in methods:
-        df_data[method] = data['y data'][method]
-        if method + '- std' in data['y data']:
-            df_data[method + '_std'] = data['y data'][method + '- std']
-    
-    # Include additional relevant data
-    df_data['title'] = data.get('title', '')
-    df_data['x name'] = data.get('x name', '')
-    df_data['y name'] = data.get('y name', '')
-    
-    # Create DataFrame and save to CSV
-    df = pd.DataFrame(df_data)
-    df.to_csv(experiment_name, index=False)
-
 def save_experiment_plot(data: DataDict, methods: MethodList, experiment_name: str) -> None:
     """
     Save the experiment plot to a file.
@@ -238,11 +209,12 @@ def run_experiment(
     
     # Get the examples directory path
     examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
-    data_file = os.path.join(examples_dir, 'data', f'{experiment_name}.csv')
+    data_dir = os.path.join(examples_dir, 'data')
+    data_file = os.path.join(data_dir, experiment_name)
     
-    # Extract required parameters from params_dict
-    x_var = params_dict.pop('x_var', None)
-    y_var = params_dict.pop('y_var', None)
+    # Extract required parameters from params_dict without removing them
+    x_var = params_dict.get('x_var')
+    y_var = params_dict.get('y_var')
     
     if x_var is None or y_var is None:
         raise ValueError("params_dict must contain 'x_var' and 'y_var' keys")
@@ -253,7 +225,7 @@ def run_experiment(
     x_values = cast(XValues, params_dict[x_var])
     
     # Create a PrivacyParams object with base values (excluding x_values)
-    base_params = {k: v for k, v in params_dict.items() if not isinstance(v, (list, np.ndarray))}
+    base_params = {k: v for k, v in params_dict.items() if not isinstance(v, (list, np.ndarray)) and k not in ['x_var', 'y_var']}
     
     # Use epsilon/delta from params_dict if present
     epsilon = base_params.get(EPSILON)
@@ -278,19 +250,10 @@ def run_experiment(
         data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
         save_experiment_data(data, methods, data_file)
     else:
-        if os.path.exists(data_file):
-            print(f"Reading data from {data_file}")
-            # Read the CSV and convert to expected DataDict format
-            df = pd.read_csv(data_file)
-            data = {'y data': {}, 'x data': df['x'].tolist()}
-            for method in methods:
-                if method in df.columns:
-                    data['y data'][method] = df[method].values
-                if f"{method}_std" in df.columns:
-                    data['y data'][method + '- std'] = df[f"{method}_std"].values
-            data['title'] = df.get('title', [''])[0] if not df.empty else ''
-            data['x name'] = df.get('x name', [''])[0] if not df.empty else ''
-            data['y name'] = df.get('y name', [''])[0] if not df.empty else ''
+        # Try to load existing data
+        loaded_data = load_experiment_data(data_file, methods)
+        if loaded_data is not None:
+            data = loaded_data
         else:
             print(f"Computing data for {experiment_name}")
             data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
@@ -311,8 +274,9 @@ def run_experiment(
     
     if save_plots:
         # Save the plot
-        os.makedirs(os.path.join(examples_dir, 'plots'), exist_ok=True)
-        fig.savefig(os.path.join(examples_dir, 'plots', f'{experiment_name}_plot.png'))
+        plots_dir = os.path.join(examples_dir, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        fig.savefig(os.path.join(plots_dir, f'{experiment_name}_plot.png'))
         plt.close(fig)
     else:
         # Display the plot and table

@@ -65,8 +65,8 @@ def local_delta(params: PrivacyParams,
 
     Parameters:
     - params: PrivacyParams containing sigma, epsilon, num_selected, and num_epochs
-    - config: Configuration parameters
-    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
+    - config: Configuration parameters. Is used only for consistency.
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH. Doesn't affect the result, and is used only for consistency.
     """
     params.validate()
     assert params.epsilon is not None, "Epsilon must be provided to compute delta"
@@ -83,8 +83,8 @@ def local_epsilon(params: PrivacyParams,
 
     Parameters:
     - params: PrivacyParams containing sigma, delta, num_selected, and num_epochs
-    - config: Configuration parameters
-    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
+    - config: Configuration parameters. Is used only for consistency.
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH. Doesn't affect the result, and is used only for consistency.
     """
     params.validate()
     assert params.delta is not None, "Delta must be provided to compute epsilon"
