@@ -60,6 +60,11 @@ conda-env/
 # OS
 .DS_Store
 Thumbs.db
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
 
 # Project specific
 random_allocation.egg-info/
@@ -74,6 +79,11 @@ random_allocation.egg-info/
 *.rar
 *.7z
 
+# MyPy cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
 # Local development
 .env.local
 .env.development.local
@@ -82,4 +92,7 @@ random_allocation.egg-info/
 
 # Generated data and plots
 data/
-plots/ 
+plots/
+
+# Generated cleanup script
+cleanup.sh 

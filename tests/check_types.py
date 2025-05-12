@@ -25,7 +25,7 @@ def run_mypy(include_paths: Optional[List[str]] = None) -> Tuple[str, int]:
     cmd.extend([
         "--show-column-numbers",
         "--pretty",
-        "--config-file=.mypy.ini"  # Explicitly use the mypy.ini config file
+        # Use the configuration from pyproject.toml
     ])
     
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -35,7 +35,7 @@ def analyze_results(mypy_output: str) -> Dict[str, int]:
     """Analyze mypy output and calculate types per module."""
     modules: Dict[str, int] = {}
     
-    # Modules to ignore based on .mypy.ini configuration
+    # Modules to ignore based on pyproject.toml configuration
     ignored_modules = [
         "random_allocation.random_allocation_scheme.Monte_Carlo_external",
         "random_allocation.other_schemes.shuffle_external"
@@ -69,7 +69,7 @@ def get_all_modules() -> Set[str]:
     """Find all Python modules in the project."""
     modules = set()
     
-    # Modules to ignore based on .mypy.ini configuration
+    # Modules to ignore based on pyproject.toml configuration
     ignored_modules = [
         "random_allocation.random_allocation_scheme.Monte_Carlo_external",
         "random_allocation.other_schemes.shuffle_external"

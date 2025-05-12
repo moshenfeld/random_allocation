@@ -64,3 +64,35 @@ ignore_missing_imports = true
 module = "random_allocation.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "random_allocation.random_allocation_scheme.Monte_Carlo_external"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "random_allocation.other_schemes.shuffle_external"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "random_allocation.*.*_external"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "numpy"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "scipy"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "matplotlib"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "dp_accounting"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "numba"
+ignore_missing_imports = true
