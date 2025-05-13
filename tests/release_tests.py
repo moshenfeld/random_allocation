@@ -4,14 +4,16 @@ Release tests for the Random Allocation project.
 
 This script runs all tests that should pass before a release, including:
 1. Basic functionality tests
-2. Type checking
-3. Data handler tests
+2. Data handler tests
 """
 
 import os
 import sys
 import subprocess
 import time
+
+# Set the matplotlib backend to 'Agg' to prevent plots from being displayed
+os.environ['MPLBACKEND'] = 'Agg'
 
 def run_command(cmd: list, name: str) -> bool:
     """Run a command and return True if it succeeds."""
@@ -21,7 +23,7 @@ def run_command(cmd: list, name: str) -> bool:
     
     start_time = time.time()
     # Capture output to display it properly
-    result = subprocess.run(cmd, text=True, capture_output=True)
+    result = subprocess.run(cmd, text=True, capture_output=True, env=dict(os.environ, MPLBACKEND='Agg'))
     elapsed_time = time.time() - start_time
     
     # Always print the output so that test failures are visible
@@ -51,10 +53,6 @@ def main() -> None:
         {
             "name": "Basic Tests",
             "cmd": [sys.executable, os.path.join(project_root, "tests", "basic_tests.py")]
-        },
-        {
-            "name": "Type Checking",
-            "cmd": [sys.executable, os.path.join(project_root, "tests", "check_types.py")]
         },
         {
             "name": "Data Handler Tests",

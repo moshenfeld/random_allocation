@@ -14,7 +14,7 @@ from random_allocation.random_allocation_scheme.direct import allocation_delta_d
 # Type aliases
 NumericFunction = Callable[[float], float]
 
-def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, discretization, optimization_func):
+def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, discretization, optimization_func, direction):
     epsilon = np.inf
 
     # Find a gamma such that the Poisson term with sampling probability e^(2*gamma)/num_steps_per_round
@@ -39,7 +39,7 @@ def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, disc
                 num_epochs=num_epochs,
                 sampling_prob=sampling_prob,
                 discretization=discretization,
-                direction="remove"
+                direction=direction
             )
             epsilon = float(Poisson_PLD_final.get_epsilon_for_delta(delta/2))
     return epsilon
@@ -80,13 +80,13 @@ def allocation_epsilon_recursive(params: PrivacyParams,
         optimization_func = lambda eps: Poisson_PLD_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))\
                                         *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps))
         epsilon_remove = allocation_epsilon_recursive_inner(params.sigma, params.delta, num_steps_per_round,
-                                                            num_rounds*params.num_epochs, config.discretization, optimization_func)
+                                                            num_rounds*params.num_epochs, config.discretization, optimization_func, "remove")
     
     if direction != Direction.REMOVE:
         optimization_func = lambda eps: Poisson_PLD_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))\
                                         *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps))
         epsilon_add = allocation_epsilon_recursive_inner(params.sigma, params.delta, num_steps_per_round,
-                                                         num_rounds*params.num_epochs, config.discretization, optimization_func)
+                                                         num_rounds*params.num_epochs, config.discretization, optimization_func, "add")
     
     if direction == Direction.ADD:
         assert 'epsilon_add' in locals(), "Failed to compute epsilon_add"

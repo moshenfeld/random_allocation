@@ -182,8 +182,10 @@ def run_experiment(
     visualization_config: Optional[VisualizationConfig] = None,
     experiment_name: str = '',
     plot_type: PlotType = PlotType.COMPARISON,
-    save_data: bool = True, 
-    save_plots: bool = True,
+    read_data: bool = False, 
+    save_data: bool = True,
+    save_plots: bool = False,
+    show_plots: bool = True,
     direction: Direction = Direction.BOTH
 ) -> DataDict:
     """
@@ -197,8 +199,10 @@ def run_experiment(
         visualization_config: Additional keyword arguments for the plot function
         experiment_name: Name of the experiment for the output file
         plot_type: Type of plot to create (COMPARISON or COMBINED)
-        save_data: Whether to save data to CSV files
+        read_data: Whether to try reading data from existing files before calculating
+        save_data: Whether to save computed data to CSV files
         save_plots: Whether to save plots to files
+        show_plots: Whether to display plots interactively
         direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
         
     Returns:
@@ -241,26 +245,30 @@ def run_experiment(
         delta=delta
     )
 
-    # Data logic:
-    # If save_data is True: always recalculate and save
-    # If save_data is False: try to read existing data, if not exists - recalculate but don't save
+    # Data handling logic:
+    # - If read_data is True: Try to read existing data first
+    # - If calculation is needed and save_data is True: Save the calculated data
     data: DataDict
-    if save_data:
-        print(f"Computing data for {experiment_name}")
-        data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
-        save_experiment_data(data, methods, data_file)
-    else:
-        # Try to load existing data
+    
+    if read_data:
+        # Try to load existing data first
         loaded_data = load_experiment_data(data_file, methods)
         if loaded_data is not None:
+            print(f"Loaded existing data for {experiment_name}")
             data = loaded_data
         else:
             print(f"Computing data for {experiment_name}")
             data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
+            if save_data:
+                save_experiment_data(data, methods, data_file)
+    else:
+        # Always calculate new data
+        print(f"Computing data for {experiment_name}")
+        data = calc_experiment_data(params, config, methods, x_var, x_values, y_var, direction)
+        if save_data:
+            save_experiment_data(data, methods, data_file)
     
-    # Plot logic:
-    # If save_plots is True: only save the plot, don't display it
-    # If save_plots is False: only display the plot, don't save it
+    # Plotting logic
     if visualization_config is None:
         visualization_config = {}
     
@@ -272,14 +280,17 @@ def run_experiment(
         # Use type: ignore to bypass incompatible argument type errors
         fig = plot_combined_data(data, **visualization_config)  # type: ignore
     
+    # Save the plot if requested
     if save_plots:
-        # Save the plot
         plots_dir = os.path.join(examples_dir, 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         fig.savefig(os.path.join(plots_dir, f'{experiment_name}_plot.png'))
-        plt.close(fig)
-    else:
-        # Display the plot and table
+    
+    # Show the plot if requested
+    if show_plots:
         plt.show()
         plot_as_table(data)
+    else:
+        plt.close(fig)
+        
     return data

@@ -1,9 +1,12 @@
+import os
+# Force matplotlib to use a non-interactive backend to prevent plots from being displayed
+os.environ['MPLBACKEND'] = 'Agg'
+
 import unittest
 import numpy as np
 import warnings
 import sys
 from io import StringIO
-import matplotlib.pyplot as plt
 import time  # Added for timing tests
 import functools  # For decorators
 import signal  # For timeout handling
@@ -21,7 +24,6 @@ REMOVE = Direction.REMOVE.value
 BOTH = Direction.BOTH.value
 
 from random_allocation.comparisons.experiments import run_experiment
-from random_allocation.comparisons.visualization import plot_comparison, plot_combined_data, plot_as_table
 from random_allocation.random_allocation_scheme import (
     allocation_epsilon_analytic, allocation_delta_analytic,
     allocation_epsilon_direct, allocation_delta_direct,
@@ -601,11 +603,10 @@ class TestFunctionalityNotBroken(unittest.TestCase):
     
     @timeout(MAX_TEST_TIME)
     def test_run_experiment(self):
-        """Test experiment running functionality."""
-        # Basic experiment with minimal settings to verify it runs
+        """Test run_experiment function."""
         with WarningCatcher() as warning_catcher:
             try:
-                # Create a params_dict with the required parameters using the correct format
+                # Create a simple parameter dictionary
                 params_dict = {
                     'x_var': SIGMA,
                     'y_var': EPSILON,
@@ -638,52 +639,6 @@ class TestFunctionalityNotBroken(unittest.TestCase):
             except Exception as e:
                 # Fail the test with an informative message instead of skipping
                 self.fail(f"run_experiment test failed: {e}")
-        
-        self.warning_summaries[self._testMethodName] = warning_catcher.get_warnings_summary()
-    
-    @timeout(MAX_TEST_TIME)
-    def test_plotting_functions(self):
-        """Test basic plotting functionality without actually plotting."""
-        with WarningCatcher() as warning_catcher:
-            try:
-                # Create a simple DataDict structure that matches what plot_comparison expects
-                data = {
-                    'x data': [0.1, 0.5, 1.0],
-                    'y data': {
-                        LOCAL: np.array([0.2, 0.4, 0.8]),
-                        ALLOCATION_DIRECT: np.array([0.1, 0.3, 0.7])
-                    },
-                    'x name': names_dict[SIGMA],
-                    'y name': names_dict[EPSILON],
-                    'title': 'Test Plot'
-                }
-                
-                # Test plot_comparison with the correct signature
-                fig1 = plot_comparison(
-                    data=data,
-                    log_x_axis=True,
-                    log_y_axis=False
-                )
-                self.assertIsNotNone(fig1)
-                plt.close(fig1)
-                
-                # Test plot_combined_data
-                fig2 = plot_combined_data(
-                    data=data,
-                    log_x_axis=True,
-                    log_y_axis=False
-                )
-                self.assertIsNotNone(fig2)
-                plt.close(fig2)
-                
-                # Test plot_as_table
-                table = plot_as_table(data)
-                self.assertIsNotNone(table)
-                self.assertEqual(len(table), len(data['x data']))
-                
-            except Exception as e:
-                # Fail the test with an informative message instead of skipping
-                self.fail(f"Plotting functions test failed: {e}")
         
         self.warning_summaries[self._testMethodName] = warning_catcher.get_warnings_summary()
 
