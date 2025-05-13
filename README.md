@@ -202,8 +202,13 @@ Visualization configuration options include:
 - `format_x`: Function to format x-axis labels.
 - `format_y`: Function to format y-axis labels.
 - `legend_position`: Optional custom position for the legend (e.g., 'upper right', 'lower left').
+- `num_y_ticks`: Optional number of y-axis tick marks to display (if not specified, matplotlib's default is used).
 
 The visualization module includes intelligent legend positioning that automatically places legends to avoid overlapping with data points. If not specified, the system analyzes data distribution and places the legend in the area with the fewest data points.
+
+When using logarithmic y-axis scaling (`log_y_axis=True`), the system automatically adjusts tick formatting for privacy parameters:
+- For epsilon (ε) and delta (δ) parameters, small values (< 0.01) are displayed in scientific notation
+- For other values, regular decimal formatting is used
 
 For multi-plot figures, use the `plot_multiple_data` function:
 
@@ -220,7 +225,8 @@ fig = plot_multiple_data(
     plot_type='combined',  # 'combined' or 'comparison'
     figsize=(20, 6),  # Width, height in inches
     grid_layout=(1, 3),  # 1 row, 3 columns
-    legend_position='upper right'  # Optional: specify legend position
+    legend_position='upper right',  # Optional: specify legend position
+    num_y_ticks=5  # Optional: control number of y-axis ticks
 )
 
 # Add a super title and adjust layout

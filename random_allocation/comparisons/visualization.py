@@ -17,6 +17,7 @@ from random_allocation.comparisons.definitions import *
 DataDict = Dict[str, Any]
 FormatterFunc = Callable[[float, int], str]
 AxisScale = Literal['linear', 'log']
+PlotResult = Tuple[Figure, Axes]
 
 def clean_log_axis_ticks(
     ax: Axes, 
@@ -83,8 +84,32 @@ def find_optimal_legend_position(
     x_lim = ax.get_xlim()
     y_lim = ax.get_ylim()
     
-    x_mid = (x_lim[0] + x_lim[1]) / 2
-    y_mid = (y_lim[0] + y_lim[1]) / 2
+    # Check if axes are using logarithmic scales
+    x_scale = ax.get_xscale()
+    y_scale = ax.get_yscale()
+    
+    # Determine midpoints based on scale type
+    if x_scale == 'log':
+        # For log scale, use geometric mean if bounds are positive
+        if x_lim[0] > 0 and x_lim[1] > 0:
+            x_mid = np.sqrt(x_lim[0] * x_lim[1])
+        else:
+            # Fall back to arithmetic mean if we have non-positive values
+            x_mid = (x_lim[0] + x_lim[1]) / 2
+    else:
+        # For linear scale, use arithmetic mean
+        x_mid = (x_lim[0] + x_lim[1]) / 2
+    
+    if y_scale == 'log':
+        # For log scale, use geometric mean if bounds are positive
+        if y_lim[0] > 0 and y_lim[1] > 0:
+            y_mid = np.sqrt(y_lim[0] * y_lim[1])
+        else:
+            # Fall back to arithmetic mean if we have non-positive values
+            y_mid = (y_lim[0] + y_lim[1]) / 2
+    else:
+        # For linear scale, use arithmetic mean
+        y_mid = (y_lim[0] + y_lim[1]) / 2
     
     # Count points in each quadrant
     lower_left_count = 0
@@ -158,7 +183,8 @@ def setup_plot_axes(
     xlabel_fontsize: int = 14,
     ylabel_fontsize: int = 14,
     title: Optional[str] = None,
-    title_fontsize: int = 16
+    title_fontsize: int = 16,
+    num_y_ticks: Optional[int] = None
 ) -> None:
     """
     Set up common axis properties for plots.
@@ -211,20 +237,193 @@ def setup_plot_axes(
     
     if log_y_axis:
         ax.set_yscale('log')
-        ax.yaxis.set_major_formatter(plt.FuncFormatter(format_y))
-        # Clean up y-axis log scale ticks if needed
-        if 'y data' in data and filtered_methods:
-            # For y-axis, we need to extract unique y values across all methods
-            y_values = []
-            for method in filtered_methods:
-                if method in methods_data:
-                    y_values.extend(methods_data[method])
-            y_values = np.unique(np.array(y_values)[np.isfinite(y_values)])
-            clean_log_axis_ticks(ax, y_values, format_y, 'y')
+        # Use a concise formatter for log scale y-axis
+        if data['y name'] == names_dict[EPSILON] or data['y name'] == names_dict[DELTA]:
+            # For epsilon and delta, use scientific notation for small values
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(
+                lambda y, _: f'{y:.1e}' if y < 0.01 else f'{y:.2f}'
+            ))
+        else:
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(format_y))
+        
+        # Optionally limit number of ticks on y-axis
+        if num_y_ticks is not None:
+            from matplotlib.ticker import MaxNLocator
+            ax.yaxis.set_major_locator(MaxNLocator(nbins=num_y_ticks))
     
     # Set tick parameters
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.set_xticks(data['x data'])
+
+def plot_data_lines(
+    ax: Axes,
+    data: DataDict,
+    filtered_methods: List[str],
+    methods_data: Dict[str, Any],
+    legend_map: Dict[str, Any],
+    markers_map: Dict[str, Any],
+    colors_map: Dict[str, Any],
+    legend_prefix: str,
+    is_allocation_method: bool = False
+) -> None:
+    """
+    Plot data lines for each method on the given axes.
+    
+    Args:
+        ax: The matplotlib axes to plot on
+        data: Data dictionary containing plot data
+        filtered_methods: List of methods to include (without '- std' entries)
+        methods_data: Dictionary mapping methods to their data
+        legend_map: Dictionary mapping methods to their legend text
+        markers_map: Dictionary mapping methods to their marker styles
+        colors_map: Dictionary mapping methods to their colors
+        legend_prefix: Prefix for the legend labels
+        is_allocation_method: Whether to apply special styling for allocation methods
+    """
+    for method in filtered_methods:
+        legend_value = legend_map.get(method, "")
+        if legend_value is None:
+            legend_value = ""
+            
+        # Determine line style based on method type
+        if is_allocation_method:
+            linewidth: float = 1 if (method == ALLOCATION_DECOMPOSITION or 
+                                  method == ALLOCATION_DIRECT or 
+                                  method == ALLOCATION_ANALYTIC or 
+                                  method == ALLOCATION_RECURSIVE) else 2
+                                  
+            linestyle: str = 'dotted' if (method == ALLOCATION_DECOMPOSITION or 
+                                       method == ALLOCATION_DIRECT or 
+                                       method == ALLOCATION_ANALYTIC or 
+                                       method == ALLOCATION_RECURSIVE) else 'solid'
+        else:
+            linewidth: float = 2.5
+            linestyle: str = 'solid'
+            
+        # Adjust marker size based on plot type
+        markersize = 10 if is_allocation_method else 12
+            
+        ax.plot(data['x data'], methods_data[method], 
+               label=legend_prefix + str(legend_value), 
+               marker=markers_map[method], 
+               color=colors_map[method], 
+               linewidth=linewidth, 
+               linestyle=linestyle, 
+               markersize=markersize, 
+               alpha=0.8)
+
+def plot_error_bars(
+    ax: Axes,
+    data: DataDict,
+    filtered_methods: List[str],
+    methods_data: Dict[str, Any],
+    colors_map: Dict[str, Any]
+) -> None:
+    """
+    Plot error bars (standard deviation) for each method if available.
+    
+    Args:
+        ax: The matplotlib axes to plot on
+        data: Data dictionary containing plot data
+        filtered_methods: List of methods to include (without '- std' entries)
+        methods_data: Dictionary mapping methods to their data
+        colors_map: Dictionary mapping methods to their colors
+    """
+    for method in filtered_methods:
+        # Add error bars if available (method + '- std' exists)
+        if method + '- std' in methods_data:
+            ax.fill_between(
+                data['x data'], 
+                np.clip(methods_data[method] - methods_data[method + '- std'], 0, 1),  
+                np.clip(methods_data[method] + methods_data[method + '- std'], 0, 1), 
+                color=colors_map[method], 
+                alpha=0.1
+            )
+
+def calculate_min_allocation(
+    data: DataDict,
+    filtered_methods: List[str],
+    methods_data: Dict[str, Any]
+) -> np.ndarray:
+    """
+    Calculate the minimum allocation across specified allocation methods.
+    
+    Args:
+        data: Data dictionary containing plot data
+        filtered_methods: List of methods to include
+        methods_data: Dictionary mapping methods to their data
+        
+    Returns:
+        NumPy array containing the min allocation values
+    """
+    min_allocation: np.ndarray = np.ones_like(data['x data']) * 10000
+    
+    # Check each allocation method
+    allocation_methods = [
+        ALLOCATION_ANALYTIC,
+        ALLOCATION_DIRECT,
+        ALLOCATION_DECOMPOSITION,
+        ALLOCATION_RECURSIVE
+    ]
+    
+    for method in allocation_methods:
+        if method in filtered_methods:
+            min_allocation = np.min([min_allocation, methods_data[method]], axis=0)
+            
+    return min_allocation
+
+def plot_min_allocation(
+    ax: Axes,
+    data: DataDict,
+    min_allocation: np.ndarray
+) -> None:
+    """
+    Plot the minimum allocation line.
+    
+    Args:
+        ax: The matplotlib axes to plot on
+        data: Data dictionary containing plot data
+        min_allocation: NumPy array containing the min allocation values
+    """
+    ax.plot(data['x data'], min_allocation, 
+           label='_{\\mathcal{A}}$ - (Our - Combined)', 
+           color=colors_dict[ALLOCATION], 
+           linewidth=2, 
+           alpha=1)
+
+def prepare_plot_data(
+    data: DataDict
+) -> Tuple[List[str], List[str], Dict[str, Any], Dict[str, Any], Dict[str, Any], Dict[str, Any], str]:
+    """
+    Prepare common data needed for plotting.
+    
+    Args:
+        data: Data dictionary containing plot data
+        
+    Returns:
+        Tuple containing:
+        - List of all methods
+        - List of filtered methods (without '- std' entries)
+        - Dictionary of methods data
+        - Dictionary of legend mappings
+        - Dictionary of marker mappings
+        - Dictionary of color mappings
+        - Legend prefix string
+    """
+    methods: List[str] = list(data['y data'].keys())
+    # Remove keys that end with '- std'
+    filtered_methods: List[str] = [method for method in methods if not method.endswith('- std')]
+    methods_data = data['y data']
+    
+    # Get method features
+    legend_map = get_features_for_methods(filtered_methods, 'legend')
+    markers_map = get_features_for_methods(filtered_methods, 'marker')
+    colors_map = get_features_for_methods(filtered_methods, 'color')
+    
+    # Determine legend prefix based on y-axis data
+    legend_prefix: str = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
+    
+    return methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix
 
 def plot_comparison(data: DataDict, 
                 log_x_axis: bool = False, 
@@ -248,40 +447,16 @@ def plot_comparison(data: DataDict,
     Returns:
         The created matplotlib figure
     """
-    methods: List[str] = list(data['y data'].keys())
-    # Remove keys that end with '- std'
-    filtered_methods: List[str] = [method for method in methods if not method.endswith('- std')]
-    methods_data = data['y data']
-    legend_map = get_features_for_methods(filtered_methods, 'legend')
-    markers_map = get_features_for_methods(filtered_methods, 'marker')
-    colors_map = get_features_for_methods(filtered_methods, 'color')
-    legend_prefix: str = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
+    methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix = prepare_plot_data(data)
     
     fig: Figure = plt.figure(figsize=figsize)
     ax = plt.gca()
     
-    # Plot each method
-    for method in filtered_methods:
-        legend_value = legend_map.get(method, "")
-        if legend_value is None:
-            legend_value = ""
-        plt.plot(data['x data'], methods_data[method], 
-               label=legend_prefix + str(legend_value), 
-               marker=markers_map[method], 
-               color=colors_map[method], 
-               linewidth=2.5, 
-               markersize=12, 
-               alpha=0.8)
-        
-        # Add error bars if available
-        if method + '- std' in methods:
-            plt.fill_between(
-                data['x data'], 
-                np.clip(methods_data[method] - methods_data[method + '- std'], 0, 1),  
-                np.clip(methods_data[method] + methods_data[method + '- std'], 0, 1), 
-                color=colors_map[method], 
-                alpha=0.1
-            )
+    # Plot data lines
+    plot_data_lines(ax, data, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix)
+    
+    # Plot error bars
+    plot_error_bars(ax, data, filtered_methods, methods_data, colors_map)
     
     # Use the common axis setup function
     setup_plot_axes(
@@ -294,7 +469,8 @@ def plot_comparison(data: DataDict,
         format_x=format_x,
         format_y=format_y,
         xlabel_fontsize=20,
-        ylabel_fontsize=20
+        ylabel_fontsize=20,
+        num_y_ticks=None
     )
     
     # Find optimal legend position if not specified
@@ -343,62 +519,20 @@ def plot_combined_data(data: DataDict,
     Returns:
         The created matplotlib figure
     """
-    methods: List[str] = list(data['y data'].keys())
-    # Remove keys that end with '- std'
-    filtered_methods: List[str] = [method for method in methods if not method.endswith('- std')]
-    methods_data = data['y data']
+    methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix = prepare_plot_data(data)
     
     # Calculate min allocation
-    min_allocation: np.ndarray = np.ones_like(data['x data'])*10000
-    if ALLOCATION_ANALYTIC in filtered_methods:
-        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_ANALYTIC]], axis=0)
-    if ALLOCATION_DIRECT in filtered_methods:
-        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_DIRECT]], axis=0)
-    if ALLOCATION_DECOMPOSITION in filtered_methods:
-        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_DECOMPOSITION]], axis=0)
-    if ALLOCATION_RECURSIVE in filtered_methods:
-        min_allocation = np.min([min_allocation, data['y data'][ALLOCATION_RECURSIVE]], axis=0)
-    
-    legend_map = get_features_for_methods(filtered_methods, 'legend')
-    markers_map = get_features_for_methods(filtered_methods, 'marker')
-    colors_map = get_features_for_methods(filtered_methods, 'color')
-    legend_prefix: str = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
+    min_allocation = calculate_min_allocation(data, filtered_methods, methods_data)
     
     # Create the figure and axis
     fig: Figure = plt.figure(figsize=figsize)
     ax: Axes = fig.add_subplot(111)
     
-    # Plot each method
-    for method in filtered_methods:
-        legend_value = legend_map.get(method, "")
-        if legend_value is None:
-            legend_value = ""
-            
-        linewidth: float = 1 if (method == ALLOCATION_DECOMPOSITION or 
-                              method == ALLOCATION_DIRECT or 
-                              method == ALLOCATION_ANALYTIC or 
-                              method == ALLOCATION_RECURSIVE) else 2
-                              
-        linestyle: str = 'dotted' if (method == ALLOCATION_DECOMPOSITION or 
-                                   method == ALLOCATION_DIRECT or 
-                                   method == ALLOCATION_ANALYTIC or 
-                                   method == ALLOCATION_RECURSIVE) else 'solid'
-        
-        ax.plot(data['x data'], methods_data[method], 
-               label=legend_prefix + str(legend_value), 
-               marker=markers_map[method], 
-               color=colors_map[method], 
-               linewidth=linewidth, 
-               linestyle=linestyle, 
-               markersize=10, 
-               alpha=0.8)
+    # Plot data lines
+    plot_data_lines(ax, data, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix, is_allocation_method=True)
     
     # Plot combined allocation
-    ax.plot(data['x data'], min_allocation, 
-           label='_{\\mathcal{A}}$ - (Our - Combined)', 
-           color=colors_dict[ALLOCATION], 
-           linewidth=2, 
-           alpha=1)
+    plot_min_allocation(ax, data, min_allocation)
     
     # Use the common axis setup function
     setup_plot_axes(
@@ -411,7 +545,8 @@ def plot_combined_data(data: DataDict,
         format_x=format_x,
         format_y=format_y,
         xlabel_fontsize=20,
-        ylabel_fontsize=20
+        ylabel_fontsize=20,
+        num_y_ticks=None
     )
     
     # Find optimal legend position if not specified
@@ -469,89 +604,24 @@ def plot_multiple_data(data_list: List[DataDict],
             print(f"Warning: Only displaying {n_rows * n_cols} of {n_plots} plots due to grid layout limitations.")
             break
         
-        # Get methods and data
-        methods: List[str] = list(data['y data'].keys())
-        # Remove keys that end with '- std'
-        filtered_methods: List[str] = [method for method in methods if not method.endswith('- std')]
-        methods_data = data['y data']
+        methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix = prepare_plot_data(data)
         
         # Create subplot
         ax: Axes = fig.add_subplot(n_rows, n_cols, idx + 1)
         
-        # Get necessary method features
-        legend_map = get_features_for_methods(filtered_methods, 'legend')
-        markers_map = get_features_for_methods(filtered_methods, 'marker')
-        colors_map = get_features_for_methods(filtered_methods, 'color')
-        legend_prefix: str = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
-        
-        # Plot based on type
         if plot_type == 'combined':
             # Special handling for combined plot type
-            min_allocation: np.ndarray = np.ones_like(data['x data']) * 10000
-            if ALLOCATION_ANALYTIC in filtered_methods:
-                min_allocation = np.min([min_allocation, methods_data[ALLOCATION_ANALYTIC]], axis=0)
-            if ALLOCATION_DIRECT in filtered_methods:
-                min_allocation = np.min([min_allocation, methods_data[ALLOCATION_DIRECT]], axis=0)
-            if ALLOCATION_DECOMPOSITION in filtered_methods:
-                min_allocation = np.min([min_allocation, methods_data[ALLOCATION_DECOMPOSITION]], axis=0)
-            if ALLOCATION_RECURSIVE in filtered_methods:
-                min_allocation = np.min([min_allocation, methods_data[ALLOCATION_RECURSIVE]], axis=0)
+            min_allocation = calculate_min_allocation(data, filtered_methods, methods_data)
             
-            # Plot each method
-            for method in filtered_methods:
-                legend_value = legend_map.get(method, "")
-                if legend_value is None:
-                    legend_value = ""
-                    
-                linewidth: float = 1 if (method == ALLOCATION_DECOMPOSITION or 
-                                        method == ALLOCATION_DIRECT or 
-                                        method == ALLOCATION_ANALYTIC or 
-                                        method == ALLOCATION_RECURSIVE) else 2
-                                        
-                linestyle: str = 'dotted' if (method == ALLOCATION_DECOMPOSITION or 
-                                            method == ALLOCATION_DIRECT or 
-                                            method == ALLOCATION_ANALYTIC or 
-                                            method == ALLOCATION_RECURSIVE) else 'solid'
-                                            
-                ax.plot(data['x data'], methods_data[method], 
-                      label=legend_prefix + str(legend_value), 
-                      marker=markers_map[method], 
-                      color=colors_map[method], 
-                      linewidth=linewidth, 
-                      linestyle=linestyle, 
-                      markersize=6, 
-                      alpha=0.8)
+            # Plot data lines
+            plot_data_lines(ax, data, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix, is_allocation_method=True)
             
             # Plot combined allocation
-            ax.plot(data['x data'], min_allocation, 
-                  label='_{\\mathcal{A}}$ - (Our - Combined)', 
-                  color=colors_dict[ALLOCATION], 
-                  linewidth=2, 
-                  alpha=1)
+            plot_min_allocation(ax, data, min_allocation)
         else:
             # Standard comparison plot
-            for method in filtered_methods:
-                legend_value = legend_map.get(method, "")
-                if legend_value is None:
-                    legend_value = ""
-                    
-                ax.plot(data['x data'], methods_data[method], 
-                      label=legend_prefix + str(legend_value), 
-                      marker=markers_map[method], 
-                      color=colors_map[method], 
-                      linewidth=2, 
-                      markersize=6, 
-                      alpha=0.8)
-                      
-                # Add std deviation if available
-                if method + '- std' in methods:
-                    ax.fill_between(
-                        data['x data'], 
-                        np.clip(methods_data[method] - methods_data[method + '- std'], 0, 1),
-                        np.clip(methods_data[method] + methods_data[method + '- std'], 0, 1), 
-                        color=colors_map[method], 
-                        alpha=0.1
-                    )
+            plot_data_lines(ax, data, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix)
+            plot_error_bars(ax, data, filtered_methods, methods_data, colors_map)
         
         # Set axis labels and scales using the common function
         setup_plot_axes(
@@ -566,7 +636,8 @@ def plot_multiple_data(data_list: List[DataDict],
             xlabel_fontsize=14,
             ylabel_fontsize=14,
             title=titles[idx] if titles and idx < len(titles) else data.get('title'),
-            title_fontsize=16
+            title_fontsize=16,
+            num_y_ticks=None
         )
         
         # Set legend

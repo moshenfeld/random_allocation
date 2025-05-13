@@ -291,7 +291,7 @@ fig = plot_multiple_data(
     log_x_axis=True,
     log_y_axis=False,
     format_x=lambda x, _: f'{x:.2f}',
-    plot_type='combined',  # 'combined' or 'comparison'
+    plot_type='epsilon_vs_sigma_large_combined', 
     figsize=(20, 6),  # Width, height in inches
     grid_layout=(1, 3)  # 1 row, 3 columns
 )
@@ -300,5 +300,13 @@ fig = plot_multiple_data(
 plt.suptitle("Effect of σ on Privacy Guarantee (ε) Across Different Number of Steps", fontsize=20)
 plt.tight_layout(rect=[0, 0, 1, 0.95])  # Leave room for the super title
 
-# Display the figure
-plt.show()
+examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
+
+if SAVE_PLOTS:
+    plots_dir = os.path.join(examples_dir, 'plots')
+    os.makedirs(plots_dir, exist_ok=True)
+    fig.savefig(os.path.join(plots_dir, 'epsilon_vs_sigma_large_combined_plot.png'))
+if SHOW_PLOTS:
+    plt.show()
+else:
+    plt.close(fig)
