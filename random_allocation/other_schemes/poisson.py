@@ -12,6 +12,30 @@ from random_allocation.comparisons.definitions import Direction
 
 
 # ==================== PLD ====================
+def create_zero_pmf(discretization: float) -> pld.privacy_loss_distribution.pld_pmf.PLDPmf:
+    """
+    Create a PMF that represents zero privacy loss.
+    
+    This creates a PMF with all probability mass at privacy loss = 0.
+    When composed with itself, it remains a zero privacy loss distribution,
+    which avoids numerical overflow issues during composition.
+    
+    Args:
+        discretization: The discretization parameter for the PMF
+        
+    Returns:
+        A PMF object representing zero privacy loss
+    """
+    # Create a PMF with all probability mass at privacy loss = 0
+    # This is a true representation of zero privacy loss
+    return pld.privacy_loss_distribution.pld_pmf.create_pmf(
+        loss_probs={0: 1.0},  # All probability mass at privacy loss = 0
+        discretization=discretization,
+        infinity_mass=0.0,
+        pessimistic_estimate=True
+    )
+
+
 def Poisson_PLD(sigma: float,
                 num_steps: int,
                 num_epochs: int,
@@ -30,22 +54,41 @@ def Poisson_PLD(sigma: float,
     - discretization: The discretization interval for the pld.
     - direction: The direction of the pld. Can be 'add', 'remove', or 'both'.
     """
-    Gauss_PLD = pld.privacy_loss_distribution.from_gaussian_mechanism(standard_deviation=sigma,
-                                                                      value_discretization_interval=discretization,
-                                                                      pessimistic_estimate=True,
-                                                                      sampling_prob=sampling_prob,
-                                                                      use_connect_dots=True)
-    zero_delta_pmf = pld.privacy_loss_distribution.pld_pmf.create_pmf(loss_probs={-10: 1.0},
-                                                                      discretization=discretization,
-                                                                      infinity_mass=0,
-                                                                      pessimistic_estimate=True)
+    total_compositions = num_steps * num_epochs
+    
+    # Create the standard Gaussian PLD
+    Gauss_PLD = pld.privacy_loss_distribution.from_gaussian_mechanism(
+        standard_deviation=sigma,
+        value_discretization_interval=discretization,
+        pessimistic_estimate=True,
+        sampling_prob=sampling_prob,
+        use_connect_dots=True
+    )
+    
+    # For "both" direction, just use the Gaussian PLD directly
+    if direction == "both":
+        return Gauss_PLD.self_compose(total_compositions)
+    
+    # For add or remove directions, use our zero privacy loss PMF
+    # This PMF has all mass at privacy loss = 0, which is stable under composition
+    zero_pmf = create_zero_pmf(discretization)
+    
+    # Create the appropriate PLD based on direction
     if direction == "add":
-        PLD_single = pld.privacy_loss_distribution.PrivacyLossDistribution(zero_delta_pmf, Gauss_PLD._pmf_add)
+        # For add direction, use zero_pmf for pmf_remove (no privacy loss when removing)
+        PLD_single = pld.privacy_loss_distribution.PrivacyLossDistribution(
+            pmf_remove=zero_pmf,
+            pmf_add=Gauss_PLD._pmf_add
+        )
     elif direction == "remove":
-        PLD_single = pld.privacy_loss_distribution.PrivacyLossDistribution(Gauss_PLD._pmf_remove, zero_delta_pmf)
-    elif direction == "both":
-        PLD_single = Gauss_PLD
-    return PLD_single.self_compose(num_steps*num_epochs)
+        # For remove direction, use zero_pmf for pmf_add (no privacy loss when adding)
+        PLD_single = pld.privacy_loss_distribution.PrivacyLossDistribution(
+            pmf_remove=Gauss_PLD._pmf_remove,
+            pmf_add=zero_pmf
+        )
+    
+    # Directly compose and return the PLD without any fallback mechanism
+    return PLD_single.self_compose(total_compositions)
 
 def Poisson_delta_PLD(params: PrivacyParams,
                       config: SchemeConfig,

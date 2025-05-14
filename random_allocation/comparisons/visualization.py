@@ -476,8 +476,8 @@ def plot_comparison(data: DataDict,
     # Find optimal legend position if not specified
     legend_pos = find_optimal_legend_position(ax, data, filtered_methods, methods_data, legend_position)
     
-    # Set legend with optimal position and slightly transparent background
-    plt.legend(fontsize=20, loc=legend_pos, framealpha=0.7)
+    # Set legend with optimal position and no frame or background
+    plt.legend(fontsize=20, loc=legend_pos, frameon=False)
     return fig
 
 def plot_as_table(data: DataDict) -> DataFrame:
@@ -552,8 +552,8 @@ def plot_combined_data(data: DataDict,
     # Find optimal legend position if not specified
     legend_pos = find_optimal_legend_position(ax, data, filtered_methods, methods_data, legend_position)
     
-    # Set legend with optimal position and slightly transparent background
-    ax.legend(fontsize=20, loc=legend_pos, framealpha=0.7)
+    # Set legend with optimal position and no frame or background
+    ax.legend(fontsize=20, loc=legend_pos, frameon=False)
     return fig
 
 def plot_multiple_data(data_list: List[DataDict],
@@ -642,7 +642,7 @@ def plot_multiple_data(data_list: List[DataDict],
         
         # Set legend
         optimal_legend_position = find_optimal_legend_position(ax, data, filtered_methods, methods_data, legend_position)
-        ax.legend(fontsize=12, loc=optimal_legend_position, framealpha=0.7)
+        ax.legend(fontsize=12, loc=optimal_legend_position, frameon=False)
     
     # Adjust layout to prevent clipping and overlap
     fig.tight_layout()

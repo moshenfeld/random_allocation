@@ -17,7 +17,7 @@ from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.experiments import run_experiment, PlotType
 from random_allocation.comparisons.visualization import plot_multiple_data
 # Configuration
-READ_DATA: bool = False  # Set to True to try reading data from existing files first
+READ_DATA: bool = True  # Set to True to try reading data from existing files first
 SAVE_DATA: bool = True  # Set to True to save computed data to CSV files
 SAVE_PLOTS: bool = True  # Set to True to save plots to files
 SHOW_PLOTS: bool = False  # Set to True to display plots interactively
@@ -50,7 +50,7 @@ data_1: Dict[str, Any] = run_experiment(
     config=config_1, 
     methods=methods_list_1, 
     visualization_config=visualization_config_1, 
-    experiment_name='epsilon_vs_sigma', 
+    experiment_name='main_plot', 
     plot_type=PlotType.COMBINED,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -64,7 +64,7 @@ data_1_add: Dict[str, Any] = run_experiment(
     config=config_1, 
     methods=methods_list_1_add_rem, 
     visualization_config=visualization_config_1, 
-    experiment_name='epsilon_vs_sigma_add', 
+    experiment_name='main_plot_add', 
     plot_type=PlotType.COMBINED,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -78,7 +78,7 @@ data_1_rem: Dict[str, Any] = run_experiment(
     config=config_1, 
     methods=methods_list_1_add_rem, 
     visualization_config=visualization_config_1, 
-    experiment_name='epsilon_vs_sigma_rem',     
+    experiment_name='main_plot_remove',     
     plot_type=PlotType.COMBINED,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -100,7 +100,7 @@ params_dict_2: Dict[str, Any] = {
 
 config_2: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)])
 
-methods_list_2: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
+methods_list_2: List[str] = [POISSON_PLD, POISSON_RDP, ALLOCATION_DIRECT]
 
 visualization_config_2: Dict[str, Union[bool, Callable[[float, int], str]]] = {
     'log_x_axis': True, 
@@ -125,9 +125,9 @@ data_2: Dict[str, Any] = run_experiment(
 # Third experiment - Compare different schemes for varying number of steps
 params_dict_3: Dict[str, Any] = {
     'x_var': NUM_STEPS,
-    'y_var': DELTA,
+    'y_var': EPSILON,
     SIGMA: 0.3,
-    EPSILON: 10,
+    DELTA: 1e-4,
     NUM_STEPS: np.arange(25, 551, 50),
     NUM_SELECTED: 1,
     NUM_EPOCHS: 1
@@ -135,11 +135,11 @@ params_dict_3: Dict[str, Any] = {
 
 config_3: SchemeConfig = SchemeConfig(allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)])
 
-methods_list_3: List[str] = [POISSON_RDP, ALLOCATION_DIRECT, POISSON_PLD]
+methods_list_3: List[str] = [POISSON_RDP, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_DECOMPOSITION]
 
 visualization_config_3: Dict[str, Union[bool, Callable[[float, int], str]]] = {
     'log_x_axis': False, 
-    'log_y_axis': True, 
+    'log_y_axis': False, 
     'format_x': lambda x, _: str(int(x))
 }
 
@@ -148,7 +148,7 @@ data_3: Dict[str, Any] = run_experiment(
     config=config_3, 
     methods=methods_list_3, 
     visualization_config=visualization_config_3, 
-    experiment_name='delta_vs_steps', 
+    experiment_name='epsilon_vs_steps', 
     plot_type=PlotType.COMPARISON,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -161,10 +161,10 @@ data_3: Dict[str, Any] = run_experiment(
 params_dict_4: Dict[str, Any] = {
     'x_var': NUM_SELECTED,
     'y_var': EPSILON,
-    SIGMA: 1,
+    SIGMA: 0.6,
     DELTA: 1e-6,
     NUM_STEPS: 2**10,
-    NUM_SELECTED: 2**np.arange(0, 10),
+    NUM_SELECTED: 2**np.arange(0, 7),
     NUM_EPOCHS: 1,
 }
 
@@ -291,7 +291,7 @@ fig = plot_multiple_data(
     log_x_axis=True,
     log_y_axis=False,
     format_x=lambda x, _: f'{x:.2f}',
-    plot_type='epsilon_vs_sigma_large_combined', 
+    plot_type='epsilon_vs_sigma_combined', 
     figsize=(20, 6),  # Width, height in inches
     grid_layout=(1, 3)  # 1 row, 3 columns
 )
@@ -305,7 +305,7 @@ examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 if SAVE_PLOTS:
     plots_dir = os.path.join(examples_dir, 'plots')
     os.makedirs(plots_dir, exist_ok=True)
-    fig.savefig(os.path.join(plots_dir, 'epsilon_vs_sigma_large_combined_plot.png'))
+    fig.savefig(os.path.join(plots_dir, 'epsilon_vs_sigma_combined_plot.png'))
 if SHOW_PLOTS:
     plt.show()
 else:
