@@ -1,3 +1,12 @@
+#######################################################################
+# This file was coppied from the google-research/dpsgd_batch_sampler_accounting/ git project
+# (https://github.com/google-research/google-research/tree/master/dpsgd_batch_sampler_accounting),
+# and includes code from the files; dpsgd_bounds, monte_carlo_estimator, and balls_and_bins,
+# which was done in order to allow comparison in our plots.
+#######################################################################
+
+
+
 # coding=utf-8
 # Copyright 2024 The Google Research Authors.
 #
