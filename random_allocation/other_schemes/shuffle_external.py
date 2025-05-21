@@ -1,3 +1,10 @@
+#######################################################################
+# This file was coppied from the ml-shuffling-amplification git project
+# (https://github.com/apple/ml-shuffling-amplification),
+# and includes code from the file computeamplification,
+# which was done in order to allow comparison in our plots.
+#######################################################################
+
 # For licensing see accompanying LICENSE file.
 # Copyright (C) 2020 Apple Inc. All Rights Reserved.
 

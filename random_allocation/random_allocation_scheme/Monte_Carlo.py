@@ -11,7 +11,7 @@ from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfi
 def Monte_Carlo_estimation(params: PrivacyParams,
                            config: SchemeConfig,
                            adjacency_type: AdjacencyType,
-                           ) -> float:
+                           ) -> Dict[str, float]:
     """
     Estimate delta using Monte Carlo simulation.
     
@@ -55,12 +55,8 @@ def Monte_Carlo_estimation(params: PrivacyParams,
             adjacency_type, 
             use_importance_sampling=True
         )[0]
-    if config.MC_use_mean:
-        # Ensure we return a float, not Any
-        return float(delta_estimate.mean)
-    else:
-        # Ensure we return a float, not Any
-        return float(delta_estimate.get_upper_confidence_bound(1-config.MC_conf_level))
+    return {'mean': float(delta_estimate.mean), 
+            'high prob': float(delta_estimate.get_upper_confidence_bound(1-config.MC_conf_level))}
 
 def allocation_delta_MC(params: PrivacyParams, 
                       config: SchemeConfig,
@@ -86,11 +82,12 @@ def allocation_delta_MC(params: PrivacyParams,
     delta_add: float  # type annotation without initialization
     delta_remove: float  # type annotation without initialization
     
+    return_field = 'mean' if config.MC_use_mean else 'high_prob'
     if direction != Direction.ADD:
-        delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)
+        delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)[return_field]
     if direction != Direction.REMOVE:
-        delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)
-    
+        delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)[return_field]
+
     if direction == Direction.ADD:
         assert 'delta_add' in locals(), "Failed to compute delta_add"
         return delta_add

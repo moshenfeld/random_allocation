@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Dict, Any, List, Optional, Callable, Union, Tuple, TypeVar, cast
 
 # Local application imports
-from random_allocation.comparisons.structs import MethodFeatures, EpsilonCalculator, DeltaCalculator, PrivacyParams, SchemeConfig, Direction
+from random_allocation.comparisons.structs import MethodFeatures, EpsilonCalculator, DeltaCalculator, PrivacyParams, SchemeConfig, Direction, Verbosity
 from random_allocation.other_schemes.local import *
 from random_allocation.other_schemes.poisson import *
 from random_allocation.other_schemes.shuffle import *

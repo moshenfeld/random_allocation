@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.random_allocation_scheme.direct import log_factorial_range, log_factorial
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction, Verbosity
 
 # Type alias for numpy float arrays
 FloatArray = NDArray[np.float64]
@@ -122,13 +122,14 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
         used_alpha = used_alpha_add if epsilon_add > epsilon_remove else used_alpha_remove
 
     # Check for potential alpha overflow or underflow
-    if used_alpha == alpha_orders[-1]:
-        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
-        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+    if config.verbosity != Verbosity.NONE:
+        if used_alpha == alpha_orders[-1]:
+            print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
+        if used_alpha == alpha_orders[0]:
+            print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
 
-    # Print debug info if requested, but avoid overflow/underflow warnings
-    if config.print_alpha:
+    # Print debug info if requested
+    if config.verbosity == Verbosity.ALL:
         print(f'sigma: {params.sigma}, delta: {params.delta}, num_steps: {params.num_steps}, '
               f'num_selected: {params.num_selected}, num_epochs: {params.num_epochs}, used_alpha: {used_alpha}')
     
@@ -212,13 +213,14 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
         used_alpha = used_alpha_add if delta_add > delta_remove else used_alpha_remove
 
     # Check for potential alpha overflow or underflow
-    if used_alpha == alpha_orders[-1]:
-        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
-        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+    if config.verbosity != Verbosity.NONE:
+        if used_alpha == alpha_orders[-1]:
+            print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
+        if used_alpha == alpha_orders[0]:
+            print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
 
-    # Print debug info if requested, but avoid overflow/underflow warnings
-    if config.print_alpha:
+    # Print debug info if requested
+    if config.verbosity == Verbosity.ALL:
         print(f'sigma: {params.sigma}, epsilon: {params.epsilon}, num_steps: {params.num_steps}, '
               f'num_selected: {params.num_selected}, num_epochs: {params.num_epochs}, used_alpha: {used_alpha}')
     

@@ -5,13 +5,12 @@ from typing import List, Dict, Tuple, Optional, Union, Callable, Any, cast
 import numpy as np
 
 # Local application imports
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction, Verbosity
 from random_allocation.random_allocation_scheme.analytic import allocation_epsilon_analytic, allocation_delta_analytic
 from random_allocation.random_allocation_scheme.direct import allocation_epsilon_direct, allocation_delta_direct
-from random_allocation.random_allocation_scheme.RDP_DCO import allocation_epsilon_RDP_DCO, allocation_delta_RDP_DCO
 from random_allocation.random_allocation_scheme.recursive import allocation_epsilon_recursive, allocation_delta_recursive
 from random_allocation.random_allocation_scheme.decomposition import allocation_epsilon_decomposition, allocation_delta_decomposition
-from random_allocation.random_allocation_scheme.Monte_Carlo import allocation_delta_MC
+from random_allocation.other_schemes.local import local_epsilon, local_delta
 
 def allocation_delta_combined(params: PrivacyParams,
                              config: SchemeConfig,
@@ -32,12 +31,13 @@ def allocation_delta_combined(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
+    delta_local_val = local_delta(params=params, config=config)
     if direction != Direction.ADD:
         # Create config for remove direction (without direction parameter)
         remove_config = SchemeConfig(
             discretization=config.discretization,
             allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=config.print_alpha,
+            verbosity=config.verbosity,
             delta_tolerance=config.delta_tolerance,
             epsilon_tolerance=config.epsilon_tolerance,
             epsilon_upper_bound=config.epsilon_upper_bound
@@ -48,6 +48,7 @@ def allocation_delta_combined(params: PrivacyParams,
         delta_remove_direct_val = allocation_delta_direct(params=params, config=remove_config, direction=Direction.REMOVE)
         delta_remove_recursive_val = allocation_delta_recursive(params=params, config=remove_config, direction=Direction.REMOVE)
         delta_remove = min(
+            delta_local_val,
             delta_remove_analytic_val,
             delta_remove_decompose_val,
             delta_remove_direct_val,
@@ -59,7 +60,7 @@ def allocation_delta_combined(params: PrivacyParams,
         add_config = SchemeConfig(
             discretization=config.discretization,
             allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=config.print_alpha,
+            verbosity=config.verbosity,
             delta_tolerance=config.delta_tolerance,
             epsilon_tolerance=config.epsilon_tolerance,
             epsilon_upper_bound=config.epsilon_upper_bound
@@ -71,6 +72,7 @@ def allocation_delta_combined(params: PrivacyParams,
         delta_add_direct_val = allocation_delta_direct(params=params, config=add_config, direction=Direction.ADD)
         delta_add_recursive_val = allocation_delta_recursive(params=params, config=add_config, direction=Direction.ADD)
         delta_add = min(
+            delta_local_val,
             delta_add_analytic_val,
             delta_add_decompose_val,
             delta_add_direct_val,
@@ -108,13 +110,14 @@ def allocation_epsilon_combined(params: PrivacyParams,
     params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
-    
+
+    epsilon_local_val = local_epsilon(params=params, config=config)    
     if direction != Direction.ADD:
         # Create config for remove direction (without direction parameter)
         remove_config = SchemeConfig(
             discretization=config.discretization,
             allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=config.print_alpha,
+            verbosity=config.verbosity,
             delta_tolerance=config.delta_tolerance,
             epsilon_tolerance=config.epsilon_tolerance,
             epsilon_upper_bound=config.epsilon_upper_bound
@@ -126,6 +129,7 @@ def allocation_epsilon_combined(params: PrivacyParams,
         epsilon_remove_direct_val = allocation_epsilon_direct(params=params, config=remove_config, direction=Direction.REMOVE)
         epsilon_remove_recursive_val = allocation_epsilon_recursive(params=params, config=remove_config, direction=Direction.REMOVE)
         epsilon_remove = min(
+            epsilon_local_val,
             epsilon_remove_analytic_val,
             epsilon_remove_decompose_val,
             epsilon_remove_direct_val,
@@ -137,7 +141,7 @@ def allocation_epsilon_combined(params: PrivacyParams,
         add_config = SchemeConfig(
             discretization=config.discretization,
             allocation_direct_alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=config.print_alpha,
+            verbosity=config.verbosity,
             delta_tolerance=config.delta_tolerance,
             epsilon_tolerance=config.epsilon_tolerance,
             epsilon_upper_bound=config.epsilon_upper_bound
@@ -149,6 +153,7 @@ def allocation_epsilon_combined(params: PrivacyParams,
         epsilon_add_direct_val = allocation_epsilon_direct(params=params, config=add_config, direction=Direction.ADD)
         epsilon_add_recursive_val = allocation_epsilon_recursive(params=params, config=add_config, direction=Direction.ADD)
         epsilon_add = min(
+            epsilon_local_val,
             epsilon_add_analytic_val,
             epsilon_add_decompose_val,
             epsilon_add_direct_val,

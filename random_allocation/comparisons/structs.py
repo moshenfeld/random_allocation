@@ -23,6 +23,12 @@ class Direction(Enum):
     REMOVE = 'remove'
     BOTH = 'both'
 
+class Verbosity(Enum):
+    """Enum for verbosity levels in calculation functions"""
+    NONE = 'none'
+    WARNINGS = 'warnings'
+    ALL = 'all'
+
 @dataclass
 class PrivacyParams:
     """Parameters common to all privacy schemes"""
@@ -73,7 +79,6 @@ class SchemeConfig:
     allocation_direct_alpha_orders: Optional[List[int]] = None  # Will be set in __post_init__
     allocation_RDP_DCO_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
     Poisson_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
-    print_alpha: bool = False
     delta_tolerance: float = 1e-15
     epsilon_tolerance: float = 1e-3
     epsilon_upper_bound: float = 100.0
@@ -82,6 +87,7 @@ class SchemeConfig:
     MC_conf_level: float = 0.99
     MC_sample_size: int = 500_000
     shuffle_step: float = 100.0
+    verbosity: Verbosity = Verbosity.WARNINGS
 
 @dataclass
 class MethodFeatures:

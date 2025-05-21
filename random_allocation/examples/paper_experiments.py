@@ -14,8 +14,9 @@ import matplotlib.pyplot as plt
 
 # Local application imports
 from random_allocation.comparisons.definitions import *
-from random_allocation.comparisons.experiments import run_experiment, PlotType
-from random_allocation.comparisons.visualization import plot_multiple_data
+from random_allocation.comparisons.experiments import *
+from random_allocation.comparisons.visualization import *
+
 # Configuration
 READ_DATA: bool = True  # Set to True to try reading data from existing files first
 SAVE_DATA: bool = True  # Set to True to save computed data to CSV files
@@ -50,7 +51,7 @@ data_1: Dict[str, Any] = run_experiment(
     config=config_1, 
     methods=methods_list_1, 
     visualization_config=visualization_config_1, 
-    experiment_name='main_plot', 
+    experiment_name='main', 
     plot_type=PlotType.COMBINED,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -64,12 +65,12 @@ data_1_add: Dict[str, Any] = run_experiment(
     config=config_1, 
     methods=methods_list_1_add_rem, 
     visualization_config=visualization_config_1, 
-    experiment_name='main_plot_add', 
+    experiment_name='main_add', 
     plot_type=PlotType.COMBINED,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
-    save_plots=SAVE_PLOTS,
-    show_plots=SHOW_PLOTS,
+    save_plots=False,
+    show_plots=False,
     direction=Direction.ADD
 )
 
@@ -78,14 +79,43 @@ data_1_rem: Dict[str, Any] = run_experiment(
     config=config_1, 
     methods=methods_list_1_add_rem, 
     visualization_config=visualization_config_1, 
-    experiment_name='main_plot_remove',     
+    experiment_name='main_remove',     
     plot_type=PlotType.COMBINED,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
-    save_plots=SAVE_PLOTS,
-    show_plots=SHOW_PLOTS,
+    save_plots=False,
+    show_plots=False,
     direction=Direction.REMOVE
 )
+
+data_list_add_remove = [data_1_add, data_1_rem]
+
+titles = [
+    f"Add direction",
+    f"Remove direction"
+]
+
+# Use the plot_multiple_data function to create a multi-subplot figure
+fig = plot_multiple_data(
+    data_list=data_list_add_remove,
+    titles=titles,
+    log_x_axis=True,
+    log_y_axis=True,
+    format_x=lambda x, _: f'{x:.2f}',
+    plot_type='main_add_remove', 
+    figsize=(15, 6),  # Width, height in inches
+    grid_layout=(1, 2)  # 1 row, 2 columns
+)
+
+if SAVE_PLOTS:
+    plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
+    os.makedirs(plots_dir, exist_ok=True)
+    fig.savefig(os.path.join(plots_dir, 'main_add_remove_plot.png'))
+if SHOW_PLOTS:
+    plt.show()
+else:
+    plt.close(fig)
+
 
 # Second experiment - Compare different schemes for varying number of epochs
 params_dict_2: Dict[str, Any] = {
@@ -113,7 +143,7 @@ data_2: Dict[str, Any] = run_experiment(
     config=config_2, 
     methods=methods_list_2, 
     visualization_config=visualization_config_2, 
-    experiment_name='epsilon_vs_epochs', 
+    experiment_name='multi_epoch', 
     plot_type=PlotType.COMPARISON,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -148,7 +178,7 @@ data_3: Dict[str, Any] = run_experiment(
     config=config_3, 
     methods=methods_list_3, 
     visualization_config=visualization_config_3, 
-    experiment_name='epsilon_vs_steps', 
+    experiment_name='RDP_domination', 
     plot_type=PlotType.COMPARISON,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -183,7 +213,7 @@ data_4: Dict[str, Any] = run_experiment(
     config=config_4, 
     methods=methods_list_4, 
     visualization_config=visualization_config_4, 
-    experiment_name='epsilon_vs_selected', 
+    experiment_name='DCO_comp', 
     plot_type=PlotType.COMPARISON,
     read_data=READ_DATA,
     save_data=SAVE_DATA,
@@ -222,7 +252,7 @@ data_5_1: Dict[str, Any] = run_experiment(
     read_data=READ_DATA,
     save_data=SAVE_DATA,
     save_plots=False,
-    show_plots=SHOW_PLOTS,
+    show_plots=False,
     direction=Direction.BOTH
 )
 
@@ -236,7 +266,6 @@ params_dict_5_2: Dict[str, Any] = {
     NUM_EPOCHS: 1
 }
 
-
 data_5_2: Dict[str, Any] = run_experiment(
     params_dict=params_dict_5_2,
     config=config_5,
@@ -247,7 +276,7 @@ data_5_2: Dict[str, Any] = run_experiment(
     read_data=READ_DATA,
     save_data=SAVE_DATA,
     save_plots=False,
-    show_plots=SHOW_PLOTS,
+    show_plots=False,
     direction=Direction.BOTH
 )
 
@@ -261,7 +290,6 @@ params_dict_5_3: Dict[str, Any] = {
     NUM_EPOCHS: 1
 }
 
-
 data_5_3: Dict[str, Any] = run_experiment(
     params_dict=params_dict_5_3,
     config=config_5,
@@ -272,7 +300,7 @@ data_5_3: Dict[str, Any] = run_experiment(
     read_data=READ_DATA,
     save_data=SAVE_DATA,
     save_plots=False,
-    show_plots=SHOW_PLOTS,
+    show_plots=False,
     direction=Direction.BOTH
 )
 
@@ -300,12 +328,44 @@ fig = plot_multiple_data(
 plt.suptitle("Effect of σ on Privacy Guarantee (ε) Across Different Number of Steps", fontsize=20)
 plt.tight_layout(rect=[0, 0, 1, 0.95])  # Leave room for the super title
 
-examples_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
+if SAVE_PLOTS:
+    plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
+    os.makedirs(plots_dir, exist_ok=True)
+    fig.savefig(os.path.join(plots_dir, 'multi_range_plot.png'))
+if SHOW_PLOTS:
+    plt.show()
+else:
+    plt.close(fig)
+
+config_6 = SchemeConfig(
+    discretization=1e-4,
+    allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)],
+    delta_tolerance=1e-15,
+    epsilon_tolerance=1e-3,
+    MC_use_order_stats=True,
+    MC_use_mean=False,
+    MC_conf_level=0.99,
+    MC_sample_size=500_000,
+    verbosity=Verbosity.NONE,
+)
+
+num_steps_arr_6 = [100, 1000, 10_000, 100_000]
+sigma_arr_6 = [1.0, 0.7, 0.5, 0.4]
+epsilon_arr_6 = [np.linspace(0.05, 0.8, 10),
+                 np.linspace(0.1, 1.1, 10),
+                 np.linspace(0.3, 2.0, 10),
+                 np.linspace(0.5, 3.0, 10)]
+num_selected_6 = 1
+num_epochs_6 = 1
+params_mat_6 = [[PrivacyParams(num_steps=num_steps, sigma=sigma, epsilon=epsilon, num_selected=num_selected_6, num_epochs=num_epochs_6) for epsilon in epsilon_arr] for num_steps, sigma, epsilon_arr in zip(num_steps_arr_6, sigma_arr_6, epsilon_arr_6)]
+deltas_dict_arr = [calc_all_methods_delta(params_arr, config_6) for params_arr in params_mat_6]
+subplot_titles = [f"Steps: {num_steps}, Sigma: {sigma}" for num_steps, sigma in zip(num_steps_arr_6, sigma_arr_6)]
+fig = plot_privacy_curves(deltas_dict_arr, epsilon_arr_6, subplot_titles)
 
 if SAVE_PLOTS:
-    plots_dir = os.path.join(examples_dir, 'plots')
+    plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
     os.makedirs(plots_dir, exist_ok=True)
-    fig.savefig(os.path.join(plots_dir, 'epsilon_vs_sigma_combined_plot.png'))
+    fig.savefig(os.path.join(plots_dir, 'MC_comparison_plot.png'))
 if SHOW_PLOTS:
     plt.show()
 else:

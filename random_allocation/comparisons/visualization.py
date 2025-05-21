@@ -1,5 +1,5 @@
 # Standard library imports
-from typing import Any, Dict, List, Callable, Union, Optional, Tuple, TypeVar, cast, Literal
+from typing import Any, Dict, List, Callable, Optional, Tuple, Literal
 import math
 
 # Third-party imports
@@ -647,4 +647,27 @@ def plot_multiple_data(data_list: List[DataDict],
     # Adjust layout to prevent clipping and overlap
     fig.tight_layout()
     
+    return fig
+
+def plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles):
+    num_plots = len(deltas_dict_arr)
+    n_rows = (num_plots + 1) // 2
+    n_cols = 2
+    fig, axs = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(15, 5 * n_rows))
+    for i, (deltas_dict, epsilon_arr) in enumerate(zip(deltas_dict_arr, epsilon_mat)):
+        plt.subplot(n_rows, n_cols, i + 1)
+        for method, deltas in deltas_dict.items():
+            plt.plot(epsilon_arr, deltas, label=method)
+        plt.title(subplot_titles[i])
+        plt.xlabel("$\epsilon$")
+        plt.ylabel("$\delta$")
+        # plt.xscale("log")
+        plt.yscale("log")
+    plt.tight_layout()
+    #add the legend below all the subplots
+    handles, labels = axs[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.05), ncol=3)
+    plt.subplots_adjust(hspace=0.5)
+    #make it tight
+    plt.tight_layout()
     return fig

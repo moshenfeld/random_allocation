@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 # Local application imports
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
-from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
+from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction, Verbosity
 
 # Type aliases
 Partition = Tuple[int, ...]
@@ -35,8 +35,9 @@ def allocation_epsilon_direct_add(sigma: float,
     Returns:
         Computed epsilon value
     """
-    result = Gaussian_epsilon(sigma=sigma*math.sqrt(num_steps/(num_epochs)), delta=delta) + (1-1.0/num_steps)/(2*sigma**2)
-    return float(result)
+    epsilon = Gaussian_epsilon(sigma=sigma*math.sqrt(num_steps/num_epochs), delta=delta)
+    epsilon += (1-1.0/num_steps)/(2*sigma**2)
+    return float(epsilon)
 
 def allocation_delta_direct_add(sigma: float,
                                 epsilon: float,
@@ -186,7 +187,7 @@ def allocation_epsilon_direct_remove(sigma: float,
                                   num_steps: int,
                                   num_epochs: int,
                                   alpha_orders: List[int],
-                                  print_alpha: bool = False,
+                                  verbosity: Verbosity = Verbosity.NONE,
                                   ) -> float:
     """
     Compute the epsilon value of the allocation scheme in the remove direction using Rényi Differential Privacy (RDP).
@@ -198,7 +199,7 @@ def allocation_epsilon_direct_remove(sigma: float,
         num_steps: Number of steps in the allocation scheme
         num_epochs: Number of epochs
         alpha_orders: List of alpha orders for RDP computation
-        print_alpha: Whether to print the alpha value used (default: False)
+        verbosity: Level of verbosity for logging (default: NONE)
         
     Returns:
         Computed epsilon value
@@ -220,12 +221,13 @@ def allocation_epsilon_direct_remove(sigma: float,
                 epsilon = new_eps
                 used_alpha = alpha
     
-    if used_alpha == alpha_orders[-1]:
-        print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
-    if used_alpha == alpha_orders[0]:
-        print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
+    if verbosity != Verbosity.NONE:
+        if used_alpha == alpha_orders[-1]:
+            print(f'Potential alpha overflow! used alpha: {used_alpha} which is the maximal alpha')
+        if used_alpha == alpha_orders[0]:
+            print(f'Potential alpha underflow! used alpha: {used_alpha} which is the minimal alpha')
         
-    if print_alpha:
+    if verbosity == Verbosity.ALL:
         print(f'sigma: {sigma}, num_steps: {num_steps}, num_epochs: {num_epochs}, used_alpha: {used_alpha}')
     
     return float(epsilon)
@@ -262,7 +264,7 @@ def allocation_epsilon_direct(params: PrivacyParams,
             num_steps=num_steps_per_round, 
             num_epochs=params.num_epochs*num_rounds,
             alpha_orders=config.allocation_direct_alpha_orders,
-            print_alpha=config.print_alpha
+            verbosity=config.verbosity
         )
     if direction != Direction.REMOVE:
         epsilon_add = allocation_epsilon_direct_add(

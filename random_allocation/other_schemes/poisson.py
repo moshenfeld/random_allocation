@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
-from random_allocation.comparisons.definitions import Direction
+from random_allocation.comparisons.definitions import Direction, Verbosity
 
 
 # ==================== PLD ====================
@@ -201,7 +201,7 @@ def Poisson_delta_RDP(params: PrivacyParams,
         alpha_orders=config.Poisson_alpha_orders
     )
     
-    if config.print_alpha:
+    if config.verbosity == Verbosity.ALL:
         delta, used_alpha = accountant.get_delta_and_optimal_order(params.epsilon)
         print(f'sigma: {params.sigma}, num_steps: {params.num_steps}, num_epochs: {params.num_epochs}, '
               f'sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
@@ -239,7 +239,7 @@ def Poisson_epsilon_RDP(params: PrivacyParams,
         alpha_orders=config.Poisson_alpha_orders
     )
     
-    if config.print_alpha:
+    if config.verbosity == Verbosity.ALL:
         epsilon, used_alpha = accountant.get_epsilon_and_optimal_order(params.delta)
         print(f'sigma: {params.sigma}, num_steps: {params.num_steps}, num_epochs: {params.num_epochs}, '
               f'sampling_prob: {sampling_prob}, used_alpha: {used_alpha}')
