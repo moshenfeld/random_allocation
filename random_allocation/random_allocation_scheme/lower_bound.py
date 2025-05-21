@@ -61,7 +61,6 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig, 
         PrivacyParams(
             sigma=params.sigma,
             epsilon=eps,
-            delta=params.delta,
             num_steps=params.num_steps,
             num_epochs=params.num_epochs,
             num_selected=params.num_selected
@@ -73,7 +72,7 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig, 
     epsilon = search_function_with_bounds(
         func=optimization_func, 
         y_target=params.delta, 
-        bounds=(0, config.epsilon_upper_bound),
+        bounds=(config.epsilon_tolerance*2, config.epsilon_upper_bound),
         tolerance=config.epsilon_tolerance, 
         function_type=FunctionType.DECREASING
     )

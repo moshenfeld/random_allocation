@@ -9,15 +9,16 @@ from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, c
 # Third-party imports
 import matplotlib.pyplot as plt
 import numpy as np
-# Add type_ignores for pandas import to handle missing stubs
-import pandas as pd  # type: ignore
 from matplotlib.figure import Figure
 
 # Local application imports
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.visualization import plot_combined_data, plot_comparison, plot_as_table
-from random_allocation.comparisons.data_handler import save_experiment_data, load_experiment_data
-from random_allocation.random_allocation_scheme.Monte_Carlo import *
+from random_allocation.comparisons.data_handler import (
+    save_experiment_data, load_experiment_data,
+    calc_method_delta, calc_all_methods_delta,
+    save_privacy_curves_data, load_privacy_curves_data
+)
 
 # Type variables and aliases
 T = TypeVar('T')
@@ -109,7 +110,7 @@ def calc_experiment_data(params: PrivacyParams,
             setattr(param_copy, x_var, x_value)
             
             # Make sure we have the correct parameter set for the calculation
-            # If we're calculating epsilon, we need delta provided (and vice versa)
+            # If we're calculating epsilon, we need delta to be provided (and vice versa)
             if y_var == 'epsilon':
                 # We're calculating epsilon, so make sure delta is set and epsilon is None
                 if param_copy.delta is None:
@@ -295,26 +296,3 @@ def run_experiment(
         plt.close(fig)
         
     return data
-
-def calc_method_delta(name, func, params_arr, config, direction=Direction.BOTH):
-    time_start = time.perf_counter()
-    results = [func(params=params, config=config, direction=direction) for params in params_arr]
-    time_stop = time.perf_counter()
-    print(f'{name} delta done in {time_stop - time_start: .0f} seconds')
-    return results
-
-def calc_all_methods_delta(params_arr, config):
-    print(f'Calculating deltas with sigma = {params_arr[0].sigma}, t = {params_arr[0].num_steps} for all methods...')
-    deltas_dict = {}
-    deltas_dict['Poisson'] = calc_method_delta('Poisson', Poisson_delta_PLD, params_arr, config, direction=Direction.BOTH)
-    deltas_dict['allocation - Our'] = calc_method_delta('allocation - Our', allocation_delta_combined, params_arr, config, direction=Direction.BOTH)
-    deltas_dict['allocation - LB'] = calc_method_delta('allocation - LB', allocation_delta_lower_bound, params_arr, config, direction=Direction.BOTH)
-
-    time_start = time.perf_counter()
-    MC_dict_arr = [Monte_Carlo_estimation(params, config, adjacency_type=AdjacencyType.REMOVE) for params in params_arr]
-    time_stop = time.perf_counter()
-    deltas_dict['allocation - MC HP'] = [MC_dict['high prob'] for MC_dict in MC_dict_arr]
-    deltas_dict['allocation - MC mean'] = [MC_dict['mean'] for MC_dict in MC_dict_arr]
-    print(f'Monte Carlo estimation done in {time_stop - time_start: .0f} seconds')
-    print(f'Calculation done for {len(deltas_dict)} methods')
-    return deltas_dict

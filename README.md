@@ -259,6 +259,25 @@ The `examples` directory contains several reference implementations:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## External Code
+
+This project includes code from external sources for comparison purposes:
+
+1. **Shuffle Model Implementation**: 
+   - Located in `random_allocation/other_schemes/shuffle_external.py`
+   - Source: [ml-shuffling-amplification](https://github.com/apple/ml-shuffling-amplification)
+   - Used to compare shuffle model performance with other privacy mechanisms
+   - Original license: See accompanying LICENSE file from Apple Inc.
+
+2. **Monte Carlo Estimator**:
+   - Located in `random_allocation/random_allocation_scheme/Monte_Carlo_external.py`
+   - Source: [google-research/dpsgd_batch_sampler_accounting](https://github.com/google-research/google-research/tree/master/dpsgd_batch_sampler_accounting)
+   - Includes code from files: dpsgd_bounds, monte_carlo_estimator, and balls_and_bins
+   - Used for comparison in our privacy analysis plots
+   - Original license: Apache License, Version 2.0
+
+These external implementations are used solely for comparative analysis and are not part of the core functionality of this package.
+
 ## Citation
 
 If you use this code in your research, please cite:

@@ -209,14 +209,14 @@ def allocation_epsilon_direct_remove(sigma: float,
     
     alpha = alpha_orders[0]
     alpha_RDP = allocation_RDP_remove(alpha=alpha, sigma=sigma, num_steps=num_steps) * num_epochs
-    epsilon = alpha_RDP + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
+    epsilon = alpha_RDP + max(math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1), 0)
     used_alpha = alpha
     for alpha in alpha_orders:
         alpha_RDP = allocation_RDP_remove(alpha=alpha, sigma=sigma, num_steps=num_steps) * num_epochs
         if alpha_RDP > epsilon:
             break
         else:
-            new_eps = alpha_RDP + math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1)
+            new_eps = alpha_RDP + max(math.log1p(-1/alpha) - math.log(delta * alpha)/(alpha-1), 0)
             if new_eps < epsilon:
                 epsilon = new_eps
                 used_alpha = alpha
@@ -311,8 +311,6 @@ def allocation_delta_direct(params: PrivacyParams,
         if config.allocation_direct_alpha_orders is None:
             raise ValueError("allocation_direct_alpha_orders must be provided in SchemeConfig for 'remove' or 'both' direction")
         
-        # Use the search_function_with_bounds for REMOVE direction
-        # Create a temporary PrivacyParams object with delta as variable
         result = search_function_with_bounds(
             func=lambda delta: allocation_epsilon_direct(
                 params=PrivacyParams(
@@ -327,9 +325,10 @@ def allocation_delta_direct(params: PrivacyParams,
                 direction=Direction.REMOVE,
             ),
             y_target=params.epsilon,
-            bounds=(config.delta_tolerance, 1-config.delta_tolerance),
+            bounds=(2*config.delta_tolerance, 1-2*config.delta_tolerance),
             tolerance=config.delta_tolerance,
-            function_type=FunctionType.DECREASING
+            function_type=FunctionType.DECREASING,
+            verbosity=config.verbosity,
         )
         
         # Handle case where search function returns None

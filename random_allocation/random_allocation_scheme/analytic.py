@@ -124,7 +124,7 @@ def allocation_delta_analytic(params: PrivacyParams,
             delta=delta
         ), config=config, direction=direction), 
         y_target=params.epsilon, 
-        bounds=(config.delta_tolerance, 1-config.delta_tolerance),
+        bounds=(2*config.delta_tolerance, 1-2*config.delta_tolerance),
         tolerance=config.delta_tolerance, 
         function_type=FunctionType.DECREASING
     )

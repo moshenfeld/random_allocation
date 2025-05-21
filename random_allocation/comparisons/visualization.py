@@ -659,15 +659,22 @@ def plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles):
         for method, deltas in deltas_dict.items():
             plt.plot(epsilon_arr, deltas, label=method)
         plt.title(subplot_titles[i])
-        plt.xlabel("$\epsilon$")
-        plt.ylabel("$\delta$")
+        plt.xlabel(r"$\epsilon$")
+        plt.ylabel(r"$\delta$")
         # plt.xscale("log")
         plt.yscale("log")
-    plt.tight_layout()
-    #add the legend below all the subplots
+    
+    # Add the legend below all the subplots
     handles, labels = axs[0, 0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.05), ncol=3)
-    plt.subplots_adjust(hspace=0.5)
-    #make it tight
-    plt.tight_layout()
+    
+    # First adjust the spacing to make room for the legend
+    plt.subplots_adjust(bottom=0.2, hspace=0.5)
+    
+    # Now add the legend in the space we created
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), 
+               ncol=3, fontsize='medium', frameon=True, framealpha=0.9)
+    
+    # Final tight layout to ensure proper spacing
+    plt.tight_layout(rect=[0, 0.1, 1, 0.95])
+    
     return fig

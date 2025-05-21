@@ -8,9 +8,16 @@ with full preservation of all information.
 import os
 import json
 from typing import Dict, List, Union, Any, Optional, Collection, cast
-
+import time
 import numpy as np
 import pandas as pd
+
+# Local imports
+from random_allocation.comparisons.definitions import Direction
+from random_allocation.comparisons.structs import SchemeConfig, PrivacyParams
+from random_allocation.other_schemes.poisson import Poisson_delta_PLD
+from random_allocation.random_allocation_scheme.combined import allocation_delta_combined
+from random_allocation.random_allocation_scheme.Monte_Carlo import Monte_Carlo_estimation, AdjacencyType
 
 # Define type aliases locally to avoid circular imports
 MethodList = List[str]
@@ -152,4 +159,136 @@ def load_experiment_data(experiment_name: str, methods: MethodList) -> Optional[
         return csv_data
     
     # If neither file exists, return None
-    return None 
+    return None
+
+def calc_method_delta(name, func, params_arr, config, direction=Direction.BOTH):
+    """
+    Calculate delta values for a specific method.
+    
+    Args:
+        name: Name of the method
+        func: Function to calculate delta
+        params_arr: Array of PrivacyParams objects
+        config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
+        
+    Returns:
+        List of delta values for each set of parameters
+    """
+    time_start = time.perf_counter()
+    results = [func(params=params, config=config, direction=direction) for params in params_arr]
+    time_stop = time.perf_counter()
+    print(f'{name} delta done in {time_stop - time_start: .0f} seconds')
+    return results
+
+def calc_all_methods_delta(params_arr, config):
+    """
+    Calculate delta values for all methods.
+    
+    Args:
+        params_arr: Array of PrivacyParams objects
+        config: Scheme configuration parameters
+        
+    Returns:
+        Dictionary mapping method names to lists of delta values
+    """
+    print(f'Calculating deltas with sigma = {params_arr[0].sigma}, t = {params_arr[0].num_steps} for all methods...')
+    deltas_dict = {}
+    deltas_dict['Poisson'] = calc_method_delta('Poisson', Poisson_delta_PLD, params_arr, config, direction=Direction.BOTH)
+    deltas_dict['allocation - Our'] = calc_method_delta('allocation - Our', allocation_delta_combined, params_arr, config, direction=Direction.BOTH)
+
+    time_start = time.perf_counter()
+    MC_dict_arr = [Monte_Carlo_estimation(params, config, adjacency_type=AdjacencyType.REMOVE) for params in params_arr]
+    time_stop = time.perf_counter()
+    deltas_dict['allocation - MC HP'] = [MC_dict['high prob'] for MC_dict in MC_dict_arr]
+    deltas_dict['allocation - MC mean'] = [MC_dict['mean'] for MC_dict in MC_dict_arr]
+    print(f'Monte Carlo estimation done in {time_stop - time_start: .0f} seconds')
+    print(f'Calculation done for {len(deltas_dict)} methods')
+    return deltas_dict
+
+def save_privacy_curves_data(deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr, experiment_name):
+    """
+    Save privacy curves data for multi-parameter experiments.
+    
+    Args:
+        deltas_dict_arr: List of dictionaries mapping method names to delta values
+        epsilon_mat: List of arrays of epsilon values
+        num_steps_arr: List of number of steps values
+        sigma_arr: List of sigma values
+        experiment_name: Name of the experiment for the output file (full path)
+    """
+    # Create data directory if it doesn't exist
+    os.makedirs(os.path.dirname(experiment_name), exist_ok=True)
+    
+    # Prepare data for saving
+    save_data = {
+        'num_steps': num_steps_arr,
+        'sigma': sigma_arr,
+        'epsilon_values': [eps_arr.tolist() if isinstance(eps_arr, np.ndarray) else eps_arr for eps_arr in epsilon_mat],
+        'deltas_data': []
+    }
+    
+    # Convert each deltas_dict to a format suitable for JSON
+    for deltas_dict in deltas_dict_arr:
+        json_dict = {}
+        for method, deltas in deltas_dict.items():
+            json_dict[method] = deltas if not isinstance(deltas, np.ndarray) else deltas.tolist()
+        save_data['deltas_data'].append(json_dict)
+    
+    # Save as JSON for complete data preservation
+    with open(f"{experiment_name}.json", 'w') as f:
+        json.dump(save_data, f, indent=2)
+    
+    # Also save as CSV for compatibility - one file per parameter combination
+    for i, (num_steps, sigma, epsilon_arr, deltas_dict) in enumerate(zip(num_steps_arr, sigma_arr, epsilon_mat, deltas_dict_arr)):
+        df_data = {'epsilon': epsilon_arr}
+        
+        # Add delta values for each method
+        for method, deltas in deltas_dict.items():
+            df_data[method] = deltas
+        
+        # Add parameter information
+        df_data['num_steps'] = [num_steps] * len(epsilon_arr)
+        df_data['sigma'] = [sigma] * len(epsilon_arr)
+        
+        # Create DataFrame and save to CSV
+        df = pd.DataFrame(df_data)
+        df.to_csv(f"{experiment_name}_{i}.csv", index=False)
+    
+    print(f"Saved privacy curves data to {experiment_name}")
+
+def load_privacy_curves_data(experiment_name):
+    """
+    Load privacy curves data for multi-parameter experiments.
+    
+    Args:
+        experiment_name: Name of the experiment file (full path, without extension)
+    
+    Returns:
+        Tuple of (deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr) or None if file doesn't exist
+    """
+    # Try to load from JSON which has complete information
+    json_file = f"{experiment_name}.json"
+    if os.path.exists(json_file):
+        print(f"Reading data from {json_file}")
+        with open(json_file, 'r') as f:
+            loaded_data = json.load(f)
+        
+        # Extract arrays from loaded data
+        num_steps_arr = loaded_data.get('num_steps', [])
+        sigma_arr = loaded_data.get('sigma', [])
+        epsilon_mat = [np.array(eps_arr) for eps_arr in loaded_data.get('epsilon_values', [])]
+        
+        # Convert loaded deltas data to correct format
+        deltas_dict_arr = []
+        for json_dict in loaded_data.get('deltas_data', []):
+            deltas_dict = {}
+            for method, deltas in json_dict.items():
+                deltas_dict[method] = np.array(deltas)
+            deltas_dict_arr.append(deltas_dict)
+        
+        return deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr
+    
+    # If file doesn't exist, return None
+    print(f"No data found at {json_file}")
+    return None

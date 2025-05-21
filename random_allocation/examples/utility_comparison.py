@@ -3,6 +3,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import json
+import pandas as pd
 
 # Get the current script's directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -160,7 +162,7 @@ def allocation_sigma(num_steps, epsilon, delta, lower = 0.1, upper = 10):
         return np.inf    
     return sigma
 
-def run_experiments(epsilon, delta, num_steps, dimension, true_mean, num_experiments, sample_size_arr):
+def run_utility_experiments(epsilon, delta, num_steps, dimension, true_mean, num_experiments, sample_size_arr):
     """
     Run a single experiment with given parameters and measure execution time for different stages.
     
@@ -253,7 +255,7 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
     
     # Only display confidence intervals if requested
     if show_ci:
-        # Format CI for legend text
+        # Format CI for legend text - just "confidence interval" without repeating for each method
         ci_text = f"{C}σ confidence interval"
         
         # Always use pre-calculated standard deviations if available
@@ -264,7 +266,7 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
                 data['Poisson accuracy'] - C * poisson_se, 
                 data['Poisson accuracy'] + C * poisson_se,
                 alpha=0.3, color=Poisson_color, 
-                label=f"Poisson {ci_text}"
+                label=f"Poisson {C}σ confidence interval"
             )
         else:
             print(f"Warning: No pre-calculated Poisson std available for {title}.")
@@ -276,7 +278,7 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
                 data['Allocation accuracy'] - C * allocation_se, 
                 data['Allocation accuracy'] + C * allocation_se,
                 alpha=0.3, color=allocation_color, 
-                label=f"Random allocation {ci_text}"
+                label=f"Random allocation {C}σ confidence interval"
             )
         else:
             print(f"Warning: No pre-calculated Allocation std available for {title}.")
@@ -293,12 +295,13 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
     ax.set_ylabel(ylabel)
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.legend()
+    # Remove individual legends for each subplot - we'll add one common legend
+    # ax.legend()
     ax.grid(True, alpha=0.3)
 
 
 # Comprehensive plot function that creates the complete visualization
-def create_comparison_plot(sample_size_arr, experiment_data_list, titles, num_steps, num_experiments, C=3, show_ci=True):
+def plot_utility_comparison(sample_size_arr, experiment_data_list, titles, num_steps, num_experiments, C=3, show_ci=True):
     """
     Creates a comprehensive plot with subplots comparing Poisson and Random Allocation
     schemes using standard deviation-based confidence intervals.
@@ -324,8 +327,132 @@ def create_comparison_plot(sample_size_arr, experiment_data_list, titles, num_st
             C=C,
             show_ci=show_ci
         )
+
+    # Create a better positioned legend with clearer organization
+    handles, labels = axs[0].get_legend_handles_labels()
     
-    # Add overall title
-    fig.suptitle(f"Square Error of Poisson vs. Random Allocation Schemes with Number of Steps = {num_steps}", fontsize=16)
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.9)  # Make space for the suptitle
+    # First reserve space for legend at the bottom
+    plt.subplots_adjust(bottom=0.22)
+    
+    # Add a single legend below all subplots
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), 
+               ncol=3, fontsize='medium', frameon=True, framealpha=0.9)
+    
+    # Apply tight_layout with rect parameter to respect the space we reserved for the legend
+    # The rect parameter specifies (left, bottom, right, top) fractions of the figure
+    plt.tight_layout(rect=(0, 0.1, 1, 0.95))
+    
+    return fig
+    # # Add overall title
+    # fig.suptitle(f"Square Error of Poisson vs. Random Allocation Schemes with Number of Steps = {num_steps}", fontsize=16)
+    # plt.tight_layout()
+    # plt.subplots_adjust(top=0.9)  # Make space for the suptitle
+
+def save_utility_experiment_data(experiment_data_list, sample_size_arr, titles, num_steps, epsilon_values, delta, dimension_values, true_mean, num_experiments, experiment_name):
+    """
+    Save utility experiment data to files for future use.
+    
+    Args:
+        experiment_data_list: List of dictionaries containing experiment results
+        sample_size_arr: Array of sample sizes used in the experiments
+        titles: List of titles for each experiment
+        num_steps: Number of steps used in the experiment
+        epsilon_values: List of epsilon values used in experiments
+        delta: Delta value used in experiments
+        dimension_values: List of dimension values used in experiments
+        true_mean: True mean value used in experiments
+        num_experiments: Number of experiments run
+        experiment_name: Base name for the output files
+    """
+    # Create data directory if it doesn't exist
+    data_dir = os.path.dirname(experiment_name)
+    os.makedirs(data_dir, exist_ok=True)
+    
+    # Create metadata dictionary
+    metadata = {
+        'sample_sizes': sample_size_arr.tolist() if isinstance(sample_size_arr, np.ndarray) else sample_size_arr,
+        'num_steps': num_steps,
+        'epsilon_values': epsilon_values,
+        'delta': delta,
+        'dimension_values': dimension_values,
+        'true_mean': true_mean,
+        'num_experiments': num_experiments,
+        'titles': titles,
+        'experiments': []
+    }
+    
+    # Add each experiment's data to metadata
+    for i, data in enumerate(experiment_data_list):
+        exp_data = {}
+        # Convert numpy arrays to lists for JSON serialization
+        for key, value in data.items():
+            if isinstance(value, np.ndarray):
+                exp_data[key] = value.tolist()
+            else:
+                exp_data[key] = value
+        metadata['experiments'].append(exp_data)
+    
+    # Save as JSON for complete data
+    with open(f"{experiment_name}.json", 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
+    # Also save as CSV files for each experiment
+    for i, (data, title) in enumerate(zip(experiment_data_list, titles)):
+        df_data = {'sample_size': sample_size_arr}
+        
+        # Add all result data
+        for key, value in data.items():
+            df_data[key] = value
+        
+        # Add experiment parameters
+        df_data['title'] = [title] * len(sample_size_arr)
+        df_data['num_steps'] = [num_steps] * len(sample_size_arr)
+        if i < len(epsilon_values):
+            df_data['epsilon'] = [epsilon_values[i]] * len(sample_size_arr)
+        if i < len(dimension_values):
+            df_data['dimension'] = [dimension_values[i]] * len(sample_size_arr)
+        
+        # Create DataFrame and save to CSV
+        df = pd.DataFrame(df_data)
+        df.to_csv(f"{experiment_name}_{i}.csv", index=False)
+    
+    print(f"Saved utility experiment data to {experiment_name}")
+
+def load_utility_experiment_data(experiment_name):
+    """
+    Load utility experiment data from previously saved files.
+    
+    Args:
+        experiment_name: Base name for the input files
+        
+    Returns:
+        Tuple containing (experiment_data_list, sample_size_arr, titles, num_steps, num_experiments)
+        or None if the file doesn't exist
+    """
+    json_file = f"{experiment_name}.json"
+    if not os.path.exists(json_file):
+        print(f"No data found at {json_file}")
+        return None
+    
+    print(f"Reading data from {json_file}")
+    with open(json_file, 'r') as f:
+        metadata = json.load(f)
+    
+    # Extract experiment parameters
+    sample_size_arr = np.array(metadata['sample_sizes'])
+    num_steps = metadata['num_steps']
+    num_experiments = metadata['num_experiments']
+    titles = metadata['titles']
+    
+    # Convert experiment data back from lists to numpy arrays
+    experiment_data_list = []
+    for exp_data in metadata['experiments']:
+        data_dict = {}
+        for key, value in exp_data.items():
+            if isinstance(value, list):
+                data_dict[key] = np.array(value)
+            else:
+                data_dict[key] = value
+        experiment_data_list.append(data_dict)
+    
+    return experiment_data_list, sample_size_arr, titles, num_steps, num_experiments
