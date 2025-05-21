@@ -5,7 +5,7 @@ from typing import Optional, Union, Callable, Dict, List, Tuple, Any
 import numpy as np
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.local import local_epsilon, Direction
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig

@@ -11,9 +11,13 @@ import os
 import sys
 import subprocess
 import time
+import warnings
 
 # Set the matplotlib backend to 'Agg' to prevent plots from being displayed
 os.environ['MPLBACKEND'] = 'Agg'
+
+# Ignore warnings about non-interactive backend
+warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive, and thus cannot be shown")
 
 def run_command(cmd: list, name: str) -> bool:
     """Run a command and return True if it succeeds."""
@@ -23,7 +27,9 @@ def run_command(cmd: list, name: str) -> bool:
     
     start_time = time.time()
     # Capture output to display it properly
-    result = subprocess.run(cmd, text=True, capture_output=True, env=dict(os.environ, MPLBACKEND='Agg'))
+    # Pass our environment including warning filters to the subprocess
+    env_vars = dict(os.environ, MPLBACKEND='Agg')
+    result = subprocess.run(cmd, text=True, capture_output=True, env=env_vars)
     elapsed_time = time.time() - start_time
     
     # Always print the output so that test failures are visible

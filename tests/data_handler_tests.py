@@ -15,6 +15,10 @@ import tempfile
 import shutil
 import glob
 import numpy as np
+import warnings
+
+# Ignore warnings about non-interactive backend
+warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive, and thus cannot be shown")
 
 # Ensure the project root is in the path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

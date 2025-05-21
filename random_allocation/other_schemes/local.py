@@ -4,10 +4,10 @@ from typing import Optional, Union, Callable, Dict, List, Tuple, Any
 
 # Third-party imports
 import numpy as np
-from scipy import stats  # type: ignore # Missing stubs for scipy
+from scipy import stats 
 
 # Local application imports
-from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
+from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig, Direction
 
 # ==================== Deterministic ====================

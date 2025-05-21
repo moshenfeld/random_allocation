@@ -11,15 +11,14 @@ random_allocation/              # Main project directory
 │   ├── examples/               # Example code and experiments
 │   ├── other_schemes/          # Implementation of other privacy schemes
 │   └── random_allocation_scheme/  # Implementation of random allocation scheme
-├── tests/                      # Test files
+├── tests/                      # Test files and utility scripts
 │   ├── basic_tests.py          # Basic functionality tests
 │   ├── check_types.py          # Type checking tests
 │   ├── data_handler_tests.py   # Data handler tests
-│   └── release_tests.py        # Tests to run before a release
+│   ├── release_tests.py        # Tests to run before a release
+│   └── cleanup.sh              # Script to clean up generated files
 ├── docs/                       # Documentation
 │   └── PROJECT_STRUCTURE.md    # This document
-├── scripts/                    # Utility scripts
-│   └── cleanup.sh              # Script to clean up generated files
 ├── LICENSE                     # Project license
 ├── pyproject.toml              # Build system configuration and package metadata
 ├── README.md                   # Main project documentation
@@ -42,7 +41,7 @@ These directories are generated during building, testing, and development. They 
 Run the cleanup script to remove all generated files:
 
 ```bash
-./scripts/cleanup.sh
+./tests/cleanup.sh
 ```
 
 ## How to Rebuild Artifacts

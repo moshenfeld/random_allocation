@@ -11,6 +11,9 @@ import time  # Added for timing tests
 import functools  # For decorators
 import signal  # For timeout handling
 
+# Ignore warnings about non-interactive backend
+warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive, and thus cannot be shown")
+
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.definitions import (
     ALLOCATION, ALLOCATION_ANALYTIC, ALLOCATION_DIRECT, ALLOCATION_DECOMPOSITION,
@@ -604,43 +607,46 @@ class TestFunctionalityNotBroken(unittest.TestCase):
     @timeout(MAX_TEST_TIME)
     def test_run_experiment(self):
         """Test run_experiment function."""
-        with WarningCatcher() as warning_catcher:
-            try:
-                # Create a simple parameter dictionary
-                params_dict = {
-                    'x_var': SIGMA,
-                    'y_var': EPSILON,
-                    SIGMA: [0.1, 0.5, 1.0],  # x_values
-                    DELTA: 1e-5,
-                    NUM_STEPS: 100,
-                    NUM_SELECTED: 5,
-                    NUM_EPOCHS: 1
-                }
+        # Specifically filter out the FigureCanvasAgg warning for this test
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="FigureCanvasAgg is non-interactive, and thus cannot be shown")
+            with WarningCatcher() as warning_catcher:
+                try:
+                    # Create a simple parameter dictionary
+                    params_dict = {
+                        'x_var': SIGMA,
+                        'y_var': EPSILON,
+                        SIGMA: [0.1, 0.5, 1.0],  # x_values
+                        DELTA: 1e-5,
+                        NUM_STEPS: 100,
+                        NUM_SELECTED: 5,
+                        NUM_EPOCHS: 1
+                    }
                 
-                # Run a simple experiment
-                results = run_experiment(
-                    params_dict=params_dict,
-                    config=self.config,
-                    methods=[LOCAL],  # Use local as it's simpler
-                    visualization_config={'log_x_axis': True},
-                    experiment_name='test_experiment',
-                    save_data=False,  # Don't save data to disk
-                    save_plots=False  # Don't save plots to disk
-                )
-                
-                # Verify the result contains the expected data structure
-                self.assertIsNotNone(results)
-                self.assertIn('x data', results)
-                self.assertIn('y data', results)
-                self.assertIn('x name', results)
-                self.assertIn('y name', results)
-                self.assertIn(LOCAL, results['y data'])
-                
-            except Exception as e:
-                # Fail the test with an informative message instead of skipping
-                self.fail(f"run_experiment test failed: {e}")
-        
-        self.warning_summaries[self._testMethodName] = warning_catcher.get_warnings_summary()
+                    # Run a simple experiment
+                    results = run_experiment(
+                        params_dict=params_dict,
+                        config=self.config,
+                        methods=[LOCAL],  # Use local as it's simpler
+                        visualization_config={'log_x_axis': True},
+                        experiment_name='test_experiment',
+                        save_data=False,  # Don't save data to disk
+                        save_plots=False  # Don't save plots to disk
+                    )
+                    
+                    # Verify the result contains the expected data structure
+                    self.assertIsNotNone(results)
+                    self.assertIn('x data', results)
+                    self.assertIn('y data', results)
+                    self.assertIn('x name', results)
+                    self.assertIn('y name', results)
+                    self.assertIn(LOCAL, results['y data'])
+                    
+                except Exception as e:
+                    # Fail the test with an informative message instead of skipping
+                    self.fail(f"run_experiment test failed: {e}")
+            
+            self.warning_summaries[self._testMethodName] = warning_catcher.get_warnings_summary()
 
 
 if __name__ == "__main__":
