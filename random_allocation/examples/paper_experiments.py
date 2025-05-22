@@ -99,6 +99,43 @@ def run_experiment_1():
         direction=Direction.REMOVE
     )
 
+    params_dict_several_select = {
+        'x_var': SIGMA,
+        'y_var': EPSILON,
+        SIGMA: np.exp(np.linspace(np.log(0.5), np.log(4), 20)),
+        DELTA: 1e-10,
+        NUM_STEPS: 100_000,
+        NUM_SELECTED: 10,
+        NUM_EPOCHS: 1
+    }
+
+    data_several_select_add = run_experiment(
+        params_dict=params_dict_several_select, 
+        config=config, 
+        methods=methods_add_rem, 
+        visualization_config=visualization_config, 
+        experiment_name='main_several_select_add', 
+        plot_type=PlotType.COMBINED,
+        read_data=READ_DATA,
+        save_data=SAVE_DATA,
+        save_plots=SAVE_PLOTS,
+        show_plots=SHOW_PLOTS,
+        direction=Direction.ADD
+    )
+
+    data_several_select_rem = run_experiment(
+        params_dict=params_dict_several_select, 
+        config=config, 
+        methods=methods_add_rem, 
+        visualization_config=visualization_config, 
+        experiment_name='main_several_select_remove',     
+        plot_type=PlotType.COMBINED,
+        read_data=READ_DATA,
+        save_data=SAVE_DATA,
+        save_plots=SAVE_PLOTS,
+        show_plots=SHOW_PLOTS,
+        direction=Direction.REMOVE
+    )
 
 def run_experiment_2():
     """

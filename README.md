@@ -12,6 +12,8 @@ pip install random-allocation
 
 ## Usage
 
+This package implements the privacy mechanisms and analyses described in the "Privacy Amplification by Random Allocation" paper. The following example demonstrates how to compare different schemes described in the paper:
+
 Here's a simple example of how to use the package:
 
 ```python
@@ -253,7 +255,10 @@ For more information about the test suite, see [tests/README.md](tests/README.md
 
 The `examples` directory contains several reference implementations:
 
-- `paper_experiments.py`: Reproduces experiments from the paper.
+- `paper_experiments.py`: Reproduces experiments from the paper "Privacy Amplification by Random Allocation". You can run this script to generate all the plots from the paper:
+  ```bash
+  python -m random_allocation.examples.paper_experiments
+  ```
 
 ## License
 
@@ -279,13 +284,13 @@ This project includes code from external sources for comparison purposes:
 These external implementations are used solely for comparative analysis and are not part of the core functionality of this package.
 
 ## Citation
-
-If you use this code in your research, please cite:
+<!-- 
+If you use this code in your research, please cite the original paper:
 ```
-@article{yourcitation,
-  title={Your Paper Title},
-  author={Your Name},
-  journal={Journal Name},
-  year={2024}
+@article{privacyamplificationbyra,
+  title={Privacy Amplification by Random Allocation},
+  author={Authors},
+  journal={},
+  year={2025}
 }
-```
+``` -->
