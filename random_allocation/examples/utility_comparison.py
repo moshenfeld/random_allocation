@@ -336,17 +336,13 @@ def plot_utility_comparison(sample_size_arr, experiment_data_list, titles, num_s
     
     # Add a single legend below all subplots
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), 
-               ncol=3, fontsize='medium', frameon=True, framealpha=0.9)
+               ncol=3, fontsize=16, frameon=True, framealpha=0.9)
     
     # Apply tight_layout with rect parameter to respect the space we reserved for the legend
     # The rect parameter specifies (left, bottom, right, top) fractions of the figure
     plt.tight_layout(rect=(0, 0.1, 1, 0.95))
     
     return fig
-    # # Add overall title
-    # fig.suptitle(f"Square Error of Poisson vs. Random Allocation Schemes with Number of Steps = {num_steps}", fontsize=16)
-    # plt.tight_layout()
-    # plt.subplots_adjust(top=0.9)  # Make space for the suptitle
 
 def save_utility_experiment_data(experiment_data_list, sample_size_arr, titles, num_steps, epsilon_values, delta, dimension_values, true_mean, num_experiments, experiment_name):
     """

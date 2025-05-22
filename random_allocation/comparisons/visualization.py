@@ -672,7 +672,7 @@ def plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles):
     
     # Now add the legend in the space we created
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), 
-               ncol=3, fontsize='medium', frameon=True, framealpha=0.9)
+               ncol=3, fontsize=16, frameon=True, framealpha=0.9)
     
     # Final tight layout to ensure proper spacing
     plt.tight_layout(rect=[0, 0.1, 1, 0.95])
