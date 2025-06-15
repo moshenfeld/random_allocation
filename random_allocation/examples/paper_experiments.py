@@ -24,7 +24,7 @@ from random_allocation.examples.utility_comparison import (
 
 
 # Configuration
-READ_DATA: bool = False  # Set to True to try reading data from existing files first
+READ_DATA: bool = True  # Set to True to try reading data from existing files first
 SAVE_DATA: bool = True  # Set to True to save computed data to CSV files
 SAVE_PLOTS: bool = True  # Set to True to save plots to files
 SHOW_PLOTS: bool = False  # Set to True to display plots interactively
@@ -333,7 +333,7 @@ def run_experiment_5():
         data_list.append(data)
 
     # Create titles based on the step values in each parameter dictionary
-    titles = [f"{params_dict[NUM_STEPS]} steps" for params_dict in params_dict_list]
+    titles = [f"$t$ = {params_dict[NUM_STEPS]:,}" for params_dict in params_dict_list]
 
     # Use the plot_multiple_data function to create a multi-subplot figure
     fig = plot_multiple_data(
@@ -417,7 +417,7 @@ def run_experiment_6():
             save_privacy_curves_data(deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr, data_file)
 
     # Create plot titles and figure
-    subplot_titles = [f"Steps: {num_steps}, Sigma: {sigma}" for num_steps, sigma in zip(num_steps_arr, sigma_arr)]
+    subplot_titles = [f"$t$ = {num_steps:,}, $\\sigma$ = {sigma}" for num_steps, sigma in zip(num_steps_arr, sigma_arr)]
     fig = plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles)
 
     if SAVE_PLOTS:
@@ -428,6 +428,8 @@ def run_experiment_6():
         plt.show()
     else:
         plt.close(fig)
+        
+    return fig
 
 
 def run_experiment_7():
@@ -465,9 +467,9 @@ def run_experiment_7():
     experiment_data_list = None
     should_compute_data = True
     titles = [
-        f"ε = {large_eps:.1f}, d = {small_dim}", 
-        f"ε = {small_eps:.1f}, d = {small_dim}", 
-        f"ε = {small_eps:.1f}, d = {large_dim}"
+        f"$\varepsilon$ = {large_eps:.1f}, $d$ = {small_dim:,}", 
+        f"$\varepsilon$ = {small_eps:.1f}, $d$ = {small_dim:,}", 
+        f"$\varepsilon$ = {small_eps:.1f}, $d$ = {large_dim:,}"
     ]
     epsilon_values = [large_eps, small_eps, small_eps]
     dimension_values = [small_dim, small_dim, large_dim]
@@ -548,7 +550,9 @@ def run_experiment_7():
     if SAVE_PLOTS:
         plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
         os.makedirs(plots_dir, exist_ok=True)
-        plt.savefig(os.path.join(plots_dir, 'privacy_utility_tradeoff_plot.png'))
+        # Save with moderate padding to ensure legend doesn't get cut off
+        plt.savefig(os.path.join(plots_dir, 'privacy_utility_tradeoff_plot.png'), 
+                   bbox_inches='tight', pad_inches=0.2)
     
     if SHOW_PLOTS:
         plt.show()

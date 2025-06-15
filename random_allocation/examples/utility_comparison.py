@@ -291,7 +291,7 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
     
     # Finalize plot formatting
     ax.set_title(title)
-    ax.set_xlabel(xlabel)
+    ax.set_xlabel(xlabel, labelpad=3)  # Small padding to keep label close to axis
     ax.set_ylabel(ylabel)
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -332,15 +332,15 @@ def plot_utility_comparison(sample_size_arr, experiment_data_list, titles, num_s
     handles, labels = axs[0].get_legend_handles_labels()
     
     # First reserve space for legend at the bottom
-    plt.subplots_adjust(bottom=0.22)
+    plt.subplots_adjust(bottom=0.20)
     
     # Add a single legend below all subplots
-    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), 
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.01), 
                ncol=3, fontsize=16, frameon=True, framealpha=0.9)
     
     # Apply tight_layout with rect parameter to respect the space we reserved for the legend
     # The rect parameter specifies (left, bottom, right, top) fractions of the figure
-    plt.tight_layout(rect=(0, 0.1, 1, 0.95))
+    plt.tight_layout(rect=(0, 0.14, 1, 0.95))
     
     return fig
 

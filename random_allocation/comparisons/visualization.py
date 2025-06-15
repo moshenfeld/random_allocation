@@ -654,6 +654,10 @@ def plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles):
     n_rows = (num_plots + 1) // 2
     n_cols = 2
     fig, axs = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(15, 5 * n_rows))
+    
+    # Store handles and labels from the first subplot that has data
+    handles, labels = None, None
+    
     for i, (deltas_dict, epsilon_arr) in enumerate(zip(deltas_dict_arr, epsilon_mat)):
         plt.subplot(n_rows, n_cols, i + 1)
         for method, deltas in deltas_dict.items():
@@ -663,18 +667,25 @@ def plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles):
         plt.ylabel(r"$\delta$")
         # plt.xscale("log")
         plt.yscale("log")
+        
+        # Get legend handles from the first subplot with data
+        if handles is None:
+            current_ax = plt.gca()
+            handles, labels = current_ax.get_legend_handles_labels()
     
-    # Add the legend below all the subplots
-    handles, labels = axs[0, 0].get_legend_handles_labels()
-    
-    # First adjust the spacing to make room for the legend
-    plt.subplots_adjust(bottom=0.2, hspace=0.5)
-    
-    # Now add the legend in the space we created
-    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), 
-               ncol=3, fontsize=16, frameon=True, framealpha=0.9)
-    
-    # Final tight layout to ensure proper spacing
-    plt.tight_layout(rect=[0, 0.1, 1, 0.95])
+    # Add the legend below all the subplots if we have handles
+    if handles and labels:
+        # First adjust the spacing to make room for the legend
+        plt.subplots_adjust(bottom=0.18, hspace=0.5)
+        
+        # Now add the legend in the space we created - use a positive y value
+        fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.04), 
+                   ncol=3, fontsize=16, frameon=True, framealpha=0.9)
+        
+        # Final tight layout to ensure proper spacing, leaving room at bottom
+        plt.tight_layout(rect=(0, 0.12, 1, 0.95))
+    else:
+        # If no legend data, just use standard tight layout
+        plt.tight_layout()
     
     return fig

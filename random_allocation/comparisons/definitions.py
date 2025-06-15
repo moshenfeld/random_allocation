@@ -36,8 +36,9 @@ LOCAL: str = 'Local'
 POISSON: str = 'Poisson'
 ALLOCATION: str = 'Allocation'
 SHUFFLE: str = 'Shuffle'
+LOWER_BOUND: str = 'Lower Bound'
 
-colors_dict: Dict[str, str] = {LOCAL: '#FF0000', POISSON: '#2BB22C', ALLOCATION: '#157DED', SHUFFLE: '#FF00FF'}
+colors_dict: Dict[str, str] = {LOCAL: '#FF0000', POISSON: '#2BB22C', ALLOCATION: '#157DED', SHUFFLE: '#FF00FF', LOWER_BOUND: '#FF7F00'}
 
 # ======================= Computation =======================
 ANALYTIC: str = 'Analytic'
@@ -48,7 +49,6 @@ DECOMPOSITION: str = 'Decomposition'
 INVERSE: str = 'Inverse'
 COMBINED: str = 'Combined'
 RECURSIVE: str = 'Recursive'
-LOWER_BOUND: str = 'Lower Bound'
 
 # ======================= Methods =======================
 POISSON_PLD: str                 = f'{POISSON} ({PLD})'
@@ -160,7 +160,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         delta_calculator=allocation_delta_lower_bound,
         legend='_{\\mathcal{A}}$ - ' + ALLOCATION_LOWER_BOUND,
         marker='d',
-        color=colors_dict[ALLOCATION]
+        color=colors_dict[LOWER_BOUND]
     )
 }
 
