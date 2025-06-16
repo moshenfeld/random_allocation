@@ -239,17 +239,46 @@ plt.show()
 
 ## Testing
 
-The project includes a test suite to ensure code functionality is maintained during refactoring. The tests are located in the `tests` directory and can be run using:
+The project includes a comprehensive test suite with **110+ tests** across multiple categories to ensure mathematical correctness, robustness, and research reproducibility. 
 
+### Quick Start
 ```bash
-# Run all tests
+# Activate environment
+conda activate random_allocation
+
+# Run all tests (recommended)
+python tests/run_test_suite.py
+
+# Run with coverage analysis
+python tests/run_test_suite.py --coverage
+```
+
+### Test Categories
+- **Unit Tests**: Parameter validation and core functionality (22 tests)
+- **Mathematical Tests**: Privacy property validation and numerical correctness (27 tests)
+- **Integration Tests**: End-to-end workflow validation
+- **Performance Tests**: Benchmarking and regression detection
+- **Reproducibility Tests**: Bit-exact validation of research experiments
+
+### Legacy Testing
+```bash
+# Run legacy basic tests
 python -m unittest discover tests
 
-# Run a specific test file
+# Run specific legacy test
 python -m unittest tests.basic_tests
 ```
 
-For more information about the test suite, see [tests/README.md](tests/README.md).
+**Total Test Runtime**: ~125 seconds for complete suite
+
+For comprehensive documentation of the test suite, including detailed test descriptions and mathematical properties validated, see **[docs/test_documentation.md](docs/test_documentation.md)**.
+
+## Documentation
+
+- **[docs/test_documentation.md](docs/test_documentation.md)**: Comprehensive test suite documentation
+- **[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)**: Project organization and build instructions
+- **[docs/type_annotations_guide.md](docs/type_annotations_guide.md)**: Type annotation guidelines
+- **[tests/README.md](tests/README.md)**: Test-specific setup and usage instructions
 
 ## Examples
 
