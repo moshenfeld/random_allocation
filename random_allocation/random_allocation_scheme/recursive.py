@@ -8,46 +8,49 @@ from dp_accounting.pld.privacy_loss_distribution import PrivacyLossDistribution
 # Local application imports
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
-from random_allocation.other_schemes.poisson import Poisson_PLD, Poisson_delta_PLD
-from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition
+from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_PLD
+from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition_add_from_PLD
 from random_allocation.random_allocation_scheme.direct import allocation_delta_direct
 # Type aliases
 NumericFunction = Callable[[float], float]
 
-def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, discretization, optimization_func, direction):
+def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, config, optimization_func, direction):
     epsilon = np.inf
 
-    # Find a gamma such that the Poisson term with sampling probability e^(2*gamma)/num_steps_per_round
-    # is less than delta/2
-    gamma_result = search_function_with_bounds(
+    # Find a eps such that the the privacy profile of the random allocation in the add direction is bounded by delta/2
+    # The bound used is based on the decomposition method
+    eps_result = search_function_with_bounds(
         func=optimization_func, 
         y_target=delta/2, 
         bounds=(1e-5, 10),
         tolerance=1e-2, 
         function_type=FunctionType.DECREASING
     )
-    
-    # If we find a gamma, we can compute the sampling probability
-    if gamma_result is not None:
-        sampling_prob = np.exp(2 * gamma_result)/num_steps
+
+    # If we find a eps, we can compute the sampling probability
+    if eps_result is not None:
+        sampling_prob = np.exp(2 * eps_result)/num_steps
 
         # if the induced sampling probability is small enough, we can compute the corresponding Poisson epsilon
         if sampling_prob <= np.sqrt(1/num_steps):
-            Poisson_PLD_final = Poisson_PLD(
+            params_Poisson = PrivacyParams(
                 sigma=sigma,
                 num_steps=num_steps,
+                num_selected=1,
                 num_epochs=num_epochs,
-                sampling_prob=sampling_prob,
-                discretization=discretization,
-                direction=direction
+                epsilon=None,  
+                delta=delta/2 
             )
-            epsilon = float(Poisson_PLD_final.get_epsilon_for_delta(delta/2))
+            epsilon = float(Poisson_epsilon_PLD(params=params_Poisson,
+                                              config=config,
+                                              sampling_prob=sampling_prob,
+                                              direction=direction))
     return epsilon
 
 def allocation_epsilon_recursive(params: PrivacyParams,
-                                config: SchemeConfig = SchemeConfig(),
-                                direction: Direction = Direction.BOTH,
-                                ) -> float:
+                                 config: SchemeConfig = SchemeConfig(),
+                                 direction: Direction = Direction.BOTH,
+                                 ) -> float:
     """
     Compute epsilon for the recursive allocation scheme.
     
@@ -65,28 +68,39 @@ def allocation_epsilon_recursive(params: PrivacyParams,
         
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
-    lambda_val = 1 - (1-1.0/num_steps_per_round)**num_steps_per_round
     
-    Poisson_PLD_base = Poisson_PLD(
+    # We use the decomposition method to compute the tail bound, and we have to optimize over epsilon'.
+    # Since recomputing the Poisson PLD is expensive, we re-implement the decomposition method for the add direction,
+    # compute the PLD once, and optimize only over epsilon' to delta/2 conversion.
+    tail_Poisson_PLD = Poisson_PLD(
         sigma=params.sigma, 
         num_steps=num_steps_per_round, 
-        num_epochs=num_rounds*params.num_epochs, 
+        num_epochs=1, 
         sampling_prob=1.0/num_steps_per_round, 
         discretization=config.discretization, 
-        direction="add"
+        direction=Direction.ADD,
     )
-    
     if direction != Direction.ADD:
-        optimization_func = lambda eps: Poisson_PLD_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))\
-                                        *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps))
-        epsilon_remove = allocation_epsilon_recursive_inner(params.sigma, params.delta, num_steps_per_round,
-                                                            num_rounds*params.num_epochs, config.discretization, optimization_func, "remove")
-    
+        optimization_func = lambda eps: allocation_delta_decomposition_add_from_PLD(epsilon=eps, 
+                                                                                    num_steps=num_steps_per_round, Poisson_PLD_obj=tail_Poisson_PLD) \
+                                        * (np.exp(-eps)/(np.exp(eps) -1)) * num_rounds*params.num_epochs
+        epsilon_remove = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
+                                                           num_steps=num_steps_per_round,
+                                                           num_epochs=num_rounds*params.num_epochs,
+                                                           config=config,
+                                                           optimization_func=optimization_func,
+                                                           direction=Direction.REMOVE)
+
     if direction != Direction.REMOVE:
-        optimization_func = lambda eps: Poisson_PLD_base.get_delta_for_epsilon(-np.log(1-lambda_val*(1-np.exp(-eps))))\
-                                        *(1/(lambda_val*(np.exp(eps) -1)) - np.exp(-eps))
-        epsilon_add = allocation_epsilon_recursive_inner(params.sigma, params.delta, num_steps_per_round,
-                                                         num_rounds*params.num_epochs, config.discretization, optimization_func, "add")
+        optimization_func = lambda eps: allocation_delta_decomposition_add_from_PLD(epsilon=eps, 
+                                                                                    num_steps=num_steps_per_round, Poisson_PLD_obj=tail_Poisson_PLD) \
+                                        * (np.exp(eps)/(np.exp(eps) -1)) * num_rounds*params.num_epochs
+        epsilon_add = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
+                                                         num_steps=num_steps_per_round,
+                                                         num_epochs=num_rounds*params.num_epochs,
+                                                         config=config,
+                                                         optimization_func=optimization_func,
+                                                         direction=Direction.ADD)
     
     if direction == Direction.ADD:
         assert 'epsilon_add' in locals(), "Failed to compute epsilon_add"

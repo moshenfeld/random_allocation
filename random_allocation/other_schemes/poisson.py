@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 
 # Local application imports
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig
-from random_allocation.comparisons.definitions import Direction, Verbosity
+from random_allocation.comparisons.structs import Direction, Verbosity
 
 
 # ==================== PLD ====================
@@ -41,7 +41,7 @@ def Poisson_PLD(sigma: float,
                 num_epochs: int,
                 sampling_prob: float,
                 discretization: float,
-                direction: str,
+                direction: Direction,
                 ) -> pld.privacy_loss_distribution.PrivacyLossDistribution:
     """
     Calculate the privacy loss distribution (PLD) for the Poisson scheme with the Gaussian mechanism.
@@ -66,7 +66,7 @@ def Poisson_PLD(sigma: float,
     )
     
     # For "both" direction, just use the Gaussian PLD directly
-    if direction == "both":
+    if direction == Direction.BOTH:
         return Gauss_PLD.self_compose(total_compositions)
     
     # For add or remove directions, use our zero privacy loss PMF
@@ -74,13 +74,13 @@ def Poisson_PLD(sigma: float,
     zero_pmf = create_zero_pmf(discretization)
     
     # Create the appropriate PLD based on direction
-    if direction == "add":
+    if direction == Direction.ADD:
         # For add direction, use zero_pmf for pmf_remove (no privacy loss when removing)
         PLD_single = pld.privacy_loss_distribution.PrivacyLossDistribution(
             pmf_remove=zero_pmf,
             pmf_add=Gauss_PLD._pmf_add
         )
-    elif direction == "remove":
+    elif direction == Direction.REMOVE:
         # For remove direction, use zero_pmf for pmf_add (no privacy loss when adding)
         PLD_single = pld.privacy_loss_distribution.PrivacyLossDistribution(
             pmf_remove=Gauss_PLD._pmf_remove,
@@ -117,7 +117,7 @@ def Poisson_delta_PLD(params: PrivacyParams,
         num_epochs=params.num_epochs, 
         sampling_prob=sampling_prob,
         discretization=config.discretization, 
-        direction=direction.value
+        direction=direction
     )
     return float(PLD.get_delta_for_epsilon(params.epsilon))
 
@@ -148,7 +148,7 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
         num_epochs=params.num_epochs, 
         sampling_prob=sampling_prob,
         discretization=config.discretization, 
-        direction=direction.value
+        direction=direction
     )
     return float(PLD.get_epsilon_for_delta(params.delta))
 

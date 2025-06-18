@@ -1,5 +1,4 @@
 # Standard library imports
-from typing import Optional, Union, Callable, Dict, List, Tuple, Any
 
 # Third-party imports
 import numpy as np
@@ -59,32 +58,36 @@ def allocation_epsilon_analytic(params: PrivacyParams,
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
         
+    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+
     local_delta_split = 0.99
     Poisson_delta_split = (1-local_delta_split)/2
     large_sampling_prob_delta_split = (1-local_delta_split)/2
     
-    local_delta = params.delta*local_delta_split/(params.num_steps*params.num_epochs)
+    local_delta = params.delta*local_delta_split/(num_steps_per_round*num_rounds*params.num_epochs)
     Poisson_delta = params.delta*Poisson_delta_split
-    large_sampling_prob_delta = params.delta*large_sampling_prob_delta_split/params.num_epochs
+    large_sampling_prob_delta = params.delta*large_sampling_prob_delta_split/(num_rounds*params.num_epochs)
     
-    sampling_prob = sampling_prob_from_sigma(
-        sigma=params.sigma, 
-        delta=large_sampling_prob_delta, 
-        num_steps=params.num_steps,
-        num_selected=params.num_selected, 
-        local_delta=local_delta,
-        direction=direction
-    )
-    
+    sampling_prob = params.sampling_probability * \
+                    sampling_prob_from_sigma(
+                        sigma=params.sigma, 
+                        delta=large_sampling_prob_delta, 
+                        num_steps=num_steps_per_round,
+                        num_selected=params.num_selected, 
+                        local_delta=local_delta,
+                        direction=direction
+                    )
+
     if sampling_prob > np.sqrt(params.num_selected/params.num_steps):
         return float(np.inf)
         
     Poisson_params = PrivacyParams(
         sigma=params.sigma, 
         delta=Poisson_delta, 
-        num_steps=params.num_steps, 
-        num_selected=params.num_selected, 
-        num_epochs=params.num_epochs
+        num_steps=num_steps_per_round, 
+        num_selected=1, 
+        num_epochs=num_rounds*params.num_epochs
     )
     epsilon = Poisson_epsilon_PLD(
         params=Poisson_params,
@@ -120,6 +123,7 @@ def allocation_delta_analytic(params: PrivacyParams,
             num_steps=params.num_steps,
             num_selected=params.num_selected,
             num_epochs=params.num_epochs,
+            sampling_probability=params.sampling_probability,
             epsilon=None,
             delta=delta
         ), config=config, direction=direction), 

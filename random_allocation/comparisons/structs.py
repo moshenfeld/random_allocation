@@ -5,17 +5,12 @@ Common definitions for privacy parameters, scheme configurations, and experiment
 # Standard library imports
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Optional, Literal, Union, Any, Dict, List, TypeVar, cast
+from typing import Callable, Optional, Literal, Union, Any, Dict, List, cast
 
 # Third-party imports
 import numpy as np
 
-# Type aliases for calculator functions that may return float or Optional[float]
-# Many calculator functions can return Optional[float], so we need to be more flexible
-# in our type definitions to avoid excessive casting
-T = TypeVar('T', bound=float)
-EpsilonCalculator = Callable[[Any, Any], Union[float, Optional[float]]]
-DeltaCalculator = Callable[[Any, Any], Union[float, Optional[float]]]
+
 
 class Direction(Enum):
     """Enum for direction of privacy analysis"""
@@ -34,8 +29,9 @@ class PrivacyParams:
     """Parameters common to all privacy schemes"""
     sigma: float
     num_steps: int
-    num_selected: int
-    num_epochs: int
+    num_selected: int = 1
+    num_epochs: int = 1
+    sampling_probability: float = 1.0
     # Either epsilon or delta must be provided, the other one will be computed
     epsilon: Optional[float] = None
     delta: Optional[float] = None
@@ -65,6 +61,8 @@ class PrivacyParams:
         assert self.num_selected > 0, f"num_selected must be positive, got {self.num_selected}"
         assert self.num_selected <= self.num_steps, f"num_selected must not exceed num_steps, got {self.num_selected} > {self.num_steps}"
         assert self.num_epochs > 0, f"num_epochs must be positive, got {self.num_epochs}"
+        assert self.sampling_probability == 1.0 or self.num_selected == 1, \
+            "sampling_probability can only be less than 1.0 if num_selected is 1"
         
         # Parameter value constraints
         if self.epsilon is not None:
@@ -95,8 +93,8 @@ class MethodFeatures:
     Container for all features associated with a method.
     """
     name: str
-    epsilon_calculator: Optional[EpsilonCalculator]
-    delta_calculator: Optional[DeltaCalculator]
+    epsilon_calculator: Optional[Callable[[Any, Any], float]]
+    delta_calculator: Optional[Callable[[Any, Any], float]]
     legend: str
     marker: str
     color: str

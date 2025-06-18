@@ -1,7 +1,7 @@
 # Standard library imports
 from enum import auto, Enum
 import math
-from typing import Callable, Dict, List, Optional, Tuple, Union, TypeVar, Any, cast, TypedDict, Protocol
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any, cast, TypedDict, Protocol
 
 # Third-party imports
 import numpy as np
@@ -21,9 +21,6 @@ def _should_print_warning(verbosity: Verbosity) -> bool:
 def _should_print_info(verbosity: Verbosity) -> bool:
     """Check if info messages should be printed at this verbosity level"""
     return verbosity == Verbosity.ALL
-
-# Type variables
-T = TypeVar('T')
 
 # Type aliases
 BoundsType = Optional[Tuple[float, float]]

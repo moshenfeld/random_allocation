@@ -24,7 +24,7 @@ from random_allocation.examples.utility_comparison import (
 
 
 # Configuration
-READ_DATA: bool = True  # Set to True to try reading data from existing files first
+READ_DATA: bool = False  # Set to True to try reading data from existing files first
 SAVE_DATA: bool = True  # Set to True to save computed data to CSV files
 SAVE_PLOTS: bool = True  # Set to True to save plots to files
 SHOW_PLOTS: bool = False  # Set to True to display plots interactively
@@ -50,6 +50,7 @@ def run_experiment_1():
 
     methods_all = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
     methods_add_rem = [LOCAL, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
+    methods_several_select = [LOCAL, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE]
 
     visualization_config = {
         'log_x_axis': True, 
@@ -112,7 +113,7 @@ def run_experiment_1():
     data_several_select_add = run_experiment(
         params_dict=params_dict_several_select, 
         config=config, 
-        methods=methods_add_rem, 
+        methods=methods_several_select, 
         visualization_config=visualization_config, 
         experiment_name='main_several_select_add', 
         plot_type=PlotType.COMBINED,
@@ -126,7 +127,7 @@ def run_experiment_1():
     data_several_select_rem = run_experiment(
         params_dict=params_dict_several_select, 
         config=config, 
-        methods=methods_add_rem, 
+        methods=methods_several_select, 
         visualization_config=visualization_config, 
         experiment_name='main_several_select_remove',     
         plot_type=PlotType.COMBINED,

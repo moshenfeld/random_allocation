@@ -4,7 +4,7 @@ import inspect
 import os
 import time
 from enum import Enum
-from typing import Dict, Any, Callable, List, Tuple, Union, Optional, TypeVar, cast, Collection, Mapping, Literal
+from typing import Dict, Any, Callable, List, Tuple, Union, Optional, cast, Collection, Mapping, Literal
 
 # Third-party imports
 import matplotlib.pyplot as plt
@@ -20,8 +20,7 @@ from random_allocation.comparisons.data_handler import (
     save_privacy_curves_data, load_privacy_curves_data
 )
 
-# Type variables and aliases
-T = TypeVar('T')
+# Type aliases
 ParamsDict = Dict[str, Any]
 DataDict = Dict[str, Any]
 MethodList = List[str]
@@ -35,7 +34,7 @@ class PlotType(Enum):
 
 def get_func_dict(methods: MethodList,
                   y_var: str
-                  ) -> Dict[str, Optional[EpsilonCalculator]]:
+                  ) -> Dict[str, Optional[Callable[[Any, Any], float]]]:
     """
     Get the function dictionary for the given methods and y variable.
     
@@ -47,8 +46,8 @@ def get_func_dict(methods: MethodList,
         Dictionary mapping method names to their corresponding calculator functions
     """
     if y_var == EPSILON:
-        return cast(Dict[str, Optional[EpsilonCalculator]], get_features_for_methods(methods, 'epsilon_calculator'))
-    return cast(Dict[str, Optional[DeltaCalculator]], get_features_for_methods(methods, 'delta_calculator'))
+        return cast(Dict[str, Optional[Callable[[Any, Any], float]]], get_features_for_methods(methods, 'epsilon_calculator'))
+    return cast(Dict[str, Optional[Callable[[Any, Any], float]]], get_features_for_methods(methods, 'delta_calculator'))
 
 def clear_all_caches() -> None:
     """

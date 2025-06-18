@@ -1,7 +1,7 @@
 # Standard library imports
 from functools import lru_cache
 import math
-from typing import List, Tuple, Optional, Union, Callable, TypeVar, Dict, Any, cast, Literal
+from typing import List, Tuple, Callable
 
 # Third-party imports
 from numba import jit
@@ -12,17 +12,14 @@ from numpy.typing import NDArray
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction, Verbosity
+from random_allocation.random_allocation_scheme.random_allocation_utils import print_alpha
 
 # Type aliases
 Partition = Tuple[int, ...]
 NumericFunction = Callable[[float], float]
 
 # ==================== Add ====================
-def allocation_epsilon_direct_add(sigma: float,
-                                  delta: float,
-                                  num_steps: int,
-                                  num_epochs: int,
-                                  ) -> float:
+def allocation_epsilon_direct_add(sigma: float, delta: float, num_steps: int, num_epochs: int) -> float:
     """
     Compute the epsilon value of the allocation scheme in the add direction.
     
@@ -39,11 +36,7 @@ def allocation_epsilon_direct_add(sigma: float,
     epsilon += (1-1.0/num_steps)/(2*sigma**2)
     return float(epsilon)
 
-def allocation_delta_direct_add(sigma: float,
-                                epsilon: float,
-                                num_steps: int,
-                                num_epochs: int,
-                                ) -> float:
+def allocation_delta_direct_add(sigma: float, epsilon: float, num_steps: int, num_epochs: int) -> float:
     """
     Compute the delta value of the allocation scheme in the add direction.
     
@@ -183,12 +176,12 @@ def allocation_RDP_remove(alpha: int, sigma: float, num_steps: int) -> float:
     return float((log_sum - alpha*(1/(2*sigma**2) + np.log(num_steps)) + max_val) / (alpha - 1))
 
 def allocation_epsilon_direct_remove(sigma: float,
-                                  delta: float,
-                                  num_steps: int,
-                                  num_epochs: int,
-                                  alpha_orders: List[int],
-                                  verbosity: Verbosity = Verbosity.NONE,
-                                  ) -> float:
+                                     delta: float,
+                                     num_steps: int,
+                                     num_epochs: int,
+                                     alpha_orders: List[int],
+                                     verbosity: Verbosity = Verbosity.NONE,
+                                     ) -> float:
     """
     Compute the epsilon value of the allocation scheme in the remove direction using Rényi Differential Privacy (RDP).
     This function is based on Lemma 2.4, and utilizes the improvement stated in Claim 6.4.
@@ -233,10 +226,7 @@ def allocation_epsilon_direct_remove(sigma: float,
     return float(epsilon)
 
 # ==================== Both ====================
-def allocation_epsilon_direct(params: PrivacyParams,
-                           config: SchemeConfig,
-                           direction: Direction = Direction.BOTH,
-                           ) -> float:
+def allocation_epsilon_direct(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute epsilon for the direct allocation scheme.
     
@@ -251,6 +241,9 @@ def allocation_epsilon_direct(params: PrivacyParams,
     params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
+
+    if params.sampling_probability < 1.0:
+        raise ValueError('Sampling probability must be 1.0 for allocation direct method')
 
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
@@ -287,10 +280,7 @@ def allocation_epsilon_direct(params: PrivacyParams,
     return float(max(epsilon_remove, epsilon_add))
 
 
-def allocation_delta_direct(params: PrivacyParams,
-                         config: SchemeConfig,
-                         direction: Direction = Direction.BOTH,
-                         ) -> float:
+def allocation_delta_direct(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute the delta value of the allocation scheme using Rényi Differential Privacy (RDP).
     This function can compute delta for both the add and remove directions, or maximum of both.
@@ -307,6 +297,9 @@ def allocation_delta_direct(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
+    if params.sampling_probability < 1.0:
+        raise ValueError('Sampling probability must be 1.0 for allocation direct method')
+
     if direction != Direction.ADD:
         if config.allocation_direct_alpha_orders is None:
             raise ValueError("allocation_direct_alpha_orders must be provided in SchemeConfig for 'remove' or 'both' direction")
@@ -355,3 +348,56 @@ def allocation_delta_direct(params: PrivacyParams,
     
     # Both directions
     return float(max(delta_remove, delta_add))
+
+# ===================== Legacy RDP add ====================
+
+def allocation_RDP_add(sigma: float, 
+                       num_steps: int, 
+                       num_epochs: int,
+                       alpha_orders: np.ndarray,
+                       ) -> np.ndarray:
+    # Compute RDP values
+    alpha_RDP = num_epochs * (alpha_orders + num_steps - 1) / (2 * num_steps * sigma**2)
+    return alpha_RDP
+
+def allocation_delta_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+
+    if params.sampling_probability < 1.0:
+        raise ValueError('Sampling probability must be 1.0 for allocation RDP add method')
+
+    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+
+    alpha_orders = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
+    alpha_RDP = allocation_RDP_add(sigma=params.sigma,
+                                   num_steps=num_steps_per_round,
+                                   num_epochs=num_rounds*params.num_epochs,
+                                   alpha_orders=alpha_orders)
+    alpha_deltas = np.exp((alpha_orders-1) * (alpha_RDP - params.epsilon))*(1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
+    used_alpha = alpha_orders[np.argmin(alpha_deltas)]
+    print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
+    return float(alpha_deltas[used_alpha])
+
+def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
+    params.validate()
+    if params.delta is None:
+        raise ValueError("Delta must be provided to compute epsilon")
+    
+    if params.sampling_probability < 1.0:
+        raise ValueError('Sampling probability must be 1.0 for allocation RDP add method')
+
+    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+
+    alpha_orders = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
+    alpha_RDP = allocation_RDP_add(sigma=params.sigma,
+                                   num_steps=num_steps_per_round,
+                                   num_epochs=num_rounds*params.num_epochs,
+                                   alpha_orders=alpha_orders)
+    alpha_epsilons = alpha_RDP + np.log1p(-1 / alpha_orders) - np.log(params.delta * alpha_orders) / (alpha_orders - 1)
+    used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
+    print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
+    return float(alpha_epsilons[used_alpha])

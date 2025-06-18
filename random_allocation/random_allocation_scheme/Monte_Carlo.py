@@ -7,6 +7,7 @@ import numpy as np
 # Local application imports
 from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
+from random_allocation.random_allocation_scheme.random_allocation_utils import handle_directions
 
 def Monte_Carlo_estimation(params: PrivacyParams,
                            config: SchemeConfig,
@@ -76,25 +77,20 @@ def allocation_delta_MC(params: PrivacyParams,
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    assert params.num_selected == 1, "Monte Carlo only supports num_selected=1"
-    
-    # Variables that will be defined conditionally
-    delta_add: float  # type annotation without initialization
-    delta_remove: float  # type annotation without initialization
-    
-    return_field = 'mean' if config.MC_use_mean else 'high_prob'
-    if direction != Direction.ADD:
-        delta_remove = Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)[return_field]
-    if direction != Direction.REMOVE:
-        delta_add = Monte_Carlo_estimation(params, config, AdjacencyType.ADD)[return_field]
+    if params.num_epochs > 1 or params.num_selected > 1:
+        raise ValueError('Allocation Monte Carlo method only supports num_epochs=1 and num_selected=1')
 
-    if direction == Direction.ADD:
-        assert 'delta_add' in locals(), "Failed to compute delta_add"
-        return delta_add
-    if direction == Direction.REMOVE:
-        assert 'delta_remove' in locals(), "Failed to compute delta_remove"
-        return delta_remove
-    
-    # Both directions, return max
-    assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
-    return float(max(delta_add, delta_remove))
+    if params.sampling_probability < 1.0:
+        raise ValueError('Sampling probability must be 1.0 for allocation Monte Carlo method')
+
+    return_field = 'mean' if config.MC_use_mean else 'high_prob'
+    allocation_delta_MC_add = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.ADD)[return_field]
+    allocation_delta_MC_remove = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)[return_field]
+
+    return handle_directions(params=params,
+                             config=config,
+                             direction=direction,
+                             add_func=allocation_delta_MC_add,
+                             remove_func=allocation_delta_MC_remove,
+                             add_val_name="delta_add",
+                             remove_val_name="delta_remove")
