@@ -28,14 +28,11 @@ def allocation_epsilon_combined_add(params: PrivacyParams, config: SchemeConfig)
     
     epsilon_local_val = local_epsilon(params=params, config=config)
     epsilon_analytic_val = allocation_epsilon_analytic(params=params, config=config, direction=Direction.ADD)
-    epsilon_direct_val = allocation_epsilon_direct(params=params, config=config, direction=Direction.ADD)
+    # Direct allocation is only valid if sampling_probability == 1.0
+    epsilon_direct_val = allocation_epsilon_direct(params=params, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else float('inf')
     epsilon_recursive_val = allocation_epsilon_recursive(params=params, config=config, direction=Direction.ADD)
-
     # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
-    if params.num_epochs == 1 and params.num_selected == 1:
-        epsilon_decompose_val = allocation_epsilon_decomposition(params=params, config=config, direction=Direction.ADD)
-    else:
-        epsilon_decompose_val = float('inf')  # Skip this method if constraints not met
+    epsilon_decompose_val = allocation_epsilon_decomposition(params=params, config=config, direction=Direction.ADD) if params.num_epochs == 1 and params.num_selected == 1 else float('inf')
 
     return min(
         epsilon_local_val,
@@ -59,14 +56,11 @@ def allocation_delta_combined_add(params: PrivacyParams, config: SchemeConfig) -
     
     delta_local_val = local_delta(params=params, config=config)    
     delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.ADD)
-    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.ADD)
+    # Direct allocation is only valid if sampling_probability == 1.0
+    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else 1.0
     delta_recursive_val = allocation_delta_recursive(params=params, config=config, direction=Direction.ADD)
-
     # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
-    if params.num_epochs == 1 and params.num_selected == 1:
-        delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.ADD)
-    else:
-        delta_decompose_val = 1.0  # Skip this method if constraints not met
+    delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.ADD) if params.num_epochs == 1 and params.num_selected == 1 else 1.0
 
     return min(
         delta_local_val,
@@ -91,14 +85,11 @@ def allocation_epsilon_combined_remove(params: PrivacyParams, config: SchemeConf
     
     epsilon_local_val = local_epsilon(params=params, config=config)
     epsilon_analytic_val = allocation_epsilon_analytic(params=params, config=config, direction=Direction.REMOVE)
-    epsilon_direct_val = allocation_epsilon_direct(params=params, config=config, direction=Direction.REMOVE)
+    # Direct allocation is only valid if sampling_probability == 1.0
+    epsilon_direct_val = allocation_epsilon_direct(params=params, config=config, direction=Direction.REMOVE) if params.sampling_probability == 1.0 else float('inf')
     epsilon_recursive_val = allocation_epsilon_recursive(params=params, config=config, direction=Direction.REMOVE)
-
     # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
-    if params.num_epochs == 1 and params.num_selected == 1:
-        epsilon_decompose_val = allocation_epsilon_decomposition(params=params, config=config, direction=Direction.REMOVE)
-    else:
-        epsilon_decompose_val = float('inf')  # Skip this method if constraints not met
+    epsilon_decompose_val = allocation_epsilon_decomposition(params=params, config=config, direction=Direction.REMOVE) if params.num_epochs == 1 and params.num_selected == 1 else float('inf')
 
     return min(
         epsilon_local_val,
@@ -122,14 +113,11 @@ def allocation_delta_combined_remove(params: PrivacyParams, config: SchemeConfig
     
     delta_local_val = local_delta(params=params, config=config)
     delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.REMOVE)
-    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.REMOVE)
+    # Direct allocation is only valid if sampling_probability == 1.0
+    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.REMOVE) if params.sampling_probability == 1.0 else 1.0
     delta_recursive_val = allocation_delta_recursive(params=params, config=config, direction=Direction.REMOVE)
-
     # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
-    if params.num_epochs == 1 and params.num_selected == 1:
-        delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.REMOVE)
-    else:
-        delta_decompose_val = 1.0  # Skip this method if constraints not met
+    delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.REMOVE) if params.num_epochs == 1 and params.num_selected == 1 else 1.0
 
     return min(
         delta_local_val,

@@ -51,7 +51,7 @@ def allocation_delta_direct_add(params: PrivacyParams, config: SchemeConfig) -> 
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
     delta = Gaussian_delta(sigma=params.sigma*math.sqrt(num_steps_per_round/(num_rounds*params.num_epochs)), 
-                           epsilon=params.delta - (1-1.0/num_steps_per_round)/(2*params.sigma**2))
+                           epsilon=params.epsilon - (1-1.0/num_steps_per_round)/(2*params.sigma**2))
     return float(delta)
 
 # ==================== Remove ====================

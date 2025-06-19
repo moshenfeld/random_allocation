@@ -74,12 +74,12 @@ def allocation_epsilon_analytic(params: PrivacyParams,
                         sigma=params.sigma, 
                         delta=large_sampling_prob_delta, 
                         num_steps=num_steps_per_round,
-                        num_selected=params.num_selected, 
+                        num_selected=1, 
                         local_delta=local_delta,
                         direction=direction
                     )
 
-    if sampling_prob > np.sqrt(params.num_selected/params.num_steps):
+    if sampling_prob > np.sqrt(1/num_steps_per_round):
         return float(np.inf)
         
     Poisson_params = PrivacyParams(

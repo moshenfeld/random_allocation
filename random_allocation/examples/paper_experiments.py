@@ -468,9 +468,9 @@ def run_experiment_7():
     experiment_data_list = None
     should_compute_data = True
     titles = [
-        f"$\varepsilon$ = {large_eps:.1f}, $d$ = {small_dim:,}", 
-        f"$\varepsilon$ = {small_eps:.1f}, $d$ = {small_dim:,}", 
-        f"$\varepsilon$ = {small_eps:.1f}, $d$ = {large_dim:,}"
+        r"$\varepsilon$ = " + f"{large_eps:.1f}" + r", $d$ = " + f"{small_dim:,}", 
+        r"$\varepsilon$ = " + f"{small_eps:.1f}" + r", $d$ = " + f"{small_dim:,}", 
+        r"$\varepsilon$ = " + f"{small_eps:.1f}" + r", $d$ = " + f"{large_dim:,}"
     ]
     epsilon_values = [large_eps, small_eps, small_eps]
     dimension_values = [small_dim, small_dim, large_dim]

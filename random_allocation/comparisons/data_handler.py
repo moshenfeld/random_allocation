@@ -7,7 +7,7 @@ with full preservation of all information.
 
 import os
 import json
-from typing import Dict, List, Union, Any, Optional, Collection, cast
+from typing import Dict, List, Union, Any, Optional, Collection, cast, Callable, Tuple
 import time
 import numpy as np
 import pandas as pd
@@ -161,7 +161,7 @@ def load_experiment_data(experiment_name: str, methods: MethodList) -> Optional[
     # If neither file exists, return None
     return None
 
-def calc_method_delta(name, func, params_arr, config, direction=Direction.BOTH):
+def calc_method_delta(name: str, func: Callable, params_arr: List[PrivacyParams], config: SchemeConfig, direction: Direction = Direction.BOTH) -> List[float]:
     """
     Calculate delta values for a specific method.
     
@@ -181,7 +181,7 @@ def calc_method_delta(name, func, params_arr, config, direction=Direction.BOTH):
     print(f'{name} delta done in {time_stop - time_start: .0f} seconds')
     return results
 
-def calc_all_methods_delta(params_arr, config):
+def calc_all_methods_delta(params_arr: List[PrivacyParams], config: SchemeConfig) -> Dict[str, List[float]]:
     """
     Calculate delta values for all methods.
     
@@ -206,7 +206,13 @@ def calc_all_methods_delta(params_arr, config):
     print(f'Calculation done for {len(deltas_dict)} methods')
     return deltas_dict
 
-def save_privacy_curves_data(deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr, experiment_name):
+def save_privacy_curves_data(
+    deltas_dict_arr: List[Dict[str, List[float]]], 
+    epsilon_mat: List[np.ndarray], 
+    num_steps_arr: List[int], 
+    sigma_arr: List[float], 
+    experiment_name: str
+) -> None:
     """
     Save privacy curves data for multi-parameter experiments.
     
@@ -257,7 +263,7 @@ def save_privacy_curves_data(deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_
     
     print(f"Saved privacy curves data to {experiment_name}")
 
-def load_privacy_curves_data(experiment_name):
+def load_privacy_curves_data(experiment_name: str) -> Optional[Tuple[List[Dict[str, np.ndarray]], List[np.ndarray], List[int], List[float]]]:
     """
     Load privacy curves data for multi-parameter experiments.
     

@@ -7,13 +7,22 @@ import numpy as np
 # Local application imports
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
-from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_PLD
+from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_delta_PLD, Poisson_PLD
 from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition_add_from_PLD, allocation_delta_decomposition
 from random_allocation.random_allocation_scheme.direct import allocation_delta_direct
 # Type aliases
 NumericFunction = Callable[[float], float]
 
-def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, sampling_probability, config, optimization_func, direction):
+def allocation_epsilon_recursive_inner(
+    sigma: float, 
+    delta: float, 
+    num_steps: int, 
+    num_epochs: int, 
+    sampling_probability: float, 
+    config: SchemeConfig, 
+    optimization_func: NumericFunction, 
+    direction: Direction
+) -> float:
     epsilon = np.inf
 
     # Find a eps such that the the privacy profile of the random allocation in the add direction is bounded by delta/2

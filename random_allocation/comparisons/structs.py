@@ -74,9 +74,9 @@ class PrivacyParams:
 class SchemeConfig:
     """Configuration for privacy schemes"""
     discretization: float = 1e-4
-    allocation_direct_alpha_orders: Optional[List[int]] = None  # Will be set in __post_init__
-    allocation_RDP_DCO_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
-    Poisson_alpha_orders: Optional[List[float]] = None  # Will be set in __post_init__
+    allocation_direct_alpha_orders: Optional[List[int]] = None
+    allocation_RDP_DCO_alpha_orders: Optional[List[float]] = None
+    Poisson_alpha_orders: Optional[List[float]] = None
     delta_tolerance: float = 1e-15
     epsilon_tolerance: float = 1e-3
     epsilon_upper_bound: float = 100.0

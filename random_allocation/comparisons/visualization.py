@@ -421,7 +421,7 @@ def prepare_plot_data(
     colors_map = get_features_for_methods(filtered_methods, 'color')
     
     # Determine legend prefix based on y-axis data
-    legend_prefix: str = '$\\varepsilon' if data['y name'] == names_dict[EPSILON] else '$\\delta'
+    legend_prefix: str = '$\\varepsilon$' if data['y name'] == names_dict[EPSILON] else '$\\delta$'
     
     return methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix
 
@@ -649,7 +649,11 @@ def plot_multiple_data(data_list: List[DataDict],
     
     return fig
 
-def plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles):
+def plot_privacy_curves(
+    deltas_dict_arr: List[Dict[str, np.ndarray]], 
+    epsilon_mat: List[np.ndarray], 
+    subplot_titles: List[str]
+) -> Figure:
     num_plots = len(deltas_dict_arr)
     n_rows = (num_plots + 1) // 2
     n_cols = 2
