@@ -16,13 +16,17 @@ NumericFunction = Callable[[float], float]
 
 # ==================== Add ====================
 def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, Poisson_PLD_obj: PrivacyLossDistribution) -> float:
+    if num_steps == 1:
+        return float(np.inf)# will lead to lambda=1
+
     lambda_val = 1 - (1-1.0/num_steps)**num_steps
     # use one of two identical formulas to avoid numerical instability
     if epsilon < 1:
         lambda_new = lambda_val / (lambda_val + np.exp(epsilon)*(1-lambda_val))
     else:
         lambda_new = lambda_val*np.exp(-epsilon) / (lambda_val*np.exp(-epsilon) + (1-lambda_val))
-    epsilon_new = -np.log(1-lambda_val*(1-np.exp(-epsilon)))
+    
+    epsilon_new = -np.log(1 - lambda_val * (1 - np.exp(-epsilon)))
     return float(Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new)
 
 def allocation_delta_decomposition_add(params: PrivacyParams,
@@ -50,8 +54,10 @@ def allocation_epsilon_decomposition_add(params: PrivacyParams,
                                          config: SchemeConfig,
                                          ) -> float:
     """Helper function to compute epsilon for the add direction in decomposition scheme"""
-    lambda_val = 1 - (1-1.0/params.num_steps)**params.num_steps
+    if params.num_steps == 1:
+        return float(np.inf)# will lead to lambda=1
 
+    lambda_val = 1 - (1-1.0/params.num_steps)**params.num_steps
     Poisson_sampling_prob = params.sampling_probability/params.num_steps
     Poisson_PLD_obj = Poisson_PLD(
         sigma=params.sigma,

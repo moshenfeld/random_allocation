@@ -14,7 +14,7 @@ from random_allocation.random_allocation_scheme.direct import allocation_delta_d
 # Type aliases
 NumericFunction = Callable[[float], float]
 
-def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, config, optimization_func, direction):
+def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, sampling_probability, config, optimization_func, direction):
     epsilon = np.inf
 
     # Find a eps such that the the privacy profile of the random allocation in the add direction is bounded by delta/2
@@ -29,7 +29,7 @@ def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, conf
 
     # If we find a eps, we can compute the sampling probability
     if eps_result is not None:
-        sampling_prob = np.exp(2 * eps_result)/num_steps
+        sampling_prob = sampling_probability*np.exp(2 * eps_result)/num_steps
 
         # if the induced sampling probability is small enough, we can compute the corresponding Poisson epsilon
         if sampling_prob <= np.sqrt(1/num_steps):
@@ -76,7 +76,7 @@ def allocation_epsilon_recursive(params: PrivacyParams,
         sigma=params.sigma, 
         num_steps=num_steps_per_round, 
         num_epochs=1, 
-        sampling_prob=1.0/num_steps_per_round, 
+        sampling_prob=params.sampling_probability/num_steps_per_round, 
         discretization=config.discretization, 
         direction=Direction.ADD,
     )
@@ -87,6 +87,7 @@ def allocation_epsilon_recursive(params: PrivacyParams,
         epsilon_remove = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
                                                            num_steps=num_steps_per_round,
                                                            num_epochs=num_rounds*params.num_epochs,
+                                                           sampling_probability=params.sampling_probability,
                                                            config=config,
                                                            optimization_func=optimization_func,
                                                            direction=Direction.REMOVE)
@@ -98,6 +99,7 @@ def allocation_epsilon_recursive(params: PrivacyParams,
         epsilon_add = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
                                                          num_steps=num_steps_per_round,
                                                          num_epochs=num_rounds*params.num_epochs,
+                                                         sampling_probability=params.sampling_probability,
                                                          config=config,
                                                          optimization_func=optimization_func,
                                                          direction=Direction.ADD)
@@ -131,6 +133,9 @@ def allocation_delta_recursive(params: PrivacyParams,
     params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
+    
+    if params.sampling_probability < 1.0:
+        raise ValueError("Sampling probability < 1.0 still not supported for the delta part of the recursive allocation scheme")
     
     delta_add: float  # type annotation without initialization
     delta_remove: float  # type annotation without initialization

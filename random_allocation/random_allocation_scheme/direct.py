@@ -354,11 +354,11 @@ def allocation_delta_direct(params: PrivacyParams, config: SchemeConfig, directi
 def allocation_RDP_add(sigma: float, 
                        num_steps: int, 
                        num_epochs: int,
-                       alpha_orders: np.ndarray,
-                       ) -> np.ndarray:
+                       ) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
     # Compute RDP values
+    alpha_orders = np.concatenate((np.arange(2, 202, dtype=np.float64), np.exp(np.linspace(np.log(202), np.log(10_000), 50))))
     alpha_RDP = num_epochs * (alpha_orders + num_steps - 1) / (2 * num_steps * sigma**2)
-    return alpha_RDP
+    return alpha_orders, alpha_RDP
 
 def allocation_delta_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
     params.validate()
@@ -371,15 +371,14 @@ def allocation_delta_RDP_add(params: PrivacyParams, config: SchemeConfig) -> flo
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
 
-    alpha_orders = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
-    alpha_RDP = allocation_RDP_add(sigma=params.sigma,
-                                   num_steps=num_steps_per_round,
-                                   num_epochs=num_rounds*params.num_epochs,
-                                   alpha_orders=alpha_orders)
+    alpha_orders, alpha_RDP = allocation_RDP_add(sigma=params.sigma,
+                                                 num_steps=num_steps_per_round,
+                                                 num_epochs=num_rounds*params.num_epochs)
     alpha_deltas = np.exp((alpha_orders-1) * (alpha_RDP - params.epsilon))*(1-1/alpha_orders)**alpha_orders / (alpha_orders-1)
-    used_alpha = alpha_orders[np.argmin(alpha_deltas)]
+    idx = np.argmin(alpha_deltas)
+    used_alpha = alpha_orders[idx]
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
-    return float(alpha_deltas[used_alpha])
+    return float(alpha_deltas[idx])
 
 def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
     params.validate()
@@ -392,12 +391,11 @@ def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> f
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
 
-    alpha_orders = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
-    alpha_RDP = allocation_RDP_add(sigma=params.sigma,
-                                   num_steps=num_steps_per_round,
-                                   num_epochs=num_rounds*params.num_epochs,
-                                   alpha_orders=alpha_orders)
+    alpha_orders, alpha_RDP = allocation_RDP_add(sigma=params.sigma,
+                                                 num_steps=num_steps_per_round,
+                                                 num_epochs=num_rounds*params.num_epochs)
     alpha_epsilons = alpha_RDP + np.log1p(-1 / alpha_orders) - np.log(params.delta * alpha_orders) / (alpha_orders - 1)
-    used_alpha = alpha_orders[np.argmin(alpha_epsilons)]
+    idx = np.argmin(alpha_epsilons)
+    used_alpha = alpha_orders[idx]
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
-    return float(alpha_epsilons[used_alpha])
+    return float(alpha_epsilons[idx])
