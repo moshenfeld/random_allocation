@@ -105,3 +105,35 @@ mypy random_allocation
 ```
 
 The mypy configuration in pyproject.toml sets reasonable defaults for gradual typing.
+
+### Integration with Test Suite
+
+Type checking is integrated into the test suite at multiple levels:
+
+```bash
+# Basic type checking (development)
+python tests/run_tests.py basic
+
+# Comprehensive type validation (pre-release)
+python tests/run_tests.py full
+
+# Complete type annotation coverage (release)
+python tests/run_tests.py release
+```
+
+The release-level tests include comprehensive type annotation validation covering:
+- Type alias compliance
+- Function signature completeness
+- Runtime type validation
+- Constant type annotations
+- MyPy integration testing
+
+### Current Type Coverage
+
+The project maintains high type annotation coverage:
+- Core data structures: 100% typed
+- Public APIs: Complete type annotations
+- Internal functions: Gradual typing approach
+- Test suite: Validates type annotation compliance
+
+All type annotations follow the standards outlined in this guide and are validated through automated testing.

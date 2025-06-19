@@ -14,22 +14,25 @@ random_allocation/                    # Main project directory
 │   ├── other_schemes/                # Implementation of other privacy schemes
 │   └── random_allocation_scheme/     # Implementation of random allocation scheme
 ├── tests/                            # Comprehensive test suite
-│   ├── test_privacy_params.py        # Parameter validation tests (22 tests)
-│   ├── test_mathematical_properties.py  # Mathematical correctness (27 tests)
-│   ├── test_edge_cases.py            # Robustness testing
-│   ├── test_scheme_comparison.py     # Privacy method comparisons
-│   ├── test_integration.py           # Workflow and example validation
-│   ├── test_performance.py           # Benchmarking and regression detection
-│   ├── test_paper_experiments.py     # Bit-exact experiment validation
-│   ├── conftest.py                   # Pytest configuration and fixtures
-│   ├── run_test_suite.py             # Test runner with phase-based execution
-│   ├── test_requirements.txt         # Test-specific dependencies
-│   ├── basic_tests.py                # Legacy basic functionality tests
-│   ├── check_types.py                # Type checking tests
-│   ├── data_handler_tests.py         # Legacy data handler tests
-│   ├── release_tests.py              # Tests to run before a release
-│   ├── cleanup.sh                    # Script to clean up generated files
-│   └── README.md                     # Test suite documentation
+│   ├── basic/                        # Basic functionality tests (27 tests)
+│   │   ├── test_basic_01_functionality.py        # Parameter validation, Gaussian mechanism
+│   │   ├── test_basic_02_core_allocation_methods.py  # Core allocation methods
+│   │   ├── test_basic_03_direct_allocation_add.py    # Direct allocation (add direction)
+│   │   ├── test_basic_03_direct_allocation_remove.py # Direct allocation (remove direction)
+│   │   └── test_basic_04_direct_RDP_add.py           # RDP-based direct method
+│   ├── full/                         # Full comprehensive tests (37 tests)
+│   │   ├── test_full_01_additional_allocation_methods.py  # Extended allocation methods
+│   │   ├── test_full_02_other_schemes.py                  # Other privacy schemes
+│   │   ├── test_full_03_mathematical_properties.py       # Mathematical correctness
+│   │   └── test_full_04_type_annotations.py              # Type annotation compliance
+│   ├── release/                      # Release validation tests (26 tests)
+│   │   ├── test_release_01_comprehensive_coverage.py     # Complex scenarios and edge cases
+│   │   └── test_release_02_complete_type_annotations.py  # Complete type validation
+│   ├── paper/                        # Research reproducibility tests
+│   │   └── test_paper_01_experiments.py                  # Paper experiment reproduction
+│   ├── run_tests.py                  # Hierarchical test runner
+│   ├── README.md                     # Test suite documentation
+│   └── TEST_STRUCTURE.md             # Detailed test organization
 ├── docs/                             # Documentation
 │   ├── PROJECT_STRUCTURE.md          # This document
 │   ├── test_documentation.md         # Comprehensive test suite documentation
@@ -43,15 +46,14 @@ random_allocation/                    # Main project directory
 
 ## Test Suite Organization
 
-The project includes a comprehensive test suite with **110+ tests** organized into categories:
+The project includes a comprehensive test suite with **90+ tests** organized into four hierarchical levels:
 
-- **Unit Tests**: Core functionality and parameter validation
-- **Mathematical Tests**: Privacy property validation and numerical correctness
-- **Integration Tests**: End-to-end workflow validation
-- **Performance Tests**: Benchmarking and regression detection
-- **Reproducibility Tests**: Bit-exact validation of research experiments
+- **Basic Tests** (27 tests): Core functionality and parameter validation (~1-5s)
+- **Full Tests** (37 tests): Comprehensive validation including mathematical properties (~5-30s)
+- **Release Tests** (26 tests): Integration and comprehensive validation (~30+s)
+- **Paper Tests** (Variable): Research reproducibility and experiment validation
 
-**Total Test Runtime**: ~125 seconds for complete suite
+**Total Test Runtime**: ~1-2 minutes for release-level tests (excluding paper experiments)
 
 ## Generated Directories (Safe to Remove)
 
@@ -68,39 +70,58 @@ These directories are generated during building, testing, and development. They 
 
 ## How to Clean Up Generated Files
 
-Run the cleanup script to remove all generated files:
+Remove generated directories manually or use standard Python cleanup:
 
 ```bash
-./tests/cleanup.sh
+# Remove Python cache files
+find . -type d -name "__pycache__" -exec rm -rf {} +
+find . -name "*.pyc" -delete
+
+# Remove build artifacts
+rm -rf dist/ random_allocation.egg-info/ .mypy_cache/ .pytest_cache/
+
+# Remove generated test data (optional)
+rm -rf random_allocation/examples/data/
+rm -rf random_allocation/examples/plots/
 ```
 
 ## How to Run Tests
 
-### Complete Test Suite
+### Hierarchical Test Execution
 ```bash
 # Activate environment
 conda activate random_allocation
 
-# Run all tests
-python tests/run_test_suite.py
+# Run basic tests (fast development feedback)
+python tests/run_tests.py basic
 
-# Run with coverage
-python tests/run_test_suite.py --coverage
+# Run full validation (development and pre-release)
+python tests/run_tests.py full
+
+# Run complete validation (release preparation)
+python tests/run_tests.py release
+
+# Run all tests including paper experiments
+python tests/run_tests.py paper
+
+# Additional options
+python tests/run_tests.py full --fast    # Skip slow tests
+python tests/run_tests.py basic -x       # Stop on first failure
 ```
 
 ### Individual Test Categories
 ```bash
-# Unit tests (most important)
-pytest tests/unit/ -v
+# Basic functionality tests
+pytest tests/basic/ -v
 
-# Integration tests  
-pytest tests/integration/ -v
+# Full comprehensive tests  
+pytest tests/full/ -v
 
-# Performance tests
-pytest tests/performance/ -v
+# Release validation tests
+pytest tests/release/ -v
 
 # Research reproducibility tests
-pytest tests/paper_experiments/ -v
+pytest tests/paper/ -v
 ```
 
 ## How to Rebuild Artifacts
@@ -146,10 +167,11 @@ pip install -r requirements.txt
 ## Documentation
 
 - **`README.md`**: Main project documentation with usage examples
-- **`docs/test_documentation.md`**: Comprehensive test suite documentation
+- **`docs/test_documentation.md`**: Comprehensive test suite documentation  
 - **`docs/type_annotations_guide.md`**: Type annotation guidelines
 - **`tests/README.md`**: Test-specific setup and usage instructions
+- **`tests/TEST_STRUCTURE.md`**: Detailed test organization and structure
 
 ## Research Reproducibility
 
-The project includes bit-exact validation of all paper experiments to ensure research reproducibility. See `docs/test_documentation.md` for details on the reproducibility testing framework. 
+The project includes comprehensive validation of research experiments to ensure reproducibility. The paper tests validate bit-exact reproduction of research results. See `tests/TEST_STRUCTURE.md` for details on the test organization and `tests/paper/` for research-specific validation. 

@@ -2,13 +2,14 @@
 """
 Test Runner for Random Allocation Project
 
-Runs tests in hierarchical order: basic -> full -> release
+Runs tests in hierarchical order: basic -> full -> release -> paper
 
 Usage:
     python run_tests.py basic    # Run only basic tests
     python run_tests.py full     # Run basic + full tests  
-    python run_tests.py release  # Run all tests (basic + full + release)
-    python run_tests.py all      # Same as release
+    python run_tests.py release  # Run basic + full + release tests
+    python run_tests.py paper    # Run all tests including paper experiments
+    python run_tests.py all      # Same as paper
 """
 
 import sys
@@ -33,7 +34,7 @@ def run_pytest(test_dirs, extra_args=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Run tests at different levels")
-    parser.add_argument("level", choices=["basic", "full", "release", "all"], 
+    parser.add_argument("level", choices=["basic", "full", "release", "paper", "all"], 
                        help="Test level to run")
     parser.add_argument("--verbose", "-v", action="store_true", 
                        help="Verbose output")
@@ -54,17 +55,21 @@ def main():
     # Determine which test directories to run
     test_dirs = []
     
-    if args.level in ["basic", "full", "release", "all"]:
+    if args.level in ["basic", "full", "release", "paper", "all"]:
         test_dirs.append("basic/")
         print("🔵 Including BASIC tests")
     
-    if args.level in ["full", "release", "all"]:
+    if args.level in ["full", "release", "paper", "all"]:
         test_dirs.append("full/")
         print("🟡 Including FULL tests")
     
-    if args.level in ["release", "all"]:
+    if args.level in ["release", "paper", "all"]:
         test_dirs.append("release/")
         print("🔴 Including RELEASE tests")
+    
+    if args.level in ["paper", "all"]:
+        test_dirs.append("paper/")
+        print("📄 Including PAPER EXPERIMENTS")
     
     print(f"\n{'='*60}")
     print(f"Running {args.level.upper()} test suite")

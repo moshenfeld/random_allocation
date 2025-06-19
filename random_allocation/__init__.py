@@ -5,8 +5,6 @@ This package provides tools for analyzing and comparing different random allocat
 in the context of differential privacy.
 """
 
-__version__ = "0.7.1"
-
 # Local application imports
 from random_allocation.comparisons.experiments import run_experiment, PlotType
 from random_allocation.comparisons.visualization import plot_comparison, plot_combined_data, plot_as_table

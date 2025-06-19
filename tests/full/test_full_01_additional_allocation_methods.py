@@ -158,7 +158,7 @@ class TestDirectionConsistency:
         from random_allocation.random_allocation_scheme.decomposition import allocation_epsilon_decomposition
         
         params = PrivacyParams(
-            sigma=10.0, num_steps=5, num_selected=1, num_epochs=1, delta=0.01
+            sigma=10.0, num_steps=5, num_selected=1, num_epochs=1, delta=0.001  # delta << 1/5 = 0.2
         )
         config = SchemeConfig()
         
@@ -183,7 +183,7 @@ class TestDirectionConsistency:
         from random_allocation.random_allocation_scheme.analytic import allocation_epsilon_analytic
         
         params = PrivacyParams(
-            sigma=10.0, num_steps=5, num_selected=1, num_epochs=1, delta=0.01
+            sigma=10.0, num_steps=5, num_selected=1, num_epochs=1, delta=0.001  # delta << 1/5 = 0.2
         )
         config = SchemeConfig()
         
@@ -210,7 +210,7 @@ class TestSchemeConfigRequirements:
         """Test what works with default SchemeConfig"""
         config = SchemeConfig()
         params = PrivacyParams(
-            sigma=5.0, num_steps=10, num_selected=2, num_epochs=1, delta=1e-4
+            sigma=5.0, num_steps=10, num_selected=1, num_epochs=1, delta=1e-4  # decomposition requires num_selected=1
         )
         
         # These should work with default config

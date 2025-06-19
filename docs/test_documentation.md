@@ -1,262 +1,242 @@
 # Random Allocation for Differential Privacy - Test Documentation
 
-This document details the comprehensive three-tier test suite for the Random Allocation project.
+This document details the comprehensive four-tier test suite for the Random Allocation project.
 
-## Three-Tier Testing System
+## Four-Tier Testing System
 
-The project uses a three-tier testing approach for different development and deployment scenarios:
+The project uses a four-tier testing approach for different development and deployment scenarios:
 
-### **BASIC Tests** (< 1 minute)
+### **BASIC Tests** (< 5 seconds)
 **Purpose**: Essential functionality checks to catch obvious mistakes  
 **When to use**: Quick development feedback, pre-commit checks  
-**Command**: `python tests/run_test_suite.py basic`
+**Command**: `python tests/run_tests.py basic`
 
 - **Parameter Validation**: Core PrivacyParams class functionality
 - **Core Functionality**: Essential privacy algorithm verification
+- **Basic Mathematical Properties**: Fundamental correctness checks
 
-### **FULL Tests** (< 5 minutes)  
+### **FULL Tests** (< 30 seconds)  
 **Purpose**: Comprehensive validation including mathematical correctness and type checking  
 **When to use**: Before merging, development milestones  
-**Command**: `python tests/run_test_suite.py full`
+**Command**: `python tests/run_tests.py full`
 
 - All BASIC tests plus:
-- **Mathematical Properties**: Privacy guarantees and numerical correctness
-- **Edge Cases**: Robustness testing with extreme parameters
-- **Scheme Comparison**: Cross-method validation
-- **Integration Tests**: End-to-end workflow validation (including data handling)
-- **Type Annotations**: Static type checking with mypy
+- **Extended Methods**: Additional allocation methods and direction consistency
+- **Other Schemes**: Cross-method validation with local, Poisson, and shuffle schemes
+- **Mathematical Properties**: Advanced correctness and boundary condition testing
+- **Type Annotations**: Static type checking and compliance validation
 
-### **RELEASE Tests** (< 2 hours)
+### **RELEASE Tests** (< 60 seconds)
 **Purpose**: Complete validation for production readiness  
 **When to use**: Before releases, major deployments  
-**Command**: `python tests/run_test_suite.py release`
+**Command**: `python tests/run_tests.py release`
 
 - All FULL tests plus:
-- **Performance Tests**: Benchmarking and regression detection
-- **Paper Experiments**: Bit-exact reproducibility of research results
+- **Comprehensive Coverage**: Complex scenarios and edge cases
+- **Complete Type Validation**: Exhaustive type annotation coverage
+- **Integration Testing**: End-to-end workflow validation
+
+### **PAPER Tests** (Variable timing)
+**Purpose**: Research reproducibility and paper experiment validation  
+**When to use**: Research validation, paper submission, reproducibility checks  
+**Command**: `python tests/run_tests.py paper`
+
+- All RELEASE tests plus:
+- **Research Experiments**: Bit-exact reproducibility of paper results
+- **Experiment Validation**: Complete paper experiment coverage
 
 ## Test Directory Structure
 
 ```
 tests/
-├── conftest.py                     # Pytest configuration and shared fixtures
-├── run_test_suite.py               # Three-tier test runner
-├── test_privacy_params.py          # Parameter validation (BASIC)
-├── test_basic_functionality.py     # Core algorithm tests (BASIC)
-├── test_mathematical_properties.py # Mathematical correctness (FULL)
-├── test_edge_cases.py              # Robustness testing (FULL)
-├── test_scheme_comparison.py       # Cross-method validation (FULL)
-├── test_integration.py             # End-to-end + data handling (FULL)
-├── test_type_checking.py           # Static type validation (FULL)
-├── test_performance.py             # Benchmarking (RELEASE)
-├── test_paper_experiments.py       # Research reproducibility (RELEASE)
-├── test_requirements.txt           # Test-specific dependencies
-├── cleanup.sh                      # Cleanup script for test artifacts
-├── README.md                       # Test directory documentation
-└── __init__.py                     # Python package marker
+├── run_tests.py                    # Four-tier hierarchical test runner
+├── basic/                          # Basic functionality tests (27 tests)
+│   ├── test_basic_01_functionality.py        # Parameter validation, Gaussian mechanism (8 tests)
+│   ├── test_basic_02_core_allocation_methods.py   # Core allocation methods (5 tests)
+│   ├── test_basic_03_direct_allocation_add.py     # Direct allocation - add (3 tests)
+│   ├── test_basic_03_direct_allocation_remove.py  # Direct allocation - remove (2 tests)
+│   └── test_basic_04_direct_RDP_add.py            # RDP-based direct method (5 tests)
+├── full/                           # Comprehensive tests (37 tests)
+│   ├── test_full_01_additional_allocation_methods.py  # Extended methods (10 tests)
+│   ├── test_full_02_other_schemes.py                  # Other schemes (12 tests)
+│   ├── test_full_03_mathematical_properties.py       # Mathematical properties (8 tests)
+│   └── test_full_04_type_annotations.py              # Type annotations (12 tests)
+├── release/                        # Release validation tests (26 tests)
+│   ├── test_release_01_comprehensive_coverage.py     # Edge cases (7 tests)
+│   └── test_release_02_complete_type_annotations.py  # Complete type validation (15 tests)
+├── paper/                          # Research tests (Variable)
+│   └── test_paper_01_experiments.py                  # Paper experiments
+├── README.md                       # Test suite overview
+└── TEST_STRUCTURE.md              # Detailed test organization
 ```
 
 ## Test File Details
 
-### `test_privacy_params.py` (BASIC - 22 tests)
-**Purpose**: Validate PrivacyParams class and parameter handling  
+### `basic/test_basic_01_functionality.py` (8 tests)
+**Purpose**: Validate core functionality and parameter handling  
 **Key Tests**:
-- Parameter creation and validation
-- Invalid parameter rejection
-- Boundary value handling
-- Type consistency checks
+- Gaussian mechanism baseline verification
+- PrivacyParams class creation and validation
+- Direction enum functionality
+- Basic parameter boundary checks
 
-### `test_basic_functionality.py` (BASIC - ~20 tests)
-**Purpose**: Essential algorithm functionality verification  
+### `basic/test_basic_02_core_allocation_methods.py` (5 tests)  
+**Purpose**: Essential allocation algorithm functionality verification  
 **Key Tests**:
-- Core privacy algorithms (local, Poisson PLD, allocation methods)
-- Direction handling (ADD/REMOVE/BOTH)
-- Basic parameter validation
-- Numerical consistency checks
-- Algorithm output validity
+- Decomposition method testing
+- Analytic method testing
+- Method comparison and consistency
+- Core mathematical property validation
 
-### `test_mathematical_properties.py` (FULL - 27 tests)  
-**Purpose**: Validate mathematical properties and correctness  
+### `basic/test_basic_03_direct_allocation_add.py` (3 tests)
+**Purpose**: Direct allocation method validation (add direction)
 **Key Tests**:
-- Privacy parameter bounds (δ ∈ [0,1], ε ≥ 0)
-- Monotonicity relationships (sigma, num_steps, num_selected, num_epochs)
-- Lower bound validations
-- Cross-method consistency
-- Numerical precision handling
+- Epsilon calculation with conservative parameters
+- Delta calculation with conservative parameters
+- Round-trip epsilon-delta consistency
 
-### `test_edge_cases.py` (FULL - ~15 tests)
-**Purpose**: Robustness testing with extreme parameters  
+### `basic/test_basic_03_direct_allocation_remove.py` (2 tests)
+**Purpose**: Direct allocation method validation (remove direction)
 **Key Tests**:
-- Extreme parameter values
-- Boundary conditions
-- Performance under stress
-- Memory usage validation
-- Timeout handling
+- Epsilon calculation for removal operations
+- Delta calculation for removal operations
 
-### `test_scheme_comparison.py` (FULL - ~12 tests)
-**Purpose**: Cross-method validation and comparison  
+### `basic/test_basic_04_direct_RDP_add.py` (5 tests)
+**Purpose**: RDP-based direct method validation
 **Key Tests**:
-- Method agreement within tolerance
-- Relative performance characteristics  
-- Parameter compatibility across methods
-- Ordering relationships between schemes
+- RDP epsilon calculation
+- RDP delta calculation
+- Round-trip validation
+- Error handling for missing parameters
 
-### `test_integration.py` (FULL - ~18 tests)
-**Purpose**: End-to-end workflow validation  
+### `full/test_full_01_additional_allocation_methods.py` (10 tests)  
+**Purpose**: Extended allocation methods and direction consistency  
 **Key Tests**:
-- README example reproduction
-- Complete algorithm workflows
-- Data handling (save/load functionality)
-- Parameter combination validation  
-- Error handling and recovery
-- Configuration testing
+- Direct method with alpha orders
+- RDP DCO method validation
+- Direction consistency across methods
+- Scheme configuration requirements
 
-### `test_type_checking.py` (FULL - 4 tests)
-**Purpose**: Static type checking and annotation validation  
+### `full/test_full_02_other_schemes.py` (12 tests)
+**Purpose**: Non-allocation privacy schemes validation  
 **Key Tests**:
-- MyPy type error detection
-- Type annotation coverage measurement
-- Type consistency validation
-- Enum type verification
+- Local scheme testing (all directions)
+- Poisson scheme PLD and RDP variants
+- Shuffle scheme validation
+- Inter-scheme comparison and ordering
 
-### `test_performance.py` (RELEASE - ~15 tests)
-**Purpose**: Performance benchmarking and regression detection  
+### `full/test_full_03_mathematical_properties.py` (8 tests)
+**Purpose**: Mathematical correctness and boundary conditions  
 **Key Tests**:
-- Method timing benchmarks
-- Memory usage monitoring
-- Performance regression detection
-- Scalability testing
-- Resource utilization validation
+- Parameter range validation
+- Boundary condition testing
+- Mathematical constraint verification
+- Specific bug reproduction and fixes
 
-### `test_paper_experiments.py` (RELEASE - 7 tests)
-**Purpose**: Bit-exact reproducibility of research experiments  
+### `full/test_full_04_type_annotations.py` (12 tests)
+**Purpose**: Type annotation compliance and validation  
 **Key Tests**:
-- **Bit-Exact Validation**: Ensures research experiments produce identical results across runs
-- **File Integrity**: Validates data file consistency
-- **Experiment Coverage**: Tests all 7 paper experiments
-- **Automated Cleanup**: Manages temporary files and backups
+- Function return type validation
+- Type conversion testing
+- Callable type annotations
+- Optional and union type handling
 
-**Bit-Exact Testing Process**:
-1. **Backup & Move**: Creates backups of existing data files and moves originals to force recomputation
-2. **Recompute**: Runs experiments without cached data to generate fresh results
-3. **Compare**: Performs binary file comparison for exact matching
-4. **Cleanup/Restore**: Removes backups if identical, restores originals if different
-5. **Investigation**: Provides detailed analysis of any differences found
+### `release/test_release_01_comprehensive_coverage.py` (7 tests)
+**Purpose**: Complex scenarios and edge case validation  
+**Key Tests**:
+- Remaining allocation methods
+- Parameter boundary conditions
+- Extreme precision requirements
+- Error condition handling
+
+### `release/test_release_02_complete_type_annotations.py` (15 tests)
+**Purpose**: Complete type annotation coverage and validation  
+**Key Tests**:
+- Type alias compliance
+- Constant type annotations
+- Function signature completeness
+- Runtime type validation
+- MyPy integration testing
+
+### `paper/test_paper_01_experiments.py` (Variable tests)
+**Purpose**: Research reproducibility and paper experiment validation  
+**Key Tests**:
+- **Research Experiment Reproduction**: Validates exact reproduction of paper results
+- **Data Integrity**: Ensures experimental data consistency
+- **Reproducibility Verification**: Tests deterministic result generation
 
 ## Usage Instructions
 
-### Quick Testing
+### Hierarchical Testing
 ```bash
-# Fast development feedback
-python tests/run_test_suite.py basic
+# Fast development feedback (< 5 seconds)
+python tests/run_tests.py basic
 
-# Before committing/merging  
-python tests/run_test_suite.py full --verbose
+# Comprehensive development testing (< 30 seconds)
+python tests/run_tests.py full
 
-# Before releases
-python tests/run_test_suite.py release --coverage
+# Complete release validation (< 60 seconds)
+python tests/run_tests.py release
+
+# Full validation including research experiments
+python tests/run_tests.py paper
 ```
 
 ### Advanced Options
 ```bash
-# Continue on failure
-python tests/run_test_suite.py full --continue-on-failure
+# Skip slow tests
+python tests/run_tests.py full --fast
 
-# Generate coverage report
-python tests/run_test_suite.py full --coverage
+# Stop on first failure
+python tests/run_tests.py basic -x
 
 # Verbose output with details
-python tests/run_test_suite.py basic --verbose
-
-# Custom report file
-python tests/run_test_suite.py full --report custom_report.txt
+python tests/run_tests.py release --verbose
 ```
 
-### Individual Test Files
+### Individual Test Execution
 ```bash
-# Run specific test file
-pytest tests/test_privacy_params.py -v
+# Run specific test directories
+pytest tests/basic/ -v
+pytest tests/full/test_full_03_mathematical_properties.py -v
 
-# Run with timeout and coverage
-pytest tests/test_mathematical_properties.py --timeout=300 --cov=random_allocation
+# Run specific test classes or methods
+pytest tests/basic/test_basic_01_functionality.py::TestGaussianMechanismBaseline -v
+pytest -k "epsilon" -v  # Run tests matching pattern
 ```
 
 ## Test Quality Metrics
 
-- **Total Tests**: 110+ tests across all categories
-- **Code Coverage**: Aims for >90% line coverage on core modules
-- **Type Coverage**: Requires >70% type annotation coverage
+- **Total Tests**: 90+ tests across all tiers
+- **Coverage**: Comprehensive validation of all privacy methods
 - **Performance**: All tests complete within designated time limits
-- **Reliability**: Deterministic results with <1e-10 numerical tolerance
+- **Reliability**: Deterministic results with appropriate numerical tolerance
+- **Type Safety**: Extensive type annotation coverage and validation
+
+## Current Test Status
+
+✅ **All core tests passing** - The complete test suite validates:
+- Mathematical correctness of all privacy allocation methods
+- Comprehensive edge case and boundary condition handling  
+- Complete type annotation coverage and compliance
+- Research experiment reproducibility
+
+### Recent Improvements
+- **Fixed decomposition method bug**: Resolved NameError in epsilon calculation
+- **Reorganized test structure**: Clear four-tier hierarchy with logical progression
+- **Enhanced type validation**: Comprehensive type annotation testing
+- **Improved documentation**: Clear test organization and purpose
 
 ## Maintenance Guidelines
 
 ### Adding New Tests
-1. **Categorize**: Determine appropriate tier (BASIC/FULL/RELEASE)
+1. **Categorize**: Determine appropriate tier (BASIC/FULL/RELEASE/PAPER)
 2. **File Placement**: Add to existing files or create focused new files
 3. **Timing**: Ensure tests complete within tier time limits
 4. **Documentation**: Update this document with new test descriptions
 
 ### Modifying Existing Tests
-1. **Backward Compatibility**: Maintain existing test interfaces
-2. **Performance**: Monitor and optimize slow tests
-3. **Reliability**: Ensure deterministic, non-flaky behavior
-4. **Documentation**: Update documentation for significant changes
-
-### Performance Optimization
-- Use fixtures for expensive setup/teardown
-- Parameterize similar tests to reduce duplication
-- Mock external dependencies when appropriate
-- Profile slow tests and optimize bottlenecks
-
-### Debugging Failed Tests
-1. **Isolation**: Run individual failing tests with `-v` flag
-2. **Timing**: Check if failures are timeout-related
-3. **Environment**: Verify test environment and dependencies
-4. **Logs**: Examine detailed output for error patterns
-5. **Bisection**: Use git bisect for regression identification
-
-The test suite provides comprehensive validation while maintaining fast feedback loops for different development scenarios.
-
-## Type Checking System
-
-The project implements a sophisticated type checking system that follows the `type_annotations_guide` standards:
-
-### Type Analysis Features
-
-- **Module Discovery**: Automatically finds all Python modules in the project
-- **Exclusion Handling**: Properly excludes external dependencies and legacy code
-- **Coverage Calculation**: Provides detailed per-module type coverage statistics
-- **Error Categorization**: Groups errors by type (var-annotated, no-redef, etc.)
-- **Compliance Reporting**: Validates adherence to type annotation standards
-
-### Release Standards
-
-- **Minimum Coverage**: 80% of checkable modules must be fully typed
-- **Error Tolerance**: ≤10 minor type errors allowed for release
-- **Core Requirements**: All core data structures and public APIs must be typed
-- **External Exclusions**: Dependencies and `*_external` modules are excluded
-
-### Comprehensive Analysis Report
-
-The release type checking provides detailed analysis including:
-
-- Total modules discovered vs. checkable vs. fully typed
-- Compliance with type_annotations_guide standards
-- List of fully typed modules (success stories)
-- Modules requiring attention with severity levels
-- Detailed error type breakdown
-- Specific recommendations for improvement
-
-### Usage Examples
-
-```bash
-# Development type checking (permissive)
-python tests/run_test_suite.py full
-
-# Release type checking (strict)
-python tests/run_test_suite.py release
-
-# Direct mypy analysis
-mypy random_allocation --show-error-codes
-```
+- **Preserve Intent**: Maintain original test purpose and validation goals
+- **Update Documentation**: Reflect changes in test descriptions
+- **Verify Performance**: Ensure modifications don't exceed time limits
+- **Test Isolation**: Maintain independence between test cases

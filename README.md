@@ -74,14 +74,17 @@ The `PrivacyParams` class encapsulates all parameters needed for privacy calcula
 
 ```python
 example_params = PrivacyParams(
-    sigma        = 1.0,   # The Gaussian mechanism's noise scale
-    num_steps    = 1_000, # The number of steps in each epoch of the scheme
-    num_selected = 1,     # The number times each element is used in an epoch in the random allocation scheme.
-                          # In the case of the Poisson scheme, sampling_probability=num_selected/num_steps
-    num_epochs   = 1,     # The number of epochs the scheme is ran
-    epsilon      = None,  # The target epsilon.
-    delta        = 1e-5,  # The target delta.
-                          # Exactly one value in {delta, epsilon} should be set to None
+    sigma               = 1.0,   # The Gaussian mechanism's noise scale
+    num_steps           = 1_000, # The number of steps in each epoch of the scheme
+    num_selected        = 1,     # The number times each element is used in an epoch in the random allocation scheme
+    num_epochs          = 1,     # The number of epochs the scheme is ran
+    sampling_probability = 1.0,  # The probability that each element will be used at all (default: 1.0).
+                                 # This argument provides support for schemes which combine Poisson sampling with random allocation
+                                 # but was not discussed in the paper.
+                                 # Can be used only when num_selected = 1.
+    epsilon             = None,  # The target epsilon.
+    delta               = 1e-5,  # The target delta.
+                                 # Exactly one value in {delta, epsilon} should be set to None
 )
 ```
 
@@ -239,37 +242,46 @@ plt.show()
 
 ## Testing
 
-The project includes a comprehensive test suite with **110+ tests** across multiple categories to ensure mathematical correctness, robustness, and research reproducibility. 
+The project includes a comprehensive test suite with **90+ tests** organized in a four-tier hierarchy to ensure mathematical correctness, robustness, and research reproducibility. 
 
 ### Quick Start
 ```bash
 # Activate environment
 conda activate random_allocation
 
-# Run all tests (recommended)
-python tests/run_test_suite.py
+# Run release-level tests (recommended for validation)
+python tests/run_tests.py release
 
-# Run with coverage analysis
-python tests/run_test_suite.py --coverage
+# Run basic tests (fast development feedback)
+python tests/run_tests.py basic
+
+# Run full tests (comprehensive development testing)
+python tests/run_tests.py full
+
+# Run all tests including paper experiments
+python tests/run_tests.py paper
 ```
 
-### Test Categories
-- **Unit Tests**: Parameter validation and core functionality (22 tests)
-- **Mathematical Tests**: Privacy property validation and numerical correctness (27 tests)
-- **Integration Tests**: End-to-end workflow validation
-- **Performance Tests**: Benchmarking and regression detection
-- **Reproducibility Tests**: Bit-exact validation of research experiments
+### Four-Tier Test Structure
+- **BASIC Tests** (27 tests): Core functionality validation (~1-5 seconds)
+- **FULL Tests** (37 tests): Comprehensive testing including mathematical properties (~5-30 seconds)
+- **RELEASE Tests** (26 tests): Integration and comprehensive validation (~30+ seconds)
+- **PAPER Tests** (Variable): Research reproducibility and experiment validation
 
-### Legacy Testing
+### Individual Test Execution
 ```bash
-# Run legacy basic tests
-python -m unittest discover tests
+# Run specific test directories
+pytest tests/basic/ -v
+pytest tests/full/ -v
+pytest tests/release/ -v
 
-# Run specific legacy test
-python -m unittest tests.basic_tests
+# Run specific test files
+pytest tests/full/test_full_03_mathematical_properties.py -v
 ```
 
-**Total Test Runtime**: ~125 seconds for complete suite
+**Total Test Runtime**: ~1-2 minutes for release-level tests (excluding paper experiments)
+
+✅ **Current Status**: All core tests passing with comprehensive coverage of mathematical properties, edge cases, and type annotations.
 
 For comprehensive documentation of the test suite, including detailed test descriptions and mathematical properties validated, see **[docs/test_documentation.md](docs/test_documentation.md)**.
 
