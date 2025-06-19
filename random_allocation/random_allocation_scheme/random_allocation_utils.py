@@ -9,8 +9,7 @@ def handle_directions(params: PrivacyParams,
                       direction: Direction,
                       add_func: Callable,
                       remove_func: Callable,
-                      add_val_name: str,
-                      remove_val_name: str,
+                      var_name: str,
                       ) -> float:
     
     remove_val: Optional[float] = None
@@ -22,15 +21,15 @@ def handle_directions(params: PrivacyParams,
         add_val = add_func(params=params, config=config)
 
     if direction == Direction.ADD:
-        assert add_val is not None, f"{add_val_name} should be defined"
+        assert add_val is not None, f"{var_name}_add should be defined"
         return add_val
     if direction == Direction.REMOVE:
-        assert remove_val is not None, f"{remove_val_name} should be defined"
+        assert remove_val is not None, f"{var_name}_remove should be defined"
         return remove_val
 
     # Both directions - both should be defined
-    assert add_val    is not None, f"{add_val_name} should be defined"
-    assert remove_val is not None, f"{remove_val_name} should be defined"
+    assert add_val    is not None, f"{var_name}_add should be defined"
+    assert remove_val is not None, f"{var_name}_remove should be defined"
     return float(max(remove_val, add_val))
 
 def print_alpha(used_alpha: float, 

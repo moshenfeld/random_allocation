@@ -36,9 +36,7 @@ def allocation_RDP_DCO_add(sigma: float,
         + (alpha*num_selected*(num_steps-num_selected))/(2*sigma**2*num_steps*(alpha-1)) \
         - num_steps*np.log1p(alpha*(np.exp(num_selected*(num_steps-num_selected)/(sigma**2*num_steps**2))-1))/(2*(alpha-1)))
 
-def allocation_epsilon_RDP_DCO_add(params: PrivacyParams,
-                                   config: SchemeConfig,
-                                   ) -> float:
+def allocation_epsilon_RDP_DCO_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """
     Compute an upper bound on epsilon for the RDP-DCO allocation mechanism (add direction)
 
@@ -58,9 +56,7 @@ def allocation_epsilon_RDP_DCO_add(params: PrivacyParams,
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
     return float(np.min(alpha_epsilons))
 
-def allocation_delta_RDP_DCO_add(params: PrivacyParams,
-                                 config: SchemeConfig,
-                                 ) -> float:
+def allocation_delta_RDP_DCO_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """
     Compute an upper bound on delta for the RDP-DCO allocation mechanism (add direction)
 
@@ -113,9 +109,7 @@ def allocation_RDP_DCO_remove(sigma: float,
     return float(max_log_term + np.log(np.sum(np.exp(log_terms_arr - max_log_term))) - 
                  log_factorial_range(n=num_steps, m=num_selected) + log_factorial(n=num_selected))
 
-def allocation_epsilon_RDP_DCO_remove(params: PrivacyParams,
-                                      config: SchemeConfig,
-                                      ) -> float:
+def allocation_epsilon_RDP_DCO_remove(params: PrivacyParams, config: SchemeConfig) -> float:
         """
         Compute an upper bound on epsilon for the RDP-DCO allocation mechanism (remove direction)
         Args:
@@ -134,9 +128,7 @@ def allocation_epsilon_RDP_DCO_remove(params: PrivacyParams,
         print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "remove", params)
         return float(np.min(alpha_epsilons))
 
-def allocation_delta_RDP_DCO_remove(params: PrivacyParams,
-                                    config: SchemeConfig,
-                                    ) -> float:
+def allocation_delta_RDP_DCO_remove(params: PrivacyParams, config: SchemeConfig) -> float:
     """
     Compute an upper bound on delta for the RDP-DCO allocation mechanism (remove direction)
     
@@ -164,10 +156,7 @@ def allocation_delta_RDP_DCO_remove(params: PrivacyParams,
     return float(np.exp(log_alpha_deltas[min_log_delta_idx]))
     
 # ==================== Both ====================
-def allocation_epsilon_RDP_DCO(params: PrivacyParams, 
-                               config: SchemeConfig,
-                               direction: Direction = Direction.BOTH,
-                               ) -> float:
+def allocation_epsilon_RDP_DCO(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute epsilon for the RDP-DCO allocation scheme.
     
@@ -199,13 +188,9 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams,
                              direction=direction,
                              add_func=allocation_epsilon_RDP_DCO_add,
                              remove_func=allocation_epsilon_RDP_DCO_remove,
-                             add_val_name="epsilon_add",
-                             remove_val_name="epsilon_remove") 
+                             var_name="epsilon")
 
-def allocation_delta_RDP_DCO(params: PrivacyParams,
-                             config: SchemeConfig,
-                             direction: Direction = Direction.BOTH,
-                             ) -> float:
+def allocation_delta_RDP_DCO(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute delta for the RDP-DCO allocation scheme.
     
@@ -237,5 +222,4 @@ def allocation_delta_RDP_DCO(params: PrivacyParams,
                              direction=direction,
                              add_func=allocation_delta_RDP_DCO_add,
                              remove_func=allocation_delta_RDP_DCO_remove,
-                             add_val_name="delta_add",
-                             remove_val_name="delta_remove")
+                             var_name="delta")

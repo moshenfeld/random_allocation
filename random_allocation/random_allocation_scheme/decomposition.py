@@ -15,44 +15,7 @@ from random_allocation.random_allocation_scheme.random_allocation_utils import h
 NumericFunction = Callable[[float], float]
 
 # ==================== Add ====================
-def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, Poisson_PLD_obj: PrivacyLossDistribution) -> float:
-    if num_steps == 1:
-        return float(np.inf)# will lead to lambda=1
-
-    lambda_val = 1 - (1-1.0/num_steps)**num_steps
-    # use one of two identical formulas to avoid numerical instability
-    if epsilon < 1:
-        lambda_new = lambda_val / (lambda_val + np.exp(epsilon)*(1-lambda_val))
-    else:
-        lambda_new = lambda_val*np.exp(-epsilon) / (lambda_val*np.exp(-epsilon) + (1-lambda_val))
-    
-    epsilon_new = -np.log(1 - lambda_val * (1 - np.exp(-epsilon)))
-    return float(Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new)
-
-def allocation_delta_decomposition_add(params: PrivacyParams,
-                                       config: SchemeConfig,
-                                       ) -> float:
-    """Helper function to compute delta for the add direction in decomposition scheme"""
-    Poisson_sampling_prob = params.sampling_probability / params.num_steps
-
-    Poisson_PLD_obj = Poisson_PLD(
-        sigma=params.sigma,
-        num_steps=params.num_steps,
-        num_epochs=params.num_epochs,
-        sampling_prob=Poisson_sampling_prob,
-        discretization=config.discretization,
-        direction=Direction.ADD,
-    )
-    
-    return allocation_delta_decomposition_add_from_PLD(
-        epsilon=params.epsilon,
-        num_steps=params.num_steps,
-        Poisson_PLD_obj=Poisson_PLD_obj
-    )
-
-def allocation_epsilon_decomposition_add(params: PrivacyParams,
-                                         config: SchemeConfig,
-                                         ) -> float:
+def allocation_epsilon_decomposition_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """Helper function to compute epsilon for the add direction in decomposition scheme"""
     if params.num_steps == 1:
         return float(np.inf)# will lead to lambda=1
@@ -97,32 +60,43 @@ def allocation_epsilon_decomposition_add(params: PrivacyParams,
         tolerance=config.epsilon_tolerance, 
         function_type=FunctionType.DECREASING
     )
-    
     return float(np.inf) if epsilon is None else float(epsilon)
 
-# ==================== Remove ====================
-def allocation_delta_decomposition_remove(params: PrivacyParams,
-                                          config: SchemeConfig,
-                                          ) -> float:
-    """Helper function to compute delta for the remove direction in decomposition scheme"""
-    lambda_val = 1 - (1-1.0/params.num_steps)**params.num_steps
-    epsilon_new = np.log(1+lambda_val*(np.exp(params.epsilon)-1))
+def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, Poisson_PLD_obj: PrivacyLossDistribution) -> float:
+    if num_steps == 1:
+        return float(np.inf)# will lead to lambda=1
 
-    Poisson_sampling_prob = params.sampling_probability/params.num_steps
-    Poisson_params = PrivacyParams(
-        sigma=params.sigma, 
-        epsilon=epsilon_new, 
-        num_steps=params.num_steps, 
-        num_selected=1, 
-        num_epochs=params.num_epochs
+    lambda_val = 1 - (1-1.0/num_steps)**num_steps
+    # use one of two identical formulas to avoid numerical instability
+    if epsilon < 1:
+        lambda_new = lambda_val / (lambda_val + np.exp(epsilon)*(1-lambda_val))
+    else:
+        lambda_new = lambda_val*np.exp(-epsilon) / (lambda_val*np.exp(-epsilon) + (1-lambda_val))
+    
+    epsilon_new = -np.log(1 - lambda_val * (1 - np.exp(-epsilon)))
+    return float(Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new)
+
+def allocation_delta_decomposition_add(params: PrivacyParams, config: SchemeConfig) -> float:
+    """Helper function to compute delta for the add direction in decomposition scheme"""
+    Poisson_sampling_prob = params.sampling_probability / params.num_steps
+
+    Poisson_PLD_obj = Poisson_PLD(
+        sigma=params.sigma,
+        num_steps=params.num_steps,
+        num_epochs=params.num_epochs,
+        sampling_prob=Poisson_sampling_prob,
+        discretization=config.discretization,
+        direction=Direction.ADD,
     )
-    delta_Poisson = Poisson_delta_PLD(params=Poisson_params, config=config, sampling_prob=Poisson_sampling_prob)
+    
+    return allocation_delta_decomposition_add_from_PLD(
+        epsilon=params.epsilon,
+        num_steps=params.num_steps,
+        Poisson_PLD_obj=Poisson_PLD_obj
+    )
 
-    return float(delta_Poisson / lambda_val)
-
-def allocation_epsilon_decomposition_remove(params: PrivacyParams,
-                                            config: SchemeConfig,
-                                            ) -> float:
+# ==================== Remove ====================
+def allocation_epsilon_decomposition_remove(params: PrivacyParams, config: SchemeConfig) -> float:
     """Helper function to compute epsilon for the remove direction in decomposition scheme"""
     lambda_val = 1 - (1-1.0/params.num_steps)**params.num_steps
     delta_new = params.delta * lambda_val
@@ -144,14 +118,26 @@ def allocation_epsilon_decomposition_remove(params: PrivacyParams,
         amplified_epsilon = np.log(1+factor*(np.exp(epsilon_Poisson)-1))
     else:
         amplified_epsilon = epsilon_Poisson + np.log(factor + (1-factor)*np.exp(-epsilon_Poisson))
-    
     return float(amplified_epsilon)
 
+def allocation_delta_decomposition_remove(params: PrivacyParams, config: SchemeConfig) -> float:
+    """Helper function to compute delta for the remove direction in decomposition scheme"""
+    lambda_val = 1 - (1-1.0/params.num_steps)**params.num_steps
+    epsilon_new = np.log(1+lambda_val*(np.exp(params.epsilon)-1))
+
+    Poisson_sampling_prob = params.sampling_probability/params.num_steps
+    Poisson_params = PrivacyParams(
+        sigma=params.sigma, 
+        epsilon=epsilon_new, 
+        num_steps=params.num_steps, 
+        num_selected=1, 
+        num_epochs=params.num_epochs
+    )
+    delta_Poisson = Poisson_delta_PLD(params=Poisson_params, config=config, sampling_prob=Poisson_sampling_prob)
+    return float(delta_Poisson / lambda_val)
+
 # ==================== Both ====================
-def allocation_epsilon_decomposition(params: PrivacyParams,
-                                     config: SchemeConfig,
-                                     direction: Direction = Direction.BOTH,
-                                     ) -> float:
+def allocation_epsilon_decomposition(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute epsilon for the decomposition allocation scheme.
     
@@ -175,13 +161,9 @@ def allocation_epsilon_decomposition(params: PrivacyParams,
                              direction=direction,
                              add_func=allocation_epsilon_decomposition_add,
                              remove_func=allocation_epsilon_decomposition_remove,
-                             add_val_name="epsilon_add",
-                             remove_val_name="epsilon_remove")
+                             var_name="epsilon")
 
-def allocation_delta_decomposition(params: PrivacyParams,
-                                   config: SchemeConfig,
-                                   direction: Direction = Direction.BOTH,
-                                   ) -> float:
+def allocation_delta_decomposition(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute delta for the decomposition allocation scheme.
     
@@ -205,5 +187,4 @@ def allocation_delta_decomposition(params: PrivacyParams,
                              direction=direction,
                              add_func=allocation_delta_decomposition_add,
                              remove_func=allocation_delta_decomposition_remove,
-                             add_val_name="delta_add",
-                             remove_val_name="delta_remove")
+                             var_name="delta")

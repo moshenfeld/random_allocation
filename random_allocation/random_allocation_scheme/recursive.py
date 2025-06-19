@@ -1,15 +1,14 @@
 # Standard library imports
-from typing import Callable, Dict, Any, List, Tuple, cast
+from typing import Callable
 
 # Third-party imports
 import numpy as np
-from dp_accounting.pld.privacy_loss_distribution import PrivacyLossDistribution
 
 # Local application imports
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_PLD
-from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition_add_from_PLD
+from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition_add_from_PLD, allocation_delta_decomposition
 from random_allocation.random_allocation_scheme.direct import allocation_delta_direct
 # Type aliases
 NumericFunction = Callable[[float], float]
@@ -47,10 +46,7 @@ def allocation_epsilon_recursive_inner(sigma, delta, num_steps, num_epochs, samp
                                               direction=direction))
     return epsilon
 
-def allocation_epsilon_recursive(params: PrivacyParams,
-                                 config: SchemeConfig = SchemeConfig(),
-                                 direction: Direction = Direction.BOTH,
-                                 ) -> float:
+def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute epsilon for the recursive allocation scheme.
     
@@ -115,10 +111,7 @@ def allocation_epsilon_recursive(params: PrivacyParams,
     assert 'epsilon_add' in locals() and 'epsilon_remove' in locals(), "Failed to compute either epsilon_add or epsilon_remove"
     return float(max(epsilon_add, epsilon_remove))
 
-def allocation_delta_recursive(params: PrivacyParams,
-                               config: SchemeConfig = SchemeConfig(),
-                               direction: Direction = Direction.BOTH,
-                               ) -> float:
+def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute delta for the recursive allocation scheme.
     

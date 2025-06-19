@@ -14,42 +14,7 @@ from random_allocation.other_schemes.local import local_epsilon, local_delta
 from random_allocation.random_allocation_scheme.random_allocation_utils import handle_directions
 
 # ==================== Add ====================
-def allocation_delta_combined_add(params: PrivacyParams,
-                                 config: SchemeConfig,
-                                 ) -> float:
-    """
-    Compute delta for the combined allocation scheme in the add direction.
-    
-    Args:
-        params: Privacy parameters (must include epsilon)
-        config: Scheme configuration parameters
-    
-    Returns:
-        Computed delta value
-    """
-    
-    delta_local_val = local_delta(params=params, config=config)    
-    delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.ADD)
-    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.ADD)
-    delta_recursive_val = allocation_delta_recursive(params=params, config=config, direction=Direction.ADD)
-
-    # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
-    if params.num_epochs == 1 and params.num_selected == 1:
-        delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.ADD)
-    else:
-        delta_decompose_val = 1.0  # Skip this method if constraints not met
-
-    return min(
-        delta_local_val,
-        delta_analytic_val,
-        delta_decompose_val,
-        delta_direct_val,
-        delta_recursive_val
-    )
-
-def allocation_epsilon_combined_add(params: PrivacyParams,
-                                   config: SchemeConfig,
-                                   ) -> float:
+def allocation_epsilon_combined_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """
     Compute epsilon for the combined allocation scheme in the add direction.
     
@@ -80,12 +45,9 @@ def allocation_epsilon_combined_add(params: PrivacyParams,
         epsilon_recursive_val
     )
 
-# ==================== Remove ====================
-def allocation_delta_combined_remove(params: PrivacyParams,
-                                    config: SchemeConfig,
-                                    ) -> float:
+def allocation_delta_combined_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """
-    Compute delta for the combined allocation scheme in the remove direction.
+    Compute delta for the combined allocation scheme in the add direction.
     
     Args:
         params: Privacy parameters (must include epsilon)
@@ -95,14 +57,14 @@ def allocation_delta_combined_remove(params: PrivacyParams,
         Computed delta value
     """
     
-    delta_local_val = local_delta(params=params, config=config)
-    delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.REMOVE)
-    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.REMOVE)
-    delta_recursive_val = allocation_delta_recursive(params=params, config=config, direction=Direction.REMOVE)
+    delta_local_val = local_delta(params=params, config=config)    
+    delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.ADD)
+    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.ADD)
+    delta_recursive_val = allocation_delta_recursive(params=params, config=config, direction=Direction.ADD)
 
     # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
     if params.num_epochs == 1 and params.num_selected == 1:
-        delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.REMOVE)
+        delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.ADD)
     else:
         delta_decompose_val = 1.0  # Skip this method if constraints not met
 
@@ -114,9 +76,8 @@ def allocation_delta_combined_remove(params: PrivacyParams,
         delta_recursive_val
     )
 
-def allocation_epsilon_combined_remove(params: PrivacyParams,
-                                      config: SchemeConfig,
-                                      ) -> float:
+# ==================== Remove ====================
+def allocation_epsilon_combined_remove(params: PrivacyParams, config: SchemeConfig) -> float:
     """
     Compute epsilon for the combined allocation scheme in the remove direction.
     
@@ -147,38 +108,39 @@ def allocation_epsilon_combined_remove(params: PrivacyParams,
         epsilon_recursive_val
     )
 
-# ==================== Both ====================
-def allocation_delta_combined(params: PrivacyParams,
-                             config: SchemeConfig,
-                             direction: Direction = Direction.BOTH,
-                             ) -> float:
+def allocation_delta_combined_remove(params: PrivacyParams, config: SchemeConfig) -> float:
     """
-    Compute delta for the combined allocation scheme.
+    Compute delta for the combined allocation scheme in the remove direction.
     
     Args:
         params: Privacy parameters (must include epsilon)
         config: Scheme configuration parameters
-        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     
     Returns:
         Computed delta value
     """
-    params.validate()
-    if params.epsilon is None:
-        raise ValueError("Epsilon must be provided to compute delta")
     
-    return handle_directions(params=params,
-                             config=config,
-                             direction=direction,
-                             add_func=allocation_delta_combined_add,
-                             remove_func=allocation_delta_combined_remove,
-                             add_val_name="delta_add",
-                             remove_val_name="delta_remove")
+    delta_local_val = local_delta(params=params, config=config)
+    delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.REMOVE)
+    delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.REMOVE)
+    delta_recursive_val = allocation_delta_recursive(params=params, config=config, direction=Direction.REMOVE)
 
-def allocation_epsilon_combined(params: PrivacyParams,
-                               config: SchemeConfig,
-                               direction: Direction = Direction.BOTH,
-                               ) -> float:
+    # Only use decomposition if constraints are met (num_epochs=1 and num_selected=1)
+    if params.num_epochs == 1 and params.num_selected == 1:
+        delta_decompose_val = allocation_delta_decomposition(params=params, config=config, direction=Direction.REMOVE)
+    else:
+        delta_decompose_val = 1.0  # Skip this method if constraints not met
+
+    return min(
+        delta_local_val,
+        delta_analytic_val,
+        delta_decompose_val,
+        delta_direct_val,
+        delta_recursive_val
+    )
+
+# ==================== Both ====================
+def allocation_epsilon_combined(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute epsilon for the combined allocation scheme.
     This method uses the minimum of the various allocation methods.
@@ -200,5 +162,27 @@ def allocation_epsilon_combined(params: PrivacyParams,
                              direction=direction,
                              add_func=allocation_epsilon_combined_add,
                              remove_func=allocation_epsilon_combined_remove,
-                             add_val_name="epsilon_add",
-                             remove_val_name="epsilon_remove")
+                             var_name="epsilon")
+
+def allocation_delta_combined(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
+    """
+    Compute delta for the combined allocation scheme.
+    
+    Args:
+        params: Privacy parameters (must include epsilon)
+        config: Scheme configuration parameters
+        direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
+    
+    Returns:
+        Computed delta value
+    """
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+    
+    return handle_directions(params=params,
+                             config=config,
+                             direction=direction,
+                             add_func=allocation_delta_combined_add,
+                             remove_func=allocation_delta_combined_remove,
+                             var_name="delta")

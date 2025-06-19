@@ -9,10 +9,7 @@ from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.random_allocation_scheme.random_allocation_utils import handle_directions
 
-def Monte_Carlo_estimation(params: PrivacyParams,
-                           config: SchemeConfig,
-                           adjacency_type: AdjacencyType,
-                           ) -> Dict[str, float]:
+def Monte_Carlo_estimation(params: PrivacyParams, config: SchemeConfig, adjacency_type: AdjacencyType) -> Dict[str, float]:
     """
     Estimate delta using Monte Carlo simulation.
     
@@ -59,9 +56,7 @@ def Monte_Carlo_estimation(params: PrivacyParams,
     return {'mean': float(delta_estimate.mean), 
             'high prob': float(delta_estimate.get_upper_confidence_bound(1-config.MC_conf_level))}
 
-def allocation_delta_MC(params: PrivacyParams, 
-                      config: SchemeConfig,
-                      direction: Direction = Direction.BOTH) -> float:
+def allocation_delta_MC(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:
     """
     Compute delta using Monte Carlo simulation for the allocation scheme.
     
@@ -84,13 +79,12 @@ def allocation_delta_MC(params: PrivacyParams,
         raise ValueError('Sampling probability must be 1.0 for allocation Monte Carlo method')
 
     return_field = 'mean' if config.MC_use_mean else 'high_prob'
-    allocation_delta_MC_add = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.ADD)[return_field]
-    allocation_delta_MC_remove = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)[return_field]
+    add_func = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.ADD)[return_field]
+    remove_func = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)[return_field]
 
     return handle_directions(params=params,
                              config=config,
                              direction=direction,
-                             add_func=allocation_delta_MC_add,
-                             remove_func=allocation_delta_MC_remove,
-                             add_val_name="delta_add",
-                             remove_val_name="delta_remove")
+                             add_func=add_func,
+                             remove_func=remove_func,
+                             var_name="delta")
