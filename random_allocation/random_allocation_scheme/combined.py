@@ -26,7 +26,7 @@ def allocation_epsilon_combined_add(params: PrivacyParams, config: SchemeConfig)
         Computed epsilon value
     """
     
-    epsilon_local_val = local_epsilon(params=params, config=config)
+    epsilon_local_val = local_epsilon(params=params, config=config) if params.sampling_probability == 1.0 else float('inf')
     epsilon_analytic_val = allocation_epsilon_analytic(params=params, config=config, direction=Direction.ADD)
     # Direct allocation is only valid if sampling_probability == 1.0
     epsilon_direct_val = allocation_epsilon_direct(params=params, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else float('inf')
@@ -54,7 +54,7 @@ def allocation_delta_combined_add(params: PrivacyParams, config: SchemeConfig) -
         Computed delta value
     """
     
-    delta_local_val = local_delta(params=params, config=config)    
+    delta_local_val = local_delta(params=params, config=config) if params.sampling_probability == 1.0 else 1.0    
     delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.ADD)
     # Direct allocation is only valid if sampling_probability == 1.0
     delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else 1.0
@@ -83,7 +83,7 @@ def allocation_epsilon_combined_remove(params: PrivacyParams, config: SchemeConf
         Computed epsilon value
     """
     
-    epsilon_local_val = local_epsilon(params=params, config=config)
+    epsilon_local_val = local_epsilon(params=params, config=config) if params.sampling_probability == 1.0 else float('inf')
     epsilon_analytic_val = allocation_epsilon_analytic(params=params, config=config, direction=Direction.REMOVE)
     # Direct allocation is only valid if sampling_probability == 1.0
     epsilon_direct_val = allocation_epsilon_direct(params=params, config=config, direction=Direction.REMOVE) if params.sampling_probability == 1.0 else float('inf')
@@ -111,7 +111,7 @@ def allocation_delta_combined_remove(params: PrivacyParams, config: SchemeConfig
         Computed delta value
     """
     
-    delta_local_val = local_delta(params=params, config=config)
+    delta_local_val = local_delta(params=params, config=config) if params.sampling_probability == 1.0 else 1.0
     delta_analytic_val = allocation_delta_analytic(params=params, config=config, direction=Direction.REMOVE)
     # Direct allocation is only valid if sampling_probability == 1.0
     delta_direct_val = allocation_delta_direct(params=params, config=config, direction=Direction.REMOVE) if params.sampling_probability == 1.0 else 1.0

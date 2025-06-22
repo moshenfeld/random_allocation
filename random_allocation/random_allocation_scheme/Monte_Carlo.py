@@ -78,7 +78,7 @@ def allocation_delta_MC(params: PrivacyParams, config: SchemeConfig, direction: 
     if params.sampling_probability < 1.0:
         raise ValueError('Sampling probability must be 1.0 for allocation Monte Carlo method')
 
-    return_field = 'mean' if config.MC_use_mean else 'high_prob'
+    return_field = 'mean' if config.MC_use_mean else 'high prob'
     add_func = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.ADD)[return_field]
     remove_func = lambda params, config: Monte_Carlo_estimation(params, config, AdjacencyType.REMOVE)[return_field]
 

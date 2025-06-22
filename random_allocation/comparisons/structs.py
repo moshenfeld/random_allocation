@@ -43,6 +43,7 @@ class PrivacyParams:
         self.num_steps = int(self.num_steps)
         self.num_selected = int(self.num_selected)
         self.num_epochs = int(self.num_epochs)
+        self.sampling_probability = float(self.sampling_probability)
         
         if self.epsilon is not None:
             self.epsilon = float(self.epsilon)

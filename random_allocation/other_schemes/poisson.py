@@ -35,7 +35,6 @@ def create_zero_pmf(discretization: float) -> pld.privacy_loss_distribution.pld_
         pessimistic_estimate=True
     )
 
-
 def Poisson_PLD(sigma: float,
                 num_steps: int,
                 num_epochs: int,
@@ -90,37 +89,6 @@ def Poisson_PLD(sigma: float,
     # Directly compose and return the PLD without any fallback mechanism
     return PLD_single.self_compose(total_compositions)
 
-def Poisson_delta_PLD(params: PrivacyParams,
-                      config: SchemeConfig,
-                      sampling_prob: float = 0.0,
-                      direction: Direction = Direction.BOTH,
-                      ) -> float:
-    """
-    Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on pld.
-
-    Parameters:
-    - params: Privacy parameters
-    - config: Scheme configuration
-    - sampling_prob: The probability of sampling
-    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
-    """
-    params.validate()
-    if params.epsilon is None:
-        raise ValueError("Epsilon must be provided to compute delta")
-    
-    if sampling_prob == 0.0:
-        sampling_prob = params.num_selected / params.num_steps
-    
-    PLD = Poisson_PLD(
-        sigma=params.sigma, 
-        num_steps=params.num_steps, 
-        num_epochs=params.num_epochs, 
-        sampling_prob=sampling_prob,
-        discretization=config.discretization, 
-        direction=direction
-    )
-    return float(PLD.get_delta_for_epsilon(params.epsilon))
-
 def Poisson_epsilon_PLD(params: PrivacyParams,
                         config: SchemeConfig,
                         sampling_prob: float = 0.0,
@@ -139,6 +107,9 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
+    if params.num_selected > 1:
+        raise ValueError("Poisson PLD method only supports num_selected=1")
+
     if sampling_prob == 0.0:
         sampling_prob = params.num_selected / params.num_steps
     
@@ -151,6 +122,41 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
         direction=direction
     )
     return float(PLD.get_epsilon_for_delta(params.delta))
+
+def Poisson_delta_PLD(params: PrivacyParams,
+                      config: SchemeConfig,
+                      sampling_prob: float = 0.0,
+                      direction: Direction = Direction.BOTH,
+                      ) -> float:
+    """
+    Calculate the delta value for the Poisson scheme with the Gaussian mechanism based on pld.
+
+    Parameters:
+    - params: Privacy parameters
+    - config: Scheme configuration
+    - sampling_prob: The probability of sampling
+    - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
+    """
+    params.validate()
+    if params.epsilon is None:
+        raise ValueError("Epsilon must be provided to compute delta")
+    
+    if params.num_selected > 1:
+        raise ValueError("Poisson PLD method only supports num_selected=1")
+
+    if sampling_prob == 0.0:
+        sampling_prob = params.num_selected / params.num_steps
+    
+    PLD = Poisson_PLD(
+        sigma=params.sigma, 
+        num_steps=params.num_steps, 
+        num_epochs=params.num_epochs, 
+        sampling_prob=sampling_prob,
+        discretization=config.discretization, 
+        direction=direction
+    )
+    return float(PLD.get_delta_for_epsilon(params.epsilon))
+
 
 # ==================== RDP ====================
 def Poisson_RDP(sigma: float,
