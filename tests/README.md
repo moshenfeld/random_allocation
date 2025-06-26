@@ -49,9 +49,9 @@ The test suite is organized into four hierarchical levels focused on different a
 - `test_full_03_utility_functions.py` - Core utility functions (search, bounds, convergence)
 
 ### Release Tests (`release/`)
-- `test_release_02_complete_type_annotations.py` - Complete type validation 
-- `test_release_03_monotonicity.py` - **Comprehensive monotonicity tests (370+ tests)**
-- `test_release_04_edge_cases.py` - **Comprehensive edge case tests (666 tests)**
+- `test_release_01_complete_type_annotations.py` - Complete type validation 
+- `test_release_02_monotonicity.py` - **Comprehensive monotonicity tests (370+ tests)**
+- `test_release_03_edge_cases.py` - **Comprehensive edge case tests (666 tests)**
 
 ### Paper Tests (`paper/`)
 - `test_paper_01_experiments.py` - Research experiment reproduction

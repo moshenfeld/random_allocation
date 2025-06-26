@@ -25,9 +25,9 @@ The tests are organized in a four-tier hierarchy:
 **Runtime**: Slow (~30+ seconds)
 **Run Level**: Pre-release and CI/CD
 
-- `test_release_02_complete_type_annotations.py` - Complete type annotation coverage and validation
-- `test_release_03_monotonicity.py` - **Comprehensive monotonicity testing (370+ parameterized tests)**
-- `test_release_04_edge_cases.py` - **Comprehensive edge case testing (666 parameterized tests)**
+- `test_release_01_complete_type_annotations.py` - Complete type annotation coverage and validation
+- `test_release_02_monotonicity.py` - **Comprehensive monotonicity testing (370+ parameterized tests)**
+- `test_release_03_edge_cases.py` - **Comprehensive edge case testing (666 parameterized tests)**
 
 ### 📄 PAPER Tests (`paper/`)
 **Purpose**: Research reproducibility and paper experiment validation
