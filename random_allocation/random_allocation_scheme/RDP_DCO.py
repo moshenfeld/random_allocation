@@ -168,7 +168,6 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams, config: SchemeConfig, dire
     Returns:
         Computed epsilon value
     """
-    params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
@@ -202,7 +201,6 @@ def allocation_delta_RDP_DCO(params: PrivacyParams, config: SchemeConfig, direct
     Returns:
         Computed delta value
     """
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     

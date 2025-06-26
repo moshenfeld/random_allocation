@@ -252,7 +252,6 @@ def allocation_epsilon_direct(params: PrivacyParams, config: SchemeConfig, direc
     Returns:
         Computed epsilon value
     """
-    params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
 
@@ -279,7 +278,6 @@ def allocation_delta_direct(params: PrivacyParams, config: SchemeConfig, directi
     Returns:
         Computed delta value
     """
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
@@ -305,7 +303,6 @@ def allocation_RDP_add(sigma: float,
     return alpha_orders, alpha_RDP
 
 def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
-    params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
@@ -325,7 +322,6 @@ def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> f
     return float(alpha_epsilons[idx])
 
 def allocation_delta_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
 

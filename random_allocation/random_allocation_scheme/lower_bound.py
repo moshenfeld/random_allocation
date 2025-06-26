@@ -22,7 +22,6 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig, 
     Returns:
         Lower bound on epsilon
     """
-    params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
@@ -66,7 +65,6 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig, di
     Returns:
         Lower bound on delta
     """
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     

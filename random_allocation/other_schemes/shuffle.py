@@ -22,7 +22,6 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
     - config: Scheme configuration parameters
     - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
-    params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
@@ -106,7 +105,6 @@ def shuffle_delta_analytic(params: PrivacyParams,
     - config: Scheme configuration parameters
     - direction: The direction of privacy. Can be ADD, REMOVE, or BOTH.
     """
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     

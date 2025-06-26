@@ -149,7 +149,6 @@ def allocation_epsilon_decomposition(params: PrivacyParams, config: SchemeConfig
     Returns:
         Computed epsilon value
     """
-    params.validate()
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
 
@@ -175,7 +174,6 @@ def allocation_delta_decomposition(params: PrivacyParams, config: SchemeConfig, 
     Returns:
         Computed delta value
     """
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     

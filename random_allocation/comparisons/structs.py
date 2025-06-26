@@ -49,28 +49,45 @@ class PrivacyParams:
             self.epsilon = float(self.epsilon)
         if self.delta is not None:
             self.delta = float(self.delta)
+        
+        # Validate parameters
+        self._validate_parameters()
     
-    def validate(self) -> None:
-        """Validate that the parameters are correctly specified"""
-        # Fundamental constraints that should be enforced by programming logic
-        assert self.epsilon is None or self.delta is None, "Only one of epsilon or delta should be provided"
-        assert not (self.epsilon is None and self.delta is None), "Either epsilon or delta must be provided"
+    def _validate_parameters(self):
+        """Validate parameter values"""
+        # Basic positivity constraints
+        if self.sigma <= 0:
+            raise ValueError(f"sigma must be positive, got {self.sigma}")
+        if self.num_steps <= 0:
+            raise ValueError(f"num_steps must be positive, got {self.num_steps}")
+        if self.num_selected <= 0:
+            raise ValueError(f"num_selected must be positive, got {self.num_selected}")
+        if self.num_epochs <= 0:
+            raise ValueError(f"num_epochs must be positive, got {self.num_epochs}")
+        if self.sampling_probability <= 0:
+            raise ValueError(f"sampling_probability must be positive, got {self.sampling_probability}")
         
-        # Value constraints that should never be violated in normal usage
-        assert self.sigma > 0, f"sigma must be positive, got {self.sigma}"
-        assert self.num_steps > 0, f"num_steps must be positive, got {self.num_steps}"
-        assert self.num_selected > 0, f"num_selected must be positive, got {self.num_selected}"
-        assert self.num_selected <= self.num_steps, f"num_selected must not exceed num_steps, got {self.num_selected} > {self.num_steps}"
-        assert self.num_epochs > 0, f"num_epochs must be positive, got {self.num_epochs}"
-        assert self.sampling_probability == 1.0 or self.num_selected == 1, \
-            "sampling_probability can only be less than 1.0 if num_selected is 1"
+        # Upper bound constraints
+        if self.sampling_probability > 1.0:
+            raise ValueError(f"sampling_probability must not exceed 1.0, got {self.sampling_probability}")
+        if self.num_selected > self.num_steps:
+            raise ValueError(f"num_selected must not exceed num_steps, got {self.num_selected} > {self.num_steps}")
         
-        # Parameter value constraints
-        if self.epsilon is not None:
-            assert self.epsilon > 0, f"epsilon must be positive, got {self.epsilon}"
+        # Privacy parameter constraints
+        if self.epsilon is not None and self.epsilon <= 0:
+            raise ValueError(f"epsilon must be positive, got {self.epsilon}")
         if self.delta is not None:
-            assert 0 < self.delta < 1, f"delta must be between 0 and 1, got {self.delta}"
-
+            if self.delta <= 0:
+                raise ValueError(f"delta must be positive, got {self.delta}")
+            if self.delta >= 1.0:
+                raise ValueError(f"delta must be less than 1.0, got {self.delta}")
+        
+        # Logic constraints
+        if self.epsilon is not None and self.delta is not None:
+            raise ValueError("Only one of epsilon or delta should be provided")
+        if self.epsilon is None and self.delta is None:
+            raise ValueError("Either epsilon or delta must be provided")
+    
 @dataclass
 class SchemeConfig:
     """Configuration for privacy schemes"""

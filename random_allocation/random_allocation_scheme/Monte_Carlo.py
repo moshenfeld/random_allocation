@@ -68,7 +68,6 @@ def allocation_delta_MC(params: PrivacyParams, config: SchemeConfig, direction: 
     Returns:
         Computed delta value
     """
-    params.validate()
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
