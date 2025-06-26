@@ -132,7 +132,9 @@ APPROVED_INVALID = [
     # are in KNOWN_FAILURES as bugs, not APPROVED_INVALID, because they should handle this gracefully
 ]
 
-KNOWN_FAILURES = [
+# These are documented bugs that will now FAIL the tests (no longer skipped)
+# This list serves as documentation of known issues that need to be fixed
+DOCUMENTED_BUGS = [
     # *** COMPUTATIONAL TIMEOUTS - LEGITIMATE TEMPORARY SKIPS ***
     # These are genuine computational limits that may be acceptable to skip
     
@@ -240,13 +242,12 @@ def check_edge_case(func, params, config, direction, case_name, scheme_name, tes
     if func is None:
         pytest.skip(f"Function not available for {scheme_name}")
     
-    # Check if this edge case is in approved invalid list
+    # Check if this edge case is in approved invalid list (these are expected errors)
     if (scheme_name, test_type, case_name) in APPROVED_INVALID:
         pytest.skip(f"Edge case '{case_name}' approved as invalid for {scheme_name} {test_type}")
     
-    # Check if this edge case is in known failures list (includes bugs and timeouts)
-    if (scheme_name, test_type, case_name) in KNOWN_FAILURES:
-        pytest.skip(f"Edge case '{case_name}' is a known failure for {scheme_name} {test_type} (see bug reports in KNOWN_FAILURES)")
+    # NOTE: KNOWN_FAILURES are no longer skipped - they should fail to expose bugs that need fixing
+    # If you want to temporarily skip a known failure, add it to APPROVED_INVALID instead
     
     # Set timeout threshold (in seconds)
     TIMEOUT_THRESHOLD = 10.0
@@ -303,9 +304,9 @@ def check_edge_case(func, params, config, direction, case_name, scheme_name, tes
         # Log the timing info for failed cases
         print(f"❌ {scheme_name}.{test_type} with {direction} failed '{case_name}' after {elapsed_time:.2f}s: {str(e)}")
         
-        # For timeouts, suggest adding to KNOWN_FAILURES
+        # For timeouts, suggest adding to DOCUMENTED_BUGS
         if isinstance(e, TimeoutError) or elapsed_time > TIMEOUT_THRESHOLD:
-            print(f"💡 Consider adding to KNOWN_FAILURES: ('{scheme_name}', '{test_type}', '{case_name}')  # Timeout after {elapsed_time:.2f}s")
+            print(f"💡 Consider adding to DOCUMENTED_BUGS: ('{scheme_name}', '{test_type}', '{case_name}')  # Timeout after {elapsed_time:.2f}s")
         
         # Unapproved failure - this is a real issue that needs attention
         pytest.fail(f"Edge case '{case_name}' failed for {scheme_name}.{test_type} with {direction} after {elapsed_time:.2f}s: {str(e)}")

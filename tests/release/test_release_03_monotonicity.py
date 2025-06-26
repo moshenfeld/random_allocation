@@ -113,9 +113,9 @@ APPROVED_INVALID = [
     ('MonteCarloMean',     'delta',   'num_epochs'),
 ]
 
-# Approved failed settings - tests where we don't expect monotonic behavior
-# These functions return the same value regardless of parameter changes
-APPROVED_FAILED = [
+# These are documented bugs that will now FAIL the tests (no longer pass silently)
+# This list serves as documentation of known monotonicity issues that need to be fixed
+DOCUMENTED_BUGS = [
     # Local scheme doesn't depend on num_steps - always returns same value
     ('Local',        'epsilon', 'num_steps'),
     ('Local',        'delta',   'num_steps'),
@@ -164,7 +164,7 @@ def run_monotonicity_analysis():
     """Run comprehensive monotonicity analysis and return results"""
     import importlib
     
-    results = {'passed': [], 'approved_invalid': [], 'approved_failed': [], 'invalid': [], 'failed': []}
+    results = {'passed': [], 'approved_invalid': [], 'documented_bugs': [], 'invalid': [], 'failed': []}
     scheme_count = 0
     total_schemes = len(SCHEMES)
     
@@ -205,8 +205,8 @@ def run_monotonicity_analysis():
                 entry = (scheme_name, 'epsilon', var, status, msg)
                 if status == 'invalid' and (scheme_name, 'epsilon', var) in APPROVED_INVALID:
                     results['approved_invalid'].append(entry)
-                elif status == 'failed' and (scheme_name, 'epsilon', var) in APPROVED_FAILED:
-                    results['approved_failed'].append(entry)
+                elif status == 'failed' and (scheme_name, 'epsilon', var) in DOCUMENTED_BUGS:
+                    results['documented_bugs'].append(entry)
                 elif status == 'invalid':
                     results['invalid'].append(entry)
                 else:
@@ -235,8 +235,8 @@ def run_monotonicity_analysis():
                 entry = (scheme_name, 'delta', var, status, msg)
                 if status == 'invalid' and (scheme_name, 'delta', var) in APPROVED_INVALID:
                     results['approved_invalid'].append(entry)
-                elif status == 'failed' and (scheme_name, 'delta', var) in APPROVED_FAILED:
-                    results['approved_failed'].append(entry)
+                elif status == 'failed' and (scheme_name, 'delta', var) in DOCUMENTED_BUGS:
+                    results['documented_bugs'].append(entry)
                 elif status == 'invalid':
                     results['invalid'].append(entry)
                 else:
@@ -273,13 +273,12 @@ class TestMonotonicity:
             else:
                 raise  # Unexpected exception
                 
-        # For approved failed cases, we expect no change - just document and pass
-        if (scheme_name, 'epsilon', var) in APPROVED_FAILED:
-            # This is expected to have no change, so just pass
-            return
+        # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
+        # If this is a documented bug, the test will proceed and fail with appropriate error message
+        is_documented_bug = (scheme_name, 'epsilon', var) in DOCUMENTED_BUGS
             
-        # Handle numerical precision issues
-        if abs(eps_low - eps_high) < 1e-10:
+        # Handle numerical precision issues (but not for documented bugs - they should fail)
+        if not is_documented_bug and abs(eps_low - eps_high) < 1e-10:
             # Values are too close to distinguish reliably
             return
             
@@ -318,13 +317,12 @@ class TestMonotonicity:
             else:
                 raise  # Unexpected exception
                 
-        # For approved failed cases, we expect no change - just document and pass
-        if (scheme_name, 'delta', var) in APPROVED_FAILED:
-            # This is expected to have no change, so just pass
-            return
+        # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
+        # If this is a documented bug, the test will proceed and fail with appropriate error message
+        is_documented_bug = (scheme_name, 'delta', var) in DOCUMENTED_BUGS
             
-        # Handle numerical precision issues
-        if abs(delta_low - delta_high) < 1e-10:
+        # Handle numerical precision issues (but not for documented bugs - they should fail)
+        if not is_documented_bug and abs(delta_low - delta_high) < 1e-10:
             # Values are too close to distinguish reliably
             return
             
