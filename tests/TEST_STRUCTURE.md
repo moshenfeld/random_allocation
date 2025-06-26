@@ -18,6 +18,7 @@ The tests are organized in a four-tier hierarchy:
 
 - `test_full_01_additional_allocation_methods.py` - Extended allocation methods, direction consistency
 - `test_full_02_other_schemes.py` - Non-allocation privacy schemes (local, Poisson, shuffle)
+- `test_full_03_utility_functions.py` - Core utility functions (search, bounds, convergence)
 
 ### 🔴 RELEASE Tests (`release/`)
 **Purpose**: Comprehensive validation and integration testing

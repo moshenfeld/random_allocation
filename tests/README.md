@@ -26,11 +26,11 @@ pytest -v
 The test suite is organized into four hierarchical levels focused on different aspects:
 
 - **Basic** (`basic/`): Core functionality, fast execution (~1-5s) - 8 tests
-- **Full** (`full/`): Extended schemes and cross-method validation (~5-30s) - 22 tests  
+- **Full** (`full/`): Extended schemes and cross-method validation (~5-30s) - 28 tests  
 - **Release** (`release/`): Comprehensive validation (~30+s) - 28 tests
 - **Paper** (`paper/`): Research reproducibility (variable timing) - Research-specific tests
 
-**Total**: 58+ tests across all levels, plus 1000+ comprehensive parameterized tests
+**Total**: 64+ tests across all levels, plus 1000+ comprehensive parameterized tests
 
 ## Documentation
 
@@ -46,6 +46,7 @@ The test suite is organized into four hierarchical levels focused on different a
 ### Full Tests (`full/`)
 - `test_full_01_additional_allocation_methods.py` - Extended allocation methods
 - `test_full_02_other_schemes.py` - Other privacy schemes (local, Poisson, shuffle)
+- `test_full_03_utility_functions.py` - Core utility functions (search, bounds, convergence)
 
 ### Release Tests (`release/`)
 - `test_release_02_complete_type_annotations.py` - Complete type validation 
