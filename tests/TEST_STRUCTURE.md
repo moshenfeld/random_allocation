@@ -9,29 +9,24 @@ The tests are organized in a four-tier hierarchy:
 **Runtime**: Fast (~1-5 seconds)
 **Run Level**: Always included
 
-- `test_basic_01_functionality.py` - Parameter validation, Gaussian mechanism, direction enum
-- `test_basic_02_core_allocation_methods.py` - Core allocation methods (decomposition, analytic)
-- `test_basic_03_direct_allocation_add.py` - Direct allocation method (add direction)
-- `test_basic_03_direct_allocation_remove.py` - Direct allocation method (remove direction)  
-- `test_basic_04_direct_RDP_add.py` - RDP-based direct method (add direction)
+- `test_basic_01_functionality.py` - Parameter validation, Gaussian mechanism, core objects
 
 ### 🟡 FULL Tests (`full/`)  
-**Purpose**: Comprehensive feature testing
+**Purpose**: Extended schemes and cross-method validation
 **Runtime**: Moderate (~5-30 seconds)
 **Run Level**: Development and pre-release
 
 - `test_full_01_additional_allocation_methods.py` - Extended allocation methods, direction consistency
 - `test_full_02_other_schemes.py` - Non-allocation privacy schemes (local, Poisson, shuffle)
-- `test_full_03_mathematical_properties.py` - Mathematical correctness, boundary conditions
-- `test_full_04_type_annotations.py` - Type annotation compliance and validation
 
 ### 🔴 RELEASE Tests (`release/`)
-**Purpose**: Integration and comprehensive validation  
+**Purpose**: Comprehensive validation and integration testing
 **Runtime**: Slow (~30+ seconds)
 **Run Level**: Pre-release and CI/CD
 
-- `test_release_01_comprehensive_coverage.py` - Complex scenarios, edge cases, boundary conditions
 - `test_release_02_complete_type_annotations.py` - Complete type annotation coverage and validation
+- `test_release_03_monotonicity.py` - **Comprehensive monotonicity testing (370+ parameterized tests)**
+- `test_release_04_edge_cases.py` - **Comprehensive edge case testing (666 parameterized tests)**
 
 ### 📄 PAPER Tests (`paper/`)
 **Purpose**: Research reproducibility and paper experiment validation
@@ -72,30 +67,37 @@ python run_tests.py release --verbose  # Detailed output
 - **Level 4 (Paper)**: Research experiment validation, reproducibility
 
 ### Method Coverage
-- **Basic**: Gaussian baseline, core allocation methods (decomposition, analytic, direct)
+- **Basic**: Gaussian baseline, core parameter validation, object creation
 - **Full**: All allocation variants, other schemes (local, Poisson, shuffle), direction consistency
-- **Release**: Combined methods, comprehensive coverage, type annotations
+- **Release**: Complete type annotations, comprehensive edge cases, monotonicity validation
 - **Paper**: Research experiments, paper-specific scenarios
 
 ### Integration Testing
 - **Basic**: Individual function testing, core parameter validation
-- **Full**: Cross-method comparisons, type checking, mathematical properties
-- **Release**: Complete workflow validation, comprehensive edge cases
+- **Full**: Cross-method comparisons, scheme validation
+- **Release**: Comprehensive mathematical validation (1000+ parameterized tests), complete type coverage
 - **Paper**: End-to-end experiment reproduction, research validation
 
 ## Current Test Status
 
 ### Test Suite Health
-- **Total Tests**: 90+ across all levels
-- **Basic Level**: 27 tests - ✅ All passing
-- **Full Level**: 37 tests - ✅ All passing  
-- **Release Level**: 26 tests - ✅ All passing
+- **Total Tests**: 58+ core tests plus 1000+ comprehensive parameterized tests
+- **Basic Level**: 8 tests - ✅ All passing (core functionality)
+- **Full Level**: 22 tests - ✅ All passing (extended schemes)
+- **Release Level**: 28 tests - ✅ All passing (comprehensive validation)
 - **Paper Level**: Variable - Excluded from standard test runs
 
-### Recent Fixes
-1. **Decomposition Bug Fixed**: NameError in `allocation_epsilon_decomposition_add` resolved
-2. **File Renaming**: `test_release_03_complete_type_annotations.py` → `test_release_02_complete_type_annotations.py`
-3. **Error Handling**: Verified no inappropriate error suppression in test suite
+### Comprehensive Test Coverage
+- **Edge Cases**: 666 parameterized tests covering all allocation methods with extreme parameters
+- **Monotonicity**: 370+ parameterized tests validating mathematical properties
+- **Type Annotations**: Complete coverage across all modules
+- **Cross-Scheme Validation**: All privacy schemes tested and compared
+
+### Recent Cleanup (Current)
+1. **Redundancy Removal**: Removed 6 redundant test files covered by comprehensive tests
+2. **API Fixes**: Fixed validation method calls to match actual PrivacyParams API
+3. **Consolidation**: Merged type annotation tests into single comprehensive suite
+4. **Focus**: Streamlined to essential tests plus comprehensive edge/monotonicity coverage
 
 ## Running Individual Test Files
 

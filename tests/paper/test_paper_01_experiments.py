@@ -257,7 +257,7 @@ class TestExampleFunctionality:
         
         for params_dict in test_cases:
             params = PrivacyParams(**params_dict)
-            params.validate()  # Should not raise an exception
+            # Validation happens automatically in __post_init__ - no need to call validate()
             
             # Check basic constraints
             assert params.sigma > 0

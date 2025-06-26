@@ -72,34 +72,31 @@ class TestParameterValidation:
         assert params.delta == 1e-5
     
     def test_privacy_params_validation(self):
-        """Test parameter validation catches invalid inputs"""
-        # This should work
+        """Test parameter validation catches invalid inputs during object creation"""
+        # This should work (validation happens in __post_init__)
         valid_params = PrivacyParams(
             sigma=1.0, num_steps=10, num_selected=5, num_epochs=1, delta=1e-5
         )
-        valid_params.validate()  # Should not raise
+        # No need to call validate() - it happens automatically
         
-        # These should fail - test each separately
-        with pytest.raises((ValueError, AssertionError)):
-            bad_params = PrivacyParams(
+        # These should fail during object creation
+        with pytest.raises(ValueError):
+            PrivacyParams(
                 sigma=-1.0,  # Invalid: negative sigma
                 num_steps=10, num_selected=5, num_epochs=1, delta=1e-5
             )
-            bad_params.validate()
         
-        with pytest.raises((ValueError, AssertionError)):
-            bad_params = PrivacyParams(
+        with pytest.raises(ValueError):
+            PrivacyParams(
                 sigma=1.0, num_steps=0,  # Invalid: zero steps
                 num_selected=5, num_epochs=1, delta=1e-5
             )
-            bad_params.validate()
         
-        with pytest.raises((ValueError, AssertionError)):
-            bad_params = PrivacyParams(
+        with pytest.raises(ValueError):
+            PrivacyParams(
                 sigma=1.0, num_steps=10, num_selected=15,  # Invalid: selected > steps
                 num_epochs=1, delta=1e-5
             )
-            bad_params.validate()
     
     def test_scheme_config_creation(self):
         """Test creating SchemeConfig"""
