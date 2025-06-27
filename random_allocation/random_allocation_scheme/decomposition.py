@@ -74,7 +74,7 @@ def allocation_delta_decomposition_add_from_PLD(epsilon: float, num_steps: int, 
         lambda_new = lambda_val*np.exp(-epsilon) / (lambda_val*np.exp(-epsilon) + (1-lambda_val))
     
     epsilon_new = -np.log(1 - lambda_val * (1 - np.exp(-epsilon)))
-    return float(Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new)
+    return float(min(Poisson_PLD_obj.get_delta_for_epsilon(epsilon_new)/lambda_new, 1.0))
 
 def allocation_delta_decomposition_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """Helper function to compute delta for the add direction in decomposition scheme"""
@@ -123,7 +123,12 @@ def allocation_epsilon_decomposition_remove(params: PrivacyParams, config: Schem
 def allocation_delta_decomposition_remove(params: PrivacyParams, config: SchemeConfig) -> float:
     """Helper function to compute delta for the remove direction in decomposition scheme"""
     lambda_val = 1 - (1-1.0/params.num_steps)**params.num_steps
-    epsilon_new = np.log(1+lambda_val*(np.exp(params.epsilon)-1))
+
+    # use one of two identical formulas to avoid numerical instability
+    if params.epsilon < 1.0:
+        epsilon_new = np.log(1+lambda_val*(np.exp(params.epsilon)-1))
+    else:
+        epsilon_new = params.epsilon + np.log(np.exp(-params.epsilon)+lambda_val*(1-np.exp(-params.epsilon)))
 
     Poisson_sampling_prob = params.sampling_probability/params.num_steps
     Poisson_params = PrivacyParams(

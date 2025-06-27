@@ -177,7 +177,6 @@ class TestShuffleScheme:
             if np.isfinite(epsilon):
                 assert epsilon > 0, f"Shuffle epsilon ({direction.value}) should be positive: {epsilon}"
     
-    @pytest.mark.xfail(reason="Shuffle implementation has validation bug with temporary PrivacyParams objects")
     def test_shuffle_delta_basic(self):
         """Test shuffle delta calculation"""
         params = PrivacyParams(

@@ -141,7 +141,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
     delta_remove: float  # type annotation without initialization
         
     if direction != Direction.ADD:
-        gamma = min(params.epsilon/2, np.log(params.num_steps)/4)
+        gamma = min(params.epsilon/2, np.log(max(params.num_steps, 2))/4)
         eta = np.exp(2*gamma)/params.num_steps
         params2 = PrivacyParams(
             sigma=params.sigma,

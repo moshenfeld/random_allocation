@@ -22,7 +22,7 @@ def Monte_Carlo_estimation(params: PrivacyParams, config: SchemeConfig, adjacenc
         Estimated delta value
     """
     bnb_accountant = BnBAccountant()
-    if config.MC_use_order_stats:
+    if config.MC_use_order_stats and params.num_steps > 1:
         # Define order_stats_encoding with a flexible type
         order_stats_encoding: Tuple[int, ...]
         if params.num_steps < 100:

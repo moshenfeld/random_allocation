@@ -315,7 +315,7 @@ def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> f
     alpha_orders, alpha_RDP = allocation_RDP_add(sigma=params.sigma,
                                                  num_steps=num_steps_per_round,
                                                  num_epochs=num_rounds*params.num_epochs)
-    alpha_epsilons = alpha_RDP + np.log1p(-1 / alpha_orders) - np.log(params.delta * alpha_orders) / (alpha_orders - 1)
+    alpha_epsilons = np.maximum(0.0, alpha_RDP + np.log1p(-1 / alpha_orders) - np.log(params.delta * alpha_orders) / (alpha_orders - 1))
     idx = np.argmin(alpha_epsilons)
     used_alpha = alpha_orders[idx]
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)

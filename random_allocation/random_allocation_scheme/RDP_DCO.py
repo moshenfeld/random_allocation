@@ -51,7 +51,7 @@ def allocation_epsilon_RDP_DCO_add(params: PrivacyParams, config: SchemeConfig) 
     alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_add(
         params.sigma, params.num_steps, params.num_selected, float(alpha))
         for alpha in alpha_orders])
-    alpha_epsilons = alpha_RDP + np.log1p(-1/alpha_orders) - np.log(params.delta * alpha_orders)/(alpha_orders-1)
+    alpha_epsilons = np.maximum(0.0, alpha_RDP + np.log1p(-1/alpha_orders) - np.log(params.delta * alpha_orders)/(alpha_orders-1))
     used_alpha = float(alpha_orders[np.argmin(alpha_epsilons)])
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
     return float(np.min(alpha_epsilons))
@@ -123,7 +123,7 @@ def allocation_epsilon_RDP_DCO_remove(params: PrivacyParams, config: SchemeConfi
         alpha_RDP = params.num_epochs * np.array([allocation_RDP_DCO_remove(
             params.sigma, params.num_steps, params.num_selected, float(alpha))
             for alpha in alpha_orders])
-        alpha_epsilons = alpha_RDP + np.log1p(-1/alpha_orders) - np.log(params.delta * alpha_orders)/(alpha_orders-1)
+        alpha_epsilons = np.maximum(0.0, alpha_RDP + np.log1p(-1/alpha_orders) - np.log(params.delta * alpha_orders)/(alpha_orders-1))
         used_alpha = float(alpha_orders[np.argmin(alpha_epsilons)])
         print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "remove", params)
         return float(np.min(alpha_epsilons))

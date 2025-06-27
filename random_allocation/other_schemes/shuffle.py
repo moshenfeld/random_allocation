@@ -113,16 +113,6 @@ def shuffle_delta_analytic(params: PrivacyParams,
     
     if params.sampling_probability < 1.0:
         raise ValueError('Sampling probability must be 1.0 for shuffle method')
-
-    # Create a copy of params with epsilon=None to use in optimization function
-    params_copy = PrivacyParams(
-        sigma=params.sigma,
-        num_steps=params.num_steps,
-        num_selected=params.num_selected,
-        num_epochs=params.num_epochs,
-        epsilon=None,
-        delta=None  # This will be set by the optimization function
-    )
     
     result = search_function_with_bounds(
         func=lambda delta: shuffle_epsilon_analytic(params=PrivacyParams(
