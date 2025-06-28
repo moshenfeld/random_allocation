@@ -21,6 +21,7 @@ import sys
 import ast
 import inspect
 import importlib
+import os
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Callable, Any, TypeVar, cast, get_type_hints
 
@@ -29,6 +30,74 @@ import numpy as np
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction, Verbosity
 from random_allocation.random_allocation_scheme.decomposition import allocation_epsilon_decomposition, allocation_delta_decomposition
 from random_allocation.other_schemes.local import Gaussian_epsilon, Gaussian_delta
+
+from tests.test_utils import ResultsReporter
+
+
+@pytest.fixture(scope="session")
+def reporter() -> ResultsReporter:
+    """Set up the results reporter for the session."""
+    rep = ResultsReporter("test_release_01_complete_type_annotations")
+    return rep
+
+
+@pytest.fixture(scope="session", autouse=True)
+def session_teardown(reporter: ResultsReporter):
+    """Teardown fixture to save results at the end of the session."""
+    yield
+    
+    # Save results - but only if not running as part of suite
+    is_suite_run = os.environ.get('PYTEST_SUITE_RUN', 'false').lower() == 'true'
+    
+    if is_suite_run:
+        # Just finalize results for suite collection
+        reporter.get_results()
+    else:
+        # Save individual JSON file when run standalone
+        reporter.finalize_and_save()
+
+
+@pytest.fixture(autouse=True)
+def track_test_results(request, reporter: ResultsReporter):
+    """Automatically track test results for all test methods."""
+    test_name = request.node.name
+    start_time = pytest.importorskip("time").time()
+    
+    yield
+    
+    # Track the test result after execution
+    duration = pytest.importorskip("time").time() - start_time
+    
+    # Check if the test passed or failed
+    if hasattr(request.node, 'rep_call'):
+        if request.node.rep_call.passed:
+            status = 'passed'
+        elif request.node.rep_call.failed:
+            status = 'failed'
+        elif request.node.rep_call.skipped:
+            status = 'skipped'
+        else:
+            status = 'error'
+    else:
+        # Default to passed if we can't determine status
+        status = 'passed'
+    
+    reporter.add_test_result(
+        test_name,
+        'Type annotations',
+        status,
+        details={'duration': duration},
+        error_message=getattr(request.node.rep_call, 'longreprtext', '') if hasattr(request.node, 'rep_call') and hasattr(request.node.rep_call, 'longreprtext') else None
+    )
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Hook to capture test results."""
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, f"rep_{rep.when}", rep)
+    return rep
 
 
 class TestTypeAliasComprehensiveCompliance:
@@ -43,11 +112,21 @@ class TestTypeAliasComprehensiveCompliance:
         exp_module = experiments
         expected_aliases = ['ParamsDict', 'DataDict', 'MethodList', 'XValues', 'FormatterFunc']
         
+        missing_aliases = []
+        invalid_aliases = []
+        
         for alias in expected_aliases:
-            assert hasattr(exp_module, alias), f"Type alias {alias} missing from experiments module"
-            alias_value = getattr(exp_module, alias)
-            # Validate it's actually a type alias (not just any variable)
-            assert hasattr(alias_value, '__origin__') or str(alias_value).startswith('typing.'), f"{alias} doesn't appear to be a proper type alias"
+            if not hasattr(exp_module, alias):
+                missing_aliases.append(alias)
+            else:
+                alias_value = getattr(exp_module, alias)
+                # Validate it's actually a type alias (not just any variable)
+                if not (hasattr(alias_value, '__origin__') or str(alias_value).startswith('typing.')):
+                    invalid_aliases.append(alias)
+        
+        # Use pytest assertions instead of manual reporting
+        assert not missing_aliases, f"Missing type aliases: {missing_aliases}"
+        assert not invalid_aliases, f"Invalid type aliases: {invalid_aliases}"
     
     def test_type_alias_consistency(self):
         """Test that type aliases are used consistently across modules"""
@@ -60,32 +139,69 @@ class TestTypeAliasComprehensiveCompliance:
             experiments.save_experiment_plot,
         ]
         
+        issues = []
+        
         for func in functions_to_check:
             sig = inspect.signature(func)
             # Check that parameters use proper type annotations
             for param_name, param in sig.parameters.items():
-                assert param.annotation != inspect.Parameter.empty, f"Parameter {param_name} in {func.__name__} missing annotation"
-                # Verify it's not just 'Any' unless specifically intended
-                assert param.annotation != Any, f"Parameter {param_name} in {func.__name__} uses 'Any' - should use specific type alias"
+                if param.annotation == inspect.Parameter.empty:
+                    issues.append(f"Parameter {param_name} in {func.__name__} missing annotation")
+                elif param.annotation == Any:
+                    issues.append(f"Parameter {param_name} in {func.__name__} uses 'Any' - should use specific type alias")
+        
+        # Use pytest assertion instead of manual reporting
+        assert not issues, f"Type alias consistency issues: {issues}"
     
-    def test_datadict_type_alias_usage(self):
+    def test_datadict_type_alias_usage(self, reporter: ResultsReporter):
         """Test DataDict type alias is properly used"""
-        from random_allocation.comparisons.experiments import DataDict
-        from random_allocation.comparisons.data_handler import save_experiment_data, load_experiment_data
-        
-        # Verify DataDict is actually Dict[str, Any]
-        assert DataDict == Dict[str, Any], f"DataDict should be Dict[str, Any], got {DataDict}"
-        
-        # Check functions use DataDict consistently
-        save_sig = inspect.signature(save_experiment_data)
-        load_sig = inspect.signature(load_experiment_data)
-        
-        # save_experiment_data should take DataDict parameter
-        data_param = save_sig.parameters.get('data')
-        assert data_param is not None, "save_experiment_data missing 'data' parameter"
-        # Note: The actual type checking here is complex due to how type aliases work
-        # We focus on ensuring the annotation exists and isn't empty
-        assert data_param.annotation != inspect.Parameter.empty, "data parameter should be annotated"
+        try:
+            from random_allocation.comparisons.experiments import DataDict
+            from random_allocation.comparisons.data_handler import save_experiment_data, load_experiment_data
+            
+            issues = []
+            
+            # Verify DataDict is actually Dict[str, Any]
+            if DataDict != Dict[str, Any]:
+                issues.append(f"DataDict should be Dict[str, Any], got {DataDict}")
+            
+            # Check functions use DataDict consistently
+            save_sig = inspect.signature(save_experiment_data)
+            load_sig = inspect.signature(load_experiment_data)
+            
+            # save_experiment_data should take DataDict parameter
+            data_param = save_sig.parameters.get('data')
+            if data_param is None:
+                issues.append("save_experiment_data missing 'data' parameter")
+            elif data_param.annotation == inspect.Parameter.empty:
+                issues.append("data parameter should be annotated")
+            
+            if issues:
+                reporter.add_test_result(
+                    'test_datadict_type_alias_usage',
+                    'Type annotations',
+                    'failed',
+                    details={'datadict_issues': issues},
+                    error_message=f"DataDict usage issues: {issues}"
+                )
+                pytest.fail(f"DataDict usage issues: {issues}")
+            else:
+                reporter.add_test_result(
+                    'test_datadict_type_alias_usage',
+                    'Type annotations',
+                    'passed',
+                    details={'datadict_verified': True}
+                )
+                
+        except Exception as e:
+            reporter.add_test_result(
+                'test_datadict_type_alias_usage',
+                'Type annotations',
+                'error',
+                details={'exception': str(e)},
+                error_message=str(e)
+            )
+            raise
 
 
 class TestConstantTypeAnnotationsComprehensive:
@@ -606,27 +722,61 @@ class TestRuntimeTypeValidationComprehensive:
             if hasattr(params, 'epsilon') and params.epsilon is not None:
                 assert isinstance(params.epsilon, float), f"epsilon conversion failed: {type(params.epsilon)}"
     
-    def test_invalid_type_rejection_comprehensive(self):
+    def test_invalid_type_rejection_comprehensive(self, reporter: ResultsReporter):
         """Test that various invalid types are properly rejected"""
-        invalid_cases = [
-            {
-                'description': 'invalid sigma string',
-                'params': {'sigma': "not_a_number", 'num_steps': 10, 'num_selected': 5, 'num_epochs': 1, 'delta': 1e-5}
-            },
-            {
-                'description': 'negative num_steps',
-                'params': {'sigma': 1.0, 'num_steps': -5, 'num_selected': 5, 'num_epochs': 1, 'delta': 1e-5}
-            },
-            {
-                'description': 'zero num_selected',
-                'params': {'sigma': 1.0, 'num_steps': 10, 'num_selected': 0, 'num_epochs': 1, 'delta': 1e-5}
-            }
-        ]
-        
-        for case in invalid_cases:
-            with pytest.raises((ValueError, TypeError, AssertionError), match=".*"):
-                params = PrivacyParams(**case['params'])
-                params.validate()  # Should raise an exception
+        try:
+            invalid_cases = [
+                {
+                    'description': 'invalid sigma string',
+                    'params': {'sigma': "not_a_number", 'num_steps': 10, 'num_selected': 5, 'num_epochs': 1, 'delta': 1e-5}
+                },
+                {
+                    'description': 'negative num_steps',
+                    'params': {'sigma': 1.0, 'num_steps': -5, 'num_selected': 5, 'num_epochs': 1, 'delta': 1e-5}
+                },
+                {
+                    'description': 'zero num_selected',
+                    'params': {'sigma': 1.0, 'num_steps': 10, 'num_selected': 0, 'num_epochs': 1, 'delta': 1e-5}
+                }
+            ]
+            
+            failed_cases = []
+            
+            for case in invalid_cases:
+                try:
+                    params = PrivacyParams(**case['params'])
+                    # PrivacyParams should validate during construction
+                    failed_cases.append(case['description'])
+                except (ValueError, TypeError, AssertionError):
+                    # Expected behavior - invalid params should raise exceptions
+                    pass
+            
+            if failed_cases:
+                reporter.add_test_result(
+                    'test_invalid_type_rejection_comprehensive',
+                    'Type annotations',
+                    'failed',
+                    details={'failed_rejections': failed_cases},
+                    error_message=f"Failed to reject invalid types: {failed_cases}"
+                )
+                pytest.fail(f"Failed to reject invalid types: {failed_cases}")
+            else:
+                reporter.add_test_result(
+                    'test_invalid_type_rejection_comprehensive',
+                    'Type annotations',
+                    'passed',
+                    details={'rejected_cases': len(invalid_cases)}
+                )
+                
+        except Exception as e:
+            reporter.add_test_result(
+                'test_invalid_type_rejection_comprehensive',
+                'Type annotations',
+                'error',
+                details={'exception': str(e)},
+                error_message=str(e)
+            )
+            raise
     
     def test_optional_field_type_validation(self):
         """Test Optional field type validation"""

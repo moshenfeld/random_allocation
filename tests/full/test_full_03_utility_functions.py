@@ -9,7 +9,33 @@ are properly tested in the main test suite.
 
 import pytest
 import numpy as np
+import os
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType, BoundType
+
+from tests.test_utils import ResultsReporter
+
+
+@pytest.fixture(scope="session")
+def reporter() -> ResultsReporter:
+    """Set up the results reporter for the session."""
+    rep = ResultsReporter("test_full_03_utility_functions")
+    return rep
+
+
+@pytest.fixture(scope="session", autouse=True)
+def session_teardown(reporter: ResultsReporter):
+    """Teardown fixture to save results at the end of the session."""
+    yield
+    
+    # Save results - but only if not running as part of suite
+    is_suite_run = os.environ.get('PYTEST_SUITE_RUN', 'false').lower() == 'true'
+    
+    if is_suite_run:
+        # Just finalize results for suite collection
+        reporter.get_results()
+    else:
+        # Save individual JSON file when run standalone
+        reporter.finalize_and_save()
 
 
 class TestSearchFunctionBounds:

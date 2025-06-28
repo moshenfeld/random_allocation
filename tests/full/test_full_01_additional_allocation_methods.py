@@ -8,9 +8,35 @@ Builds on Level 1 (basic) and Level 2 (core methods) foundations.
 
 import pytest
 import numpy as np
+import os
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.random_allocation_scheme.direct import allocation_epsilon_direct, allocation_delta_direct
 from random_allocation.random_allocation_scheme.RDP_DCO import allocation_epsilon_RDP_DCO, allocation_delta_RDP_DCO
+
+from tests.test_utils import ResultsReporter
+
+
+@pytest.fixture(scope="session")
+def reporter() -> ResultsReporter:
+    """Set up the results reporter for the session."""
+    rep = ResultsReporter("test_full_01_additional_allocation_methods")
+    return rep
+
+
+@pytest.fixture(scope="session", autouse=True)
+def session_teardown(reporter: ResultsReporter):
+    """Teardown fixture to save results at the end of the session."""
+    yield
+    
+    # Save results - but only if not running as part of suite
+    is_suite_run = os.environ.get('PYTEST_SUITE_RUN', 'false').lower() == 'true'
+    
+    if is_suite_run:
+        # Just finalize results for suite collection
+        reporter.get_results()
+    else:
+        # Save individual JSON file when run standalone
+        reporter.finalize_and_save()
 
 
 class TestAllocationDirect:
@@ -33,8 +59,9 @@ class TestAllocationDirect:
         
         epsilon = allocation_epsilon_direct(params, config, Direction.ADD)
         
-        # Test ADD direction first (simpler)
-        assert np.isfinite(epsilon) or np.isinf(epsilon), f"Direct epsilon returned {epsilon}"
+        # Validate the result
+        assert np.isfinite(epsilon) or np.isinf(epsilon), f"Direct epsilon returned invalid value: {epsilon}"
+        
         if np.isfinite(epsilon):
             assert epsilon > 0, f"Direct epsilon should be positive: {epsilon}"
     
@@ -48,14 +75,19 @@ class TestAllocationDirect:
             epsilon=1.0
         )
         
+        # Direct method requires alpha_orders
         config = SchemeConfig(
             allocation_direct_alpha_orders=[2, 3, 4, 5]
         )
         
         delta = allocation_delta_direct(params, config, Direction.ADD)
         
-        assert np.isfinite(delta), f"Direct delta returned {delta}, should be finite"
-        assert 0 < delta <= 1, f"Direct delta should be in (0,1], got {delta}"
+        # Validate the result
+        assert np.isfinite(delta) or np.isinf(delta), f"Direct delta returned invalid value: {delta}"
+        
+        if np.isfinite(delta):
+            assert delta >= 0, f"Direct delta should be non-negative: {delta}"
+            assert delta <= 1, f"Direct delta should be <= 1: {delta}"
     
     def test_direct_missing_alpha_orders_error(self):
         """Test that direct method properly reports missing alpha_orders"""

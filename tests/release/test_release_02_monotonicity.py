@@ -4,8 +4,12 @@ Monotonicity Tests - Full scheme/direction coverage
 """
 import pytest
 import numpy as np
+import os
 from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig, Direction
 import inspect
+import importlib
+from typing import Optional
+from tests.test_utils import ResultsReporter
 
 # Expanded schemes and directions - always use main functions with direction parameter
 SCHEMES = [
@@ -123,6 +127,35 @@ DOCUMENTED_BUGS = [
     ('Local',        'delta',   'sampling_probability'),
 ]
 
+# Global test results reporter
+reporter: Optional[ResultsReporter] = None
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_reporter():
+    """Setup the global test results reporter for the session."""
+    global reporter
+    reporter = ResultsReporter("monotonicity_tests")
+    yield reporter
+    # Save results to JSON file and print summary
+    # Save results to JSON file and print summary - but only if not running as part of suite
+    is_suite_run = os.environ.get('PYTEST_SUITE_RUN', 'false').lower() == 'true'
+    
+    if is_suite_run:
+        # Just finalize results for suite collection
+        results = reporter.get_results()
+        print(f"\nMonotonicity test completed - results will be collected by suite runner")
+    else:
+        # Save individual JSON file when run standalone
+        filepath = reporter.finalize_and_save()
+        print(f"\nMonotonicity test results saved to: {filepath}")
+    
+    print(reporter.get_summary_report())
+
+def get_reporter() -> ResultsReporter:
+    """Get the global reporter, ensuring it's initialized."""
+    assert reporter is not None, "Reporter not initialized. This should not happen."
+    return reporter
+
 # helper to call functions with optional sampling_prob
 def _call(func, params, config, direction):
     sig = inspect.signature(func)
@@ -160,89 +193,6 @@ def check_monotonicity(func, params_low, params_high, config, direction, increas
         return 'failed', f'values: low={low}, high={high}'
     return 'passed', f'values: low={low}, high={high}'
 
-def run_monotonicity_analysis():
-    """Run comprehensive monotonicity analysis and return results"""
-    import importlib
-    
-    results = {'passed': [], 'approved_invalid': [], 'documented_bugs': [], 'invalid': [], 'failed': []}
-    scheme_count = 0
-    total_schemes = len(SCHEMES)
-    
-    for scheme_name, direction, eps_name, delta_name, module_path in SCHEMES:
-        scheme_count += 1
-        print(f"[{scheme_count}/{total_schemes}] Processing {scheme_name} ({direction.value}) ...")
-        
-        module = None
-        try:
-            module = importlib.import_module(module_path)
-        except ImportError:
-            print(f"  Failed to import {module_path}")
-            results['invalid'].append((scheme_name, 'module import', module_path))
-            continue
-            
-        config.MC_use_mean = (scheme_name == "MonteCarloMean")
-        
-        # epsilon checks
-        if eps_name:
-            print(f"  Testing epsilon function: {eps_name}")
-            func = getattr(module, eps_name, None)
-            if func is None:
-                print(f"    Function {eps_name} not found in module {module_path}")
-                continue
-            for var, low, high, increasing in enumerated_changes:
-                print(f"    Testing {var} variation (low={low}, high={high}, increasing={increasing})...", end=" ", flush=True)
-                # default base for epsilon using test file defaults
-                base = default_eps.copy()
-                # no scheme-specific overrides; always use default base
-                params_low = PrivacyParams(**{**base, var: low})
-                params_high = PrivacyParams(**{**base, var: high})
-                try:
-                    status, msg = check_monotonicity(func, params_low, params_high, config, direction, increasing)
-                    print(f"{status}")
-                except Exception as e:
-                    print(f"ERROR: {e}")
-                    status, msg = 'invalid', str(e)
-                entry = (scheme_name, 'epsilon', var, status, msg)
-                if status == 'invalid' and (scheme_name, 'epsilon', var) in APPROVED_INVALID:
-                    results['approved_invalid'].append(entry)
-                elif status == 'failed' and (scheme_name, 'epsilon', var) in DOCUMENTED_BUGS:
-                    results['documented_bugs'].append(entry)
-                elif status == 'invalid':
-                    results['invalid'].append(entry)
-                else:
-                    results[status].append(entry)
-        
-        # delta checks
-        if delta_name:
-            print(f"  Testing delta function: {delta_name}")
-            func = getattr(module, delta_name, None)
-            if func is None:
-                print(f"    Function {delta_name} not found in module {module_path}")
-                continue
-            for var, low, high, increasing in enumerated_changes:
-                print(f"    Testing {var} variation (low={low}, high={high}, increasing={increasing})...", end=" ", flush=True)
-                # default base for delta using test file defaults
-                base = default_delta.copy()
-                # no scheme-specific overrides; always use default base
-                params_low = PrivacyParams(**{**base, var: low})
-                params_high = PrivacyParams(**{**base, var: high})
-                try:
-                    status, msg = check_monotonicity(func, params_low, params_high, config, direction, increasing)
-                    print(f"{status}")
-                except Exception as e:
-                    print(f"ERROR: {e}")
-                    status, msg = 'invalid', str(e)
-                entry = (scheme_name, 'delta', var, status, msg)
-                if status == 'invalid' and (scheme_name, 'delta', var) in APPROVED_INVALID:
-                    results['approved_invalid'].append(entry)
-                elif status == 'failed' and (scheme_name, 'delta', var) in DOCUMENTED_BUGS:
-                    results['documented_bugs'].append(entry)
-                elif status == 'invalid':
-                    results['invalid'].append(entry)
-                else:
-                    results[status].append(entry)
-    
-    return results
 
 class TestMonotonicity:
     @pytest.mark.parametrize("scheme_name, direction, eps_name, delta_name, module_path", SCHEMES)
@@ -252,42 +202,163 @@ class TestMonotonicity:
         if not eps_name:
             return
             
-        module = pytest.importorskip(module_path)
-        eps_func = getattr(module, eps_name)
-        # configure direct alpha orders for schemes needing it
-        config.MC_use_mean = (scheme_name == "MonteCarloMean")
+        test_reporter = get_reporter()
+        test_id = f"pytest_{scheme_name}_{direction.value}_epsilon_{var}"
+        category = f"pytest_epsilon_{var}"
         
-        # base params for epsilon tests
-        base = default_eps.copy()
-        # vary var
-        params_low = PrivacyParams(**{**base, var: low})
-        params_high = PrivacyParams(**{**base, var: high})
-        # call or expect exception
         try:
-            eps_low = _call(eps_func, params_low, config, direction)
-            eps_high = _call(eps_func, params_high, config, direction)
-        except (ValueError, AssertionError, TypeError):
-            # For approved invalid combinations, this is expected
-            if (scheme_name, 'epsilon', var) in APPROVED_INVALID:
-                return  # Expected exception for invalid combination
-            else:
-                raise  # Unexpected exception
+            module = pytest.importorskip(module_path)
+            eps_func = getattr(module, eps_name)
+            # configure direct alpha orders for schemes needing it
+            config.MC_use_mean = (scheme_name == "MonteCarloMean")
+            
+            # base params for epsilon tests
+            base = default_eps.copy()
+            # vary var
+            params_low = PrivacyParams(**{**base, var: low})
+            params_high = PrivacyParams(**{**base, var: high})
+            
+            # call or expect exception
+            try:
+                eps_low = _call(eps_func, params_low, config, direction)
+                eps_high = _call(eps_func, params_high, config, direction)
+            except (ValueError, AssertionError, TypeError):
+                # For approved invalid combinations, this is expected
+                if (scheme_name, 'epsilon', var) in APPROVED_INVALID:
+                    test_reporter.add_test_result(
+                        test_id=test_id,
+                        category=category,
+                        status="skipped",
+                        details={
+                            "scheme": scheme_name,
+                            "direction": direction.value,
+                            "parameter_type": "epsilon",
+                            "variable": var,
+                            "low_value": low,
+                            "high_value": high,
+                            "increasing": increasing,
+                            "function": eps_name
+                        },
+                        error_message="Expected exception for invalid combination"
+                    )
+                    return  # Expected exception for invalid combination
+                else:
+                    test_reporter.add_test_result(
+                        test_id=test_id,
+                        category=category,
+                        status="errors",
+                        details={
+                            "scheme": scheme_name,
+                            "direction": direction.value,
+                            "parameter_type": "epsilon",
+                            "variable": var,
+                            "low_value": low,
+                            "high_value": high,
+                            "increasing": increasing,
+                            "function": eps_name
+                        },
+                        error_message="Unexpected exception"
+                    )
+                    raise  # Unexpected exception
+                    
+            # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
+            # If this is a documented bug, the test will proceed and fail with appropriate error message
+            is_documented_bug = (scheme_name, 'epsilon', var) in DOCUMENTED_BUGS
                 
-        # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
-        # If this is a documented bug, the test will proceed and fail with appropriate error message
-        is_documented_bug = (scheme_name, 'epsilon', var) in DOCUMENTED_BUGS
-            
-        # Handle numerical precision issues (but not for documented bugs - they should fail)
-        if not is_documented_bug and abs(eps_low - eps_high) < 1e-10:
-            # Values are too close to distinguish reliably
-            return
-            
-        # check change and direction for normal cases
-        assert eps_low != eps_high, f"{eps_name} no change for {var}: {eps_low} vs {eps_high}"
-        if increasing:
-            assert eps_high > eps_low, f"{eps_name} not increasing in {var}: {eps_low} !< {eps_high}"
-        else:
-            assert eps_high < eps_low, f"{eps_name} not decreasing in {var}: {eps_low} !> {eps_high}"
+            # Handle numerical precision issues (but not for documented bugs - they should fail)
+            if not is_documented_bug and abs(eps_low - eps_high) < 1e-10:
+                # Values are too close to distinguish reliably
+                test_reporter.add_test_result(
+                    test_id=test_id,
+                    category=category,
+                    status="skipped",
+                    details={
+                        "scheme": scheme_name,
+                        "direction": direction.value,
+                        "parameter_type": "epsilon",
+                        "variable": var,
+                        "low_value": low,
+                        "high_value": high,
+                        "increasing": increasing,
+                        "function": eps_name,
+                        "eps_low": eps_low,
+                        "eps_high": eps_high
+                    },
+                    error_message="Values too close for numerical precision"
+                )
+                return
+                
+            # check change and direction for normal cases
+            try:
+                assert eps_low != eps_high, f"{eps_name} no change for {var}: {eps_low} vs {eps_high}"
+                if increasing:
+                    assert eps_high > eps_low, f"{eps_name} not increasing in {var}: {eps_low} !< {eps_high}"
+                else:
+                    assert eps_high < eps_low, f"{eps_name} not decreasing in {var}: {eps_low} !> {eps_high}"
+                
+                # Test passed
+                test_reporter.add_test_result(
+                    test_id=test_id,
+                    category=category,
+                    status="passed",
+                    details={
+                        "scheme": scheme_name,
+                        "direction": direction.value,
+                        "parameter_type": "epsilon",
+                        "variable": var,
+                        "low_value": low,
+                        "high_value": high,
+                        "increasing": increasing,
+                        "function": eps_name,
+                        "eps_low": eps_low,
+                        "eps_high": eps_high
+                    }
+                )
+                
+            except AssertionError as e:
+                error_msg = str(e)
+                if is_documented_bug:
+                    error_msg = f"Documented bug: {error_msg}"
+                
+                test_reporter.add_test_result(
+                    test_id=test_id,
+                    category=category,
+                    status="failed",
+                    details={
+                        "scheme": scheme_name,
+                        "direction": direction.value,
+                        "parameter_type": "epsilon",
+                        "variable": var,
+                        "low_value": low,
+                        "high_value": high,
+                        "increasing": increasing,
+                        "function": eps_name,
+                        "eps_low": eps_low,
+                        "eps_high": eps_high
+                    },
+                    error_message=error_msg
+                )
+                raise  # Re-raise the assertion error for pytest
+                
+        except Exception as e:
+            # Record any other unexpected errors
+            test_reporter.add_test_result(
+                test_id=test_id,
+                category=category,
+                status="errors",
+                details={
+                    "scheme": scheme_name,
+                    "direction": direction.value,
+                    "parameter_type": "epsilon",
+                    "variable": var,
+                    "low_value": low,
+                    "high_value": high,
+                    "increasing": increasing,
+                    "function": eps_name
+                },
+                error_message=str(e)
+            )
+            raise
 
     @pytest.mark.parametrize("scheme_name, direction, eps_name, delta_name, module_path", SCHEMES)
     @pytest.mark.parametrize("var, low, high, increasing", enumerated_changes)
@@ -296,39 +367,160 @@ class TestMonotonicity:
         if not delta_name:
             return
             
-        module = pytest.importorskip(module_path)
-        delta_func = getattr(module, delta_name)
-        # configure direct alpha orders for schemes needing it
-        config.MC_use_mean = (scheme_name == "MonteCarloMean")
+        test_reporter = get_reporter()
+        test_id = f"pytest_{scheme_name}_{direction.value}_delta_{var}"
+        category = f"pytest_delta_{var}"
         
-        # base params for delta tests
-        base = default_delta.copy()
-        # vary var
-        params_low = PrivacyParams(**{**base, var: low})
-        params_high = PrivacyParams(**{**base, var: high})
-        # call or expect exception
         try:
-            delta_low = _call(delta_func, params_low, config, direction)
-            delta_high = _call(delta_func, params_high, config, direction)
-        except (ValueError, AssertionError, TypeError):
-            # For approved invalid combinations, this is expected
-            if (scheme_name, 'delta', var) in APPROVED_INVALID:
-                return  # Expected exception for invalid combination
-            else:
-                raise  # Unexpected exception
+            module = pytest.importorskip(module_path)
+            delta_func = getattr(module, delta_name)
+            # configure direct alpha orders for schemes needing it
+            config.MC_use_mean = (scheme_name == "MonteCarloMean")
+            
+            # base params for delta tests
+            base = default_delta.copy()
+            # vary var
+            params_low = PrivacyParams(**{**base, var: low})
+            params_high = PrivacyParams(**{**base, var: high})
+            
+            # call or expect exception
+            try:
+                delta_low = _call(delta_func, params_low, config, direction)
+                delta_high = _call(delta_func, params_high, config, direction)
+            except (ValueError, AssertionError, TypeError):
+                # For approved invalid combinations, this is expected
+                if (scheme_name, 'delta', var) in APPROVED_INVALID:
+                    test_reporter.add_test_result(
+                        test_id=test_id,
+                        category=category,
+                        status="skipped",
+                        details={
+                            "scheme": scheme_name,
+                            "direction": direction.value,
+                            "parameter_type": "delta",
+                            "variable": var,
+                            "low_value": low,
+                            "high_value": high,
+                            "increasing": increasing,
+                            "function": delta_name
+                        },
+                        error_message="Expected exception for invalid combination"
+                    )
+                    return  # Expected exception for invalid combination
+                else:
+                    test_reporter.add_test_result(
+                        test_id=test_id,
+                        category=category,
+                        status="errors",
+                        details={
+                            "scheme": scheme_name,
+                            "direction": direction.value,
+                            "parameter_type": "delta",
+                            "variable": var,
+                            "low_value": low,
+                            "high_value": high,
+                            "increasing": increasing,
+                            "function": delta_name
+                        },
+                        error_message="Unexpected exception"
+                    )
+                    raise  # Unexpected exception
+                    
+            # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
+            # If this is a documented bug, the test will proceed and fail with appropriate error message
+            is_documented_bug = (scheme_name, 'delta', var) in DOCUMENTED_BUGS
                 
-        # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
-        # If this is a documented bug, the test will proceed and fail with appropriate error message
-        is_documented_bug = (scheme_name, 'delta', var) in DOCUMENTED_BUGS
-            
-        # Handle numerical precision issues (but not for documented bugs - they should fail)
-        if not is_documented_bug and abs(delta_low - delta_high) < 1e-10:
-            # Values are too close to distinguish reliably
-            return
-            
-        # check change and direction for normal cases
-        assert delta_low != delta_high, f"{delta_name} no change for {var}: {delta_low} vs {delta_high}"
-        if increasing:
-            assert delta_high > delta_low, f"{delta_name} not increasing in {var}: {delta_low} !< {delta_high}"
-        else:
-            assert delta_high < delta_low, f"{delta_name} not decreasing in {var}: {delta_low} !> {delta_high}"
+            # Handle numerical precision issues (but not for documented bugs - they should fail)
+            if not is_documented_bug and abs(delta_low - delta_high) < 1e-10:
+                # Values are too close to distinguish reliably
+                test_reporter.add_test_result(
+                    test_id=test_id,
+                    category=category,
+                    status="skipped",
+                    details={
+                        "scheme": scheme_name,
+                        "direction": direction.value,
+                        "parameter_type": "delta",
+                        "variable": var,
+                        "low_value": low,
+                        "high_value": high,
+                        "increasing": increasing,
+                        "function": delta_name,
+                        "delta_low": delta_low,
+                        "delta_high": delta_high
+                    },
+                    error_message="Values too close for numerical precision"
+                )
+                return
+                
+            # check change and direction for normal cases
+            try:
+                assert delta_low != delta_high, f"{delta_name} no change for {var}: {delta_low} vs {delta_high}"
+                if increasing:
+                    assert delta_high > delta_low, f"{delta_name} not increasing in {var}: {delta_low} !< {delta_high}"
+                else:
+                    assert delta_high < delta_low, f"{delta_name} not decreasing in {var}: {delta_low} !> {delta_high}"
+                
+                # Test passed
+                test_reporter.add_test_result(
+                    test_id=test_id,
+                    category=category,
+                    status="passed",
+                    details={
+                        "scheme": scheme_name,
+                        "direction": direction.value,
+                        "parameter_type": "delta",
+                        "variable": var,
+                        "low_value": low,
+                        "high_value": high,
+                        "increasing": increasing,
+                        "function": delta_name,
+                        "delta_low": delta_low,
+                        "delta_high": delta_high
+                    }
+                )
+                
+            except AssertionError as e:
+                error_msg = str(e)
+                if is_documented_bug:
+                    error_msg = f"Documented bug: {error_msg}"
+                
+                test_reporter.add_test_result(
+                    test_id=test_id,
+                    category=category,
+                    status="failed",
+                    details={
+                        "scheme": scheme_name,
+                        "direction": direction.value,
+                        "parameter_type": "delta",
+                        "variable": var,
+                        "low_value": low,
+                        "high_value": high,
+                        "increasing": increasing,
+                        "function": delta_name,
+                        "delta_low": delta_low,
+                        "delta_high": delta_high
+                    },
+                    error_message=error_msg
+                )
+                raise  # Re-raise the assertion error for pytest
+                
+        except Exception as e:
+            # Record any other unexpected errors
+            test_reporter.add_test_result(
+                test_id=test_id,
+                category=category,
+                status="errors",
+                details={
+                    "scheme": scheme_name,
+                    "direction": direction.value,
+                    "parameter_type": "delta",
+                    "variable": var,
+                    "low_value": low,
+                    "high_value": high,
+                    "increasing": increasing,
+                    "function": delta_name
+                },
+                error_message=str(e)
+            )
+            raise
