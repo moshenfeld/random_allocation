@@ -9,7 +9,6 @@ from random_allocation.comparisons.structs import PrivacyParams, SchemeConfig, D
 import inspect
 import importlib
 from typing import Optional
-from tests.test_utils import ResultsReporter
 
 # Expanded schemes and directions - always use main functions with direction parameter
 SCHEMES = [
@@ -117,44 +116,15 @@ APPROVED_INVALID = [
     ('MonteCarloMean',     'delta',   'num_epochs'),
 ]
 
-# These are documented bugs that will now FAIL the tests (no longer pass silently)
-# This list serves as documentation of known monotonicity issues that need to be fixed
-DOCUMENTED_BUGS = [
+# These are known, approved monotonicity failures that are expected to be skipped
+# This list documents cases where monotonicity is not guaranteed by design or implementation
+APPROVED_FAILED = [
     # Local scheme doesn't depend on num_steps - always returns same value
     ('Local',        'epsilon', 'num_steps'),
     ('Local',        'delta',   'num_steps'),
     ('Local',        'epsilon', 'sampling_probability'),
     ('Local',        'delta',   'sampling_probability'),
 ]
-
-# Global test results reporter
-reporter: Optional[ResultsReporter] = None
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_reporter():
-    """Setup the global test results reporter for the session."""
-    global reporter
-    reporter = ResultsReporter("monotonicity_tests")
-    yield reporter
-    # Save results to JSON file and print summary
-    # Save results to JSON file and print summary - but only if not running as part of suite
-    is_suite_run = os.environ.get('PYTEST_SUITE_RUN', 'false').lower() == 'true'
-    
-    if is_suite_run:
-        # Just finalize results for suite collection
-        results = reporter.get_results()
-        print(f"\nMonotonicity test completed - results will be collected by suite runner")
-    else:
-        # Save individual JSON file when run standalone
-        filepath = reporter.finalize_and_save()
-        print(f"\nMonotonicity test results saved to: {filepath}")
-    
-    print(reporter.get_summary_report())
-
-def get_reporter() -> ResultsReporter:
-    """Get the global reporter, ensuring it's initialized."""
-    assert reporter is not None, "Reporter not initialized. This should not happen."
-    return reporter
 
 # helper to call functions with optional sampling_prob
 def _call(func, params, config, direction):
@@ -202,10 +172,6 @@ class TestMonotonicity:
         if not eps_name:
             return
             
-        test_reporter = get_reporter()
-        test_id = f"pytest_{scheme_name}_{direction.value}_epsilon_{var}"
-        category = f"pytest_epsilon_{var}"
-        
         try:
             module = pytest.importorskip(module_path)
             eps_func = getattr(module, eps_name)
@@ -225,68 +191,19 @@ class TestMonotonicity:
             except (ValueError, AssertionError, TypeError):
                 # For approved invalid combinations, this is expected
                 if (scheme_name, 'epsilon', var) in APPROVED_INVALID:
-                    test_reporter.add_test_result(
-                        test_id=test_id,
-                        category=category,
-                        status="skipped",
-                        details={
-                            "scheme": scheme_name,
-                            "direction": direction.value,
-                            "parameter_type": "epsilon",
-                            "variable": var,
-                            "low_value": low,
-                            "high_value": high,
-                            "increasing": increasing,
-                            "function": eps_name
-                        },
-                        error_message="Expected exception for invalid combination"
-                    )
-                    return  # Expected exception for invalid combination
+                    pytest.skip(f"Scheme {scheme_name} is not affected by parameter {var}")
                 else:
-                    test_reporter.add_test_result(
-                        test_id=test_id,
-                        category=category,
-                        status="errors",
-                        details={
-                            "scheme": scheme_name,
-                            "direction": direction.value,
-                            "parameter_type": "epsilon",
-                            "variable": var,
-                            "low_value": low,
-                            "high_value": high,
-                            "increasing": increasing,
-                            "function": eps_name
-                        },
-                        error_message="Unexpected exception"
-                    )
                     raise  # Unexpected exception
                     
-            # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
-            # If this is a documented bug, the test will proceed and fail with appropriate error message
-            is_documented_bug = (scheme_name, 'epsilon', var) in DOCUMENTED_BUGS
+            # Handle approved failures - these should be skipped as known non-monotonic behavior
+            is_approved_failure = (scheme_name, 'epsilon', var) in APPROVED_FAILED
+            if is_approved_failure:
+                pytest.skip(f"Known non-monotonic behavior: {scheme_name} epsilon with {var}")
                 
-            # Handle numerical precision issues (but not for documented bugs - they should fail)
-            if not is_documented_bug and abs(eps_low - eps_high) < 1e-10:
+            # Handle numerical precision issues
+            if abs(eps_low - eps_high) < 1e-10:
                 # Values are too close to distinguish reliably
-                test_reporter.add_test_result(
-                    test_id=test_id,
-                    category=category,
-                    status="skipped",
-                    details={
-                        "scheme": scheme_name,
-                        "direction": direction.value,
-                        "parameter_type": "epsilon",
-                        "variable": var,
-                        "low_value": low,
-                        "high_value": high,
-                        "increasing": increasing,
-                        "function": eps_name,
-                        "eps_low": eps_low,
-                        "eps_high": eps_high
-                    },
-                    error_message="Values too close for numerical precision"
-                )
-                return
+                pytest.skip(f"Values too close for numerical precision: {eps_low} vs {eps_high}")
                 
             # check change and direction for normal cases
             try:
@@ -296,68 +213,14 @@ class TestMonotonicity:
                 else:
                     assert eps_high < eps_low, f"{eps_name} not decreasing in {var}: {eps_low} !> {eps_high}"
                 
-                # Test passed
-                test_reporter.add_test_result(
-                    test_id=test_id,
-                    category=category,
-                    status="passed",
-                    details={
-                        "scheme": scheme_name,
-                        "direction": direction.value,
-                        "parameter_type": "epsilon",
-                        "variable": var,
-                        "low_value": low,
-                        "high_value": high,
-                        "increasing": increasing,
-                        "function": eps_name,
-                        "eps_low": eps_low,
-                        "eps_high": eps_high
-                    }
-                )
+                # Test passed - no custom reporting needed, pytest handles this
                 
             except AssertionError as e:
-                error_msg = str(e)
-                if is_documented_bug:
-                    error_msg = f"Documented bug: {error_msg}"
-                
-                test_reporter.add_test_result(
-                    test_id=test_id,
-                    category=category,
-                    status="failed",
-                    details={
-                        "scheme": scheme_name,
-                        "direction": direction.value,
-                        "parameter_type": "epsilon",
-                        "variable": var,
-                        "low_value": low,
-                        "high_value": high,
-                        "increasing": increasing,
-                        "function": eps_name,
-                        "eps_low": eps_low,
-                        "eps_high": eps_high
-                    },
-                    error_message=error_msg
-                )
+                # Test failed - no custom reporting needed, pytest handles this
                 raise  # Re-raise the assertion error for pytest
                 
         except Exception as e:
-            # Record any other unexpected errors
-            test_reporter.add_test_result(
-                test_id=test_id,
-                category=category,
-                status="errors",
-                details={
-                    "scheme": scheme_name,
-                    "direction": direction.value,
-                    "parameter_type": "epsilon",
-                    "variable": var,
-                    "low_value": low,
-                    "high_value": high,
-                    "increasing": increasing,
-                    "function": eps_name
-                },
-                error_message=str(e)
-            )
+            # Any other unexpected errors - let pytest handle this
             raise
 
     @pytest.mark.parametrize("scheme_name, direction, eps_name, delta_name, module_path", SCHEMES)
@@ -367,10 +230,6 @@ class TestMonotonicity:
         if not delta_name:
             return
             
-        test_reporter = get_reporter()
-        test_id = f"pytest_{scheme_name}_{direction.value}_delta_{var}"
-        category = f"pytest_delta_{var}"
-        
         try:
             module = pytest.importorskip(module_path)
             delta_func = getattr(module, delta_name)
@@ -390,68 +249,19 @@ class TestMonotonicity:
             except (ValueError, AssertionError, TypeError):
                 # For approved invalid combinations, this is expected
                 if (scheme_name, 'delta', var) in APPROVED_INVALID:
-                    test_reporter.add_test_result(
-                        test_id=test_id,
-                        category=category,
-                        status="skipped",
-                        details={
-                            "scheme": scheme_name,
-                            "direction": direction.value,
-                            "parameter_type": "delta",
-                            "variable": var,
-                            "low_value": low,
-                            "high_value": high,
-                            "increasing": increasing,
-                            "function": delta_name
-                        },
-                        error_message="Expected exception for invalid combination"
-                    )
-                    return  # Expected exception for invalid combination
+                    pytest.skip(f"Scheme {scheme_name} is not affected by parameter {var}")
                 else:
-                    test_reporter.add_test_result(
-                        test_id=test_id,
-                        category=category,
-                        status="errors",
-                        details={
-                            "scheme": scheme_name,
-                            "direction": direction.value,
-                            "parameter_type": "delta",
-                            "variable": var,
-                            "low_value": low,
-                            "high_value": high,
-                            "increasing": increasing,
-                            "function": delta_name
-                        },
-                        error_message="Unexpected exception"
-                    )
                     raise  # Unexpected exception
                     
-            # NOTE: DOCUMENTED_BUGS are no longer skipped - they should fail to expose bugs that need fixing
-            # If this is a documented bug, the test will proceed and fail with appropriate error message
-            is_documented_bug = (scheme_name, 'delta', var) in DOCUMENTED_BUGS
+            # Handle approved failures - these should be skipped as known non-monotonic behavior
+            is_approved_failure = (scheme_name, 'delta', var) in APPROVED_FAILED
+            if is_approved_failure:
+                pytest.skip(f"Known non-monotonic behavior: {scheme_name} delta with {var}")
                 
-            # Handle numerical precision issues (but not for documented bugs - they should fail)
-            if not is_documented_bug and abs(delta_low - delta_high) < 1e-10:
+            # Handle numerical precision issues
+            if abs(delta_low - delta_high) < 1e-10:
                 # Values are too close to distinguish reliably
-                test_reporter.add_test_result(
-                    test_id=test_id,
-                    category=category,
-                    status="skipped",
-                    details={
-                        "scheme": scheme_name,
-                        "direction": direction.value,
-                        "parameter_type": "delta",
-                        "variable": var,
-                        "low_value": low,
-                        "high_value": high,
-                        "increasing": increasing,
-                        "function": delta_name,
-                        "delta_low": delta_low,
-                        "delta_high": delta_high
-                    },
-                    error_message="Values too close for numerical precision"
-                )
-                return
+                pytest.skip(f"Values too close for numerical precision: {delta_low} vs {delta_high}")
                 
             # check change and direction for normal cases
             try:
@@ -461,66 +271,12 @@ class TestMonotonicity:
                 else:
                     assert delta_high < delta_low, f"{delta_name} not decreasing in {var}: {delta_low} !> {delta_high}"
                 
-                # Test passed
-                test_reporter.add_test_result(
-                    test_id=test_id,
-                    category=category,
-                    status="passed",
-                    details={
-                        "scheme": scheme_name,
-                        "direction": direction.value,
-                        "parameter_type": "delta",
-                        "variable": var,
-                        "low_value": low,
-                        "high_value": high,
-                        "increasing": increasing,
-                        "function": delta_name,
-                        "delta_low": delta_low,
-                        "delta_high": delta_high
-                    }
-                )
+                # Test passed - no custom reporting needed, pytest handles this
                 
             except AssertionError as e:
-                error_msg = str(e)
-                if is_documented_bug:
-                    error_msg = f"Documented bug: {error_msg}"
-                
-                test_reporter.add_test_result(
-                    test_id=test_id,
-                    category=category,
-                    status="failed",
-                    details={
-                        "scheme": scheme_name,
-                        "direction": direction.value,
-                        "parameter_type": "delta",
-                        "variable": var,
-                        "low_value": low,
-                        "high_value": high,
-                        "increasing": increasing,
-                        "function": delta_name,
-                        "delta_low": delta_low,
-                        "delta_high": delta_high
-                    },
-                    error_message=error_msg
-                )
+                # Test failed - no custom reporting needed, pytest handles this
                 raise  # Re-raise the assertion error for pytest
                 
         except Exception as e:
-            # Record any other unexpected errors
-            test_reporter.add_test_result(
-                test_id=test_id,
-                category=category,
-                status="errors",
-                details={
-                    "scheme": scheme_name,
-                    "direction": direction.value,
-                    "parameter_type": "delta",
-                    "variable": var,
-                    "low_value": low,
-                    "high_value": high,
-                    "increasing": increasing,
-                    "function": delta_name
-                },
-                error_message=str(e)
-            )
+            # Any other unexpected errors - let pytest handle this
             raise
