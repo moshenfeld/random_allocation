@@ -780,37 +780,38 @@ class TestRuntimeTypeValidationComprehensive:
     
     def test_optional_field_type_validation(self):
         """Test Optional field type validation"""
-        # Test with None values
-        params = PrivacyParams(
+        # Test with epsilon provided, delta as None
+        params1 = PrivacyParams(
             sigma=1.0, num_steps=10, num_selected=5, num_epochs=1,
-            epsilon=None, delta=None
+            epsilon=1.5, delta=None
         )
         
-        assert params.epsilon is None
-        assert params.delta is None
+        assert isinstance(params1.epsilon, float)
+        assert params1.epsilon == 1.5
+        assert params1.delta is None
         
-        # Test with valid values
+        # Test with delta provided, epsilon as None  
         params2 = PrivacyParams(
             sigma=1.0, num_steps=10, num_selected=5, num_epochs=1,
-            epsilon=1.5, delta=1e-6
+            epsilon=None, delta=1e-6
         )
         
-        assert isinstance(params2.epsilon, float)
+        assert params2.epsilon is None
         assert isinstance(params2.delta, float)
+        assert params2.delta == 1e-6
 
 
 class TestOptionalAndUnionHandlingComprehensive:
     """Comprehensive Optional and Union type handling tests"""
     
     def test_optional_parameter_combinations(self):
-        """Test all combinations of Optional parameter handling"""
+        """Test valid combinations of Optional parameter handling"""
         base_params = {'sigma': 1.0, 'num_steps': 10, 'num_selected': 5, 'num_epochs': 1}
         
+        # Test valid combinations (only one of epsilon/delta provided)
         test_combinations = [
             {'epsilon': 1.0, 'delta': None},
             {'epsilon': None, 'delta': 1e-5},
-            {'epsilon': 1.0, 'delta': 1e-5},
-            {'epsilon': None, 'delta': None},
         ]
         
         for combo in test_combinations:
@@ -819,14 +820,21 @@ class TestOptionalAndUnionHandlingComprehensive:
             if combo['epsilon'] is not None:
                 assert isinstance(params.epsilon, float)
                 assert params.epsilon == combo['epsilon']
+                assert params.delta is None
             else:
                 assert params.epsilon is None
-                
-            if combo['delta'] is not None:
                 assert isinstance(params.delta, float)
                 assert params.delta == combo['delta']
-            else:
-                assert params.delta is None
+        
+        # Test that invalid combinations raise ValueError
+        invalid_combinations = [
+            {'epsilon': 1.0, 'delta': 1e-5},  # Both provided
+            {'epsilon': None, 'delta': None},  # Neither provided
+        ]
+        
+        for combo in invalid_combinations:
+            with pytest.raises(ValueError):
+                PrivacyParams(**base_params, **combo)
     
     def test_union_return_types_comprehensive(self):
         """Test comprehensive Union return type handling"""

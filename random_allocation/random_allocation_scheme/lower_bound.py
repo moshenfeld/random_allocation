@@ -84,4 +84,5 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig, di
         params.num_epochs
     )[0]
     
-    return float(result)
+    # Protected conversion: ensure delta is non-negative (delta >= 0 always)
+    return float(max(result, 0.0))

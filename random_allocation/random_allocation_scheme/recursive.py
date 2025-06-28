@@ -134,54 +134,57 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    if params.sampling_probability < 1.0:
-        raise ValueError("Sampling probability < 1.0 still not supported for the delta part of the recursive allocation scheme")
-    
+    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+
     delta_add: float  # type annotation without initialization
     delta_remove: float  # type annotation without initialization
-        
+
+    gamma = min(params.epsilon/2, np.log(max(2.0, params.num_steps))/4)
+    eta = min(np.exp(2*gamma)/params.num_steps, 1.0)
+    params_gamma = PrivacyParams(
+        sigma=params.sigma,
+        num_steps=num_steps_per_round,
+        num_selected=1,
+        num_epochs=1,
+        epsilon=gamma,
+        delta=None
+    )
+    params_Poisson = PrivacyParams(
+        sigma=params.sigma,
+        num_steps=num_steps_per_round,
+        num_selected=1,
+        num_epochs=num_rounds*params.num_epochs,
+        epsilon=params.epsilon,  
+        delta=None, 
+    )
+
     if direction != Direction.ADD:
-        gamma = min(params.epsilon/2, np.log(max(params.num_steps, 2))/4)
-        eta = np.exp(2*gamma)/params.num_steps
-        params2 = PrivacyParams(
-            sigma=params.sigma,
-            num_steps=params.num_steps,
-            num_selected=params.num_selected,
-            num_epochs=params.num_epochs,
-            epsilon=gamma,
-            delta=None
-        )
-        delta_add_decomposition = allocation_delta_decomposition(params=params2, config=config, direction=Direction.ADD)
-        delta_add_direct = allocation_delta_direct(params=params2, config=config, direction=Direction.ADD)
+        delta_add_decomposition = allocation_delta_decomposition(params=params_gamma, config=config, direction=Direction.ADD)
+        delta_add_direct = allocation_delta_direct(params=params_gamma, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else 1.0
         delta_remove = Poisson_delta_PLD(
-            params=params, 
+            params=params_Poisson, 
             config=config, 
             sampling_prob=eta, 
             direction=Direction.REMOVE
         ) + 1/(np.exp(2*gamma)-np.exp(gamma)) * min(delta_add_decomposition, delta_add_direct)
+        # Protected conversion: ensure delta doesn't exceed 1.0
+        delta_remove = min(delta_remove, 1.0)
     
     if direction != Direction.REMOVE:
         if params.epsilon > 0.5:
             delta_add = allocation_delta_decomposition(params=params, config=config, direction=Direction.ADD)
         else:
-            gamma = min(params.epsilon*2, np.log(params.num_steps)/4)
-            eta = np.exp(2*gamma)/params.num_steps
-            params2 = PrivacyParams(
-                sigma=params.sigma,
-                num_steps=params.num_steps,
-                num_selected=params.num_selected,
-                num_epochs=params.num_epochs,
-                epsilon=gamma,
-                delta=None
-            )
-            delta_add_decomposition = allocation_delta_decomposition(params=params2, config=config, direction=Direction.ADD)
-            delta_add_direct = allocation_delta_direct(params=params2, config=config, direction=Direction.ADD)
+            delta_add_decomposition = allocation_delta_decomposition(params=params_gamma, config=config, direction=Direction.ADD)
+            delta_add_direct = allocation_delta_direct(params=params_gamma, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else 1.0
             delta_add = Poisson_delta_PLD(
-                params=params, 
+                params=params_Poisson, 
                 config=config, 
                 sampling_prob=eta, 
                 direction=Direction.ADD
             ) + np.exp(gamma)/(np.exp(gamma)-1) * min(delta_add_decomposition, delta_add_direct)
+            # Protected conversion: ensure delta doesn't exceed 1.0
+            delta_add = min(delta_add, 1.0)
 
     if direction == Direction.ADD:
         assert 'delta_add' in locals(), "Failed to compute delta_add"

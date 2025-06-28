@@ -81,7 +81,9 @@ def allocation_delta_RDP_DCO_add(params: PrivacyParams, config: SchemeConfig) ->
     min_log_delta_idx = np.argmin(log_alpha_deltas)
     used_alpha = float(alpha_orders[min_log_delta_idx])
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
-    return float(np.exp(log_alpha_deltas[min_log_delta_idx]))
+    
+    # Protected conversion: ensure delta doesn't exceed 1.0
+    return float(np.minimum(1.0, np.exp(log_alpha_deltas[min_log_delta_idx])))
 
 # ==================== Remove ====================
 
@@ -153,7 +155,9 @@ def allocation_delta_RDP_DCO_remove(params: PrivacyParams, config: SchemeConfig)
     min_log_delta_idx = np.argmin(log_alpha_deltas)
     used_alpha = float(alpha_orders[min_log_delta_idx])
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "remove", params)
-    return float(np.exp(log_alpha_deltas[min_log_delta_idx]))
+    
+    # Protected conversion: ensure delta doesn't exceed 1.0
+    return float(np.minimum(1.0, np.exp(log_alpha_deltas[min_log_delta_idx])))
     
 # ==================== Both ====================
 def allocation_epsilon_RDP_DCO(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:

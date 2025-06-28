@@ -338,4 +338,5 @@ def allocation_delta_RDP_add(params: PrivacyParams, config: SchemeConfig) -> flo
     idx = np.argmin(alpha_deltas)
     used_alpha = alpha_orders[idx]
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
-    return float(alpha_deltas[idx])
+    # Protected conversion: ensure delta doesn't exceed 1.0
+    return float(np.minimum(1.0, alpha_deltas[idx]))

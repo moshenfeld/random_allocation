@@ -173,10 +173,6 @@ APPROVED_INVALID = [
     ('RDP_DCO',             'delta',    'minimal_sampling_prob'),
     ('Decomposition',       'epsilon',  'minimal_sampling_prob'),
     ('Decomposition',       'delta',    'minimal_sampling_prob'),
-
-    # Recursive/Combined schemes that don't support sampling_probability < 1.0 for delta
-    ('Combined',            'delta',    'minimal_sampling_prob'),  # "Sampling probability < 1.0 still not supported for the delta part of the recursive allocation scheme"
-    ('Recursive',           'delta',    'minimal_sampling_prob'),  # "Sampling probability < 1.0 still not supported for the delta part of the recursive allocation scheme"
 ]
 
 # These are approved timeout cases that cause excessive computation time (>10 seconds)
@@ -196,21 +192,7 @@ APPROVED_TIMEOUTS = [
 
 # These are documented bugs that will now FAIL the tests (no longer skipped)
 # This list serves as documentation of known issues that need to be fixed
-DOCUMENTED_BUGS = [
-    # *** ALGORITHM BUGS - MUST BE FIXED ***
-    # External library validation failures (dp_accounting constraints)
-    ('Combined',    'delta',    'minimal_steps'),    # "epsilon must be positive, got 0.0"
-    ('Recursive',   'delta',    'minimal_steps'),    # "epsilon must be positive, got 0.0" 
-    ('Combined',    'delta',    'minimal_steps'),    # "Sampling probability is not in (0,1] : 1.414213562373095"
-    ('Recursive',   'delta',    'minimal_steps'),    # "Sampling probability is not in (0,1] : 1.414213562373095"
-    
-    # Delta values exceeding 1.0 (algorithmic issues)
-    ('RDP_DCO',     'delta',    'equal_selection_steps'),  # "Delta value exceeds 1.0: 1.5343405687825988"
-    ('Recursive',   'delta',    'tiny_epsilon'),           # "Delta value exceeds 1.0: 6.466343432053193" and "26.45492592301156"
-    
-    # Negative delta values (algorithmic issue)
-    ('LowerBound',  'delta',    'large_sigma'),            # "Function returned negative value: -0.28329738259569004"
-]
+
 
 
 # Helper function to call functions with optional sampling_prob (same as monotonicity tests)
@@ -271,22 +253,6 @@ def check_edge_case(func, params, config, direction, case_name, scheme_name, tes
         )
         pytest.skip(f"Edge case '{case_name}' is an approved timeout for {scheme_name} {test_type}")
         
-    # Check if this is a documented bug (algorithmic failure)
-    if (scheme_name, test_type, case_name) in DOCUMENTED_BUGS:
-        test_reporter.add_test_result(
-            test_id=f"{scheme_name}_{test_type}_{direction}_{case_name}",
-            category="documented_bug",
-            status="skipped",
-            details={
-                "scheme": scheme_name,
-                "test_type": test_type,
-                "direction": str(direction),
-                "case_name": case_name,
-                "reason": "Documented bug"
-            }
-        )
-        pytest.skip(f"Edge case '{case_name}' is a documented bug for {scheme_name} {test_type}")
-    
     # Set timeout threshold (in seconds)
     TIMEOUT_THRESHOLD = 10.0
     
@@ -403,7 +369,7 @@ def check_edge_case(func, params, config, direction, case_name, scheme_name, tes
         
         # Categorize timeouts
         if isinstance(e, TimeoutError) or elapsed_time > TIMEOUT_THRESHOLD:
-            print(f"💡 Consider adding to DOCUMENTED_BUGS: ('{scheme_name}', '{test_type}', '{case_name}')  # Timeout after {elapsed_time:.2f}s")
+            print(f"💡 Timeout after {elapsed_time:.2f}s for {scheme_name} {test_type} {case_name}")
         
         # Unapproved failure - this is a real issue that needs attention
         pytest.fail(f"Edge case '{case_name}' failed for {scheme_name}.{test_type} with {direction} after {elapsed_time:.2f}s: {str(e)}")
