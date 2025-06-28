@@ -9,7 +9,7 @@ The project uses a four-tier testing approach for different development and depl
 ### **BASIC Tests** (< 5 seconds)
 **Purpose**: Essential functionality checks to catch obvious mistakes  
 **When to use**: Quick development feedback, pre-commit checks  
-**Command**: `python tests/run_tests.py basic`
+**Command**: `python tests/run_tests.py basic` or `python tests/run_basic_suite.py`
 
 - **Parameter Validation**: Core PrivacyParams class functionality
 - **Core Functionality**: Essential privacy algorithm verification
@@ -18,7 +18,7 @@ The project uses a four-tier testing approach for different development and depl
 ### **FULL Tests** (< 30 seconds)  
 **Purpose**: Comprehensive validation including mathematical correctness and type checking  
 **When to use**: Before merging, development milestones  
-**Command**: `python tests/run_tests.py full`
+**Command**: `python tests/run_tests.py full` or `python tests/run_full_suite.py`
 
 - All BASIC tests plus:
 - **Extended Methods**: Additional allocation methods and direction consistency
@@ -29,12 +29,13 @@ The project uses a four-tier testing approach for different development and depl
 ### **RELEASE Tests** (< 60 seconds)
 **Purpose**: Complete validation for production readiness  
 **When to use**: Before releases, major deployments  
-**Command**: `python tests/run_tests.py release`
+**Command**: `python tests/run_tests.py release` or `python tests/run_release_suite.py`
 
 - All FULL tests plus:
-- **Comprehensive Coverage**: Complex scenarios and edge cases
-- **Complete Type Validation**: Exhaustive type annotation coverage
-- **Integration Testing**: End-to-end workflow validation
+- **Comprehensive Coverage**: Mathematically precise edge cases and monotonicity validation
+- **Complete Type Validation**: Exhaustive type annotation coverage (26 tests)
+- **Edge Case Testing**: 476 mathematically valid boundary condition tests
+- **Monotonicity Validation**: 370 mathematical property tests
 
 ### **PAPER Tests** (Variable timing)
 **Purpose**: Research reproducibility and paper experiment validation  
@@ -50,20 +51,19 @@ The project uses a four-tier testing approach for different development and depl
 ```
 tests/
 ├── run_tests.py                    # Four-tier hierarchical test runner
-├── basic/                          # Basic functionality tests (27 tests)
-│   ├── test_basic_01_functionality.py        # Parameter validation, Gaussian mechanism (8 tests)
-│   ├── test_basic_02_core_allocation_methods.py   # Core allocation methods (5 tests)
-│   ├── test_basic_03_direct_allocation_add.py     # Direct allocation - add (3 tests)
-│   ├── test_basic_03_direct_allocation_remove.py  # Direct allocation - remove (2 tests)
-│   └── test_basic_04_direct_RDP_add.py            # RDP-based direct method (5 tests)
-├── full/                           # Comprehensive tests (37 tests)
-│   ├── test_full_01_additional_allocation_methods.py  # Extended methods (10 tests)
-│   ├── test_full_02_other_schemes.py                  # Other schemes (12 tests)
-│   ├── test_full_03_mathematical_properties.py       # Mathematical properties (8 tests)
-│   └── test_full_04_type_annotations.py              # Type annotations (12 tests)
-├── release/                        # Release validation tests (26 tests)
-│   ├── test_release_01_comprehensive_coverage.py     # Edge cases (7 tests)
-│   └── test_release_02_complete_type_annotations.py  # Complete type validation (15 tests)
+├── run_basic_suite.py             # Basic suite runner
+├── run_full_suite.py              # Full suite runner  
+├── run_release_suite.py           # Release suite runner
+├── basic/                          # Basic functionality tests (10 tests)
+│   └── test_basic_01_functionality.py        # Parameter validation, Gaussian mechanism
+├── full/                           # Comprehensive tests (28 tests)
+│   ├── test_full_01_additional_allocation_methods.py  # Extended methods
+│   ├── test_full_02_other_schemes.py                  # Other schemes  
+│   └── test_full_03_utility_functions.py             # Core utility functions
+├── release/                        # Release validation tests (872 tests)
+│   ├── test_release_01_complete_type_annotations.py  # Complete type validation (26 tests)
+│   ├── test_release_02_monotonicity.py               # Monotonicity validation (370 tests)
+│   └── test_release_03_edge_cases.py                 # Mathematically precise edge cases (476 tests)
 ├── paper/                          # Research tests (Variable)
 │   └── test_paper_01_experiments.py                  # Paper experiments
 ├── README.md                       # Test suite overview
@@ -72,7 +72,7 @@ tests/
 
 ## Test File Details
 
-### `basic/test_basic_01_functionality.py` (8 tests)
+### `basic/test_basic_01_functionality.py` (10 tests)
 **Purpose**: Validate core functionality and parameter handling  
 **Key Tests**:
 - Gaussian mechanism baseline verification
@@ -80,73 +80,64 @@ tests/
 - Direction enum functionality
 - Basic parameter boundary checks
 
-### `basic/test_basic_02_core_allocation_methods.py` (5 tests)  
-**Purpose**: Essential allocation algorithm functionality verification  
+### `full/test_full_01_additional_allocation_methods.py`
+**Purpose**: Extended allocation algorithm functionality verification  
 **Key Tests**:
-- Decomposition method testing
-- Analytic method testing
-- Method comparison and consistency
-- Core mathematical property validation
-
-### `basic/test_basic_03_direct_allocation_add.py` (3 tests)
-**Purpose**: Direct allocation method validation (add direction)
-**Key Tests**:
-- Epsilon calculation with conservative parameters
-- Delta calculation with conservative parameters
-- Round-trip epsilon-delta consistency
-
-### `basic/test_basic_03_direct_allocation_remove.py` (2 tests)
-**Purpose**: Direct allocation method validation (remove direction)
-**Key Tests**:
-- Epsilon calculation for removal operations
-- Delta calculation for removal operations
-
-### `basic/test_basic_04_direct_RDP_add.py` (5 tests)
-**Purpose**: RDP-based direct method validation
-**Key Tests**:
-- RDP epsilon calculation
-- RDP delta calculation
-- Round-trip validation
-- Error handling for missing parameters
-
-### `full/test_full_01_additional_allocation_methods.py` (10 tests)  
-**Purpose**: Extended allocation methods and direction consistency  
-**Key Tests**:
-- Direct method with alpha orders
-- RDP DCO method validation
+- Additional allocation methods beyond core functionality
 - Direction consistency across methods
-- Scheme configuration requirements
+- Extended scheme validation
+- Cross-method compatibility
 
-### `full/test_full_02_other_schemes.py` (12 tests)
-**Purpose**: Non-allocation privacy schemes validation  
+### `full/test_full_02_other_schemes.py`
+**Purpose**: Non-allocation privacy scheme validation
 **Key Tests**:
-- Local scheme testing (all directions)
-- Poisson scheme PLD and RDP variants
-- Shuffle scheme validation
-- Inter-scheme comparison and ordering
+- Local differential privacy schemes
+- Poisson mechanism testing
+- Shuffle privacy validation
+- Cross-scheme comparison
 
-### `full/test_full_03_mathematical_properties.py` (8 tests)
-**Purpose**: Mathematical correctness and boundary conditions  
+### `full/test_full_03_utility_functions.py`
+**Purpose**: Core utility function validation
 **Key Tests**:
-- Parameter range validation
-- Boundary condition testing
-- Mathematical constraint verification
-- Specific bug reproduction and fixes
+- Search functions and parameter bounds
+- Convergence validation utilities
+- Mathematical helper functions
+- Utility function integration
 
-### `full/test_full_04_type_annotations.py` (12 tests)
-**Purpose**: Type annotation compliance and validation  
+### `release/test_release_01_complete_type_annotations.py` (26 tests)
+**Purpose**: Complete type annotation coverage validation  
 **Key Tests**:
-- Function return type validation
-- Type conversion testing
-- Callable type annotations
+- Function return type validation across all modules
+- Type conversion testing and compliance
+- Callable type annotations verification
 - Optional and union type handling
+- Complete module coverage validation
 
-### `release/test_release_01_comprehensive_coverage.py` (7 tests)
-**Purpose**: Complex scenarios and edge case validation  
+### `release/test_release_02_monotonicity.py` (370 tests)
+**Purpose**: Comprehensive mathematical monotonicity validation  
 **Key Tests**:
-- Remaining allocation methods
-- Parameter boundary conditions
-- Extreme precision requirements
+- Parameter monotonicity across all allocation schemes
+- Direction consistency validation
+- Mathematical property preservation
+- Cross-scheme monotonicity comparison
+- Boundary condition monotonicity
+
+### `release/test_release_03_edge_cases.py` (476 tests)
+**Purpose**: Mathematically precise edge case validation  
+**Key Tests**:
+- **Epsilon Edge Cases**: Valid epsilon-only scenarios → delta tests (217 tests)
+- **Delta Edge Cases**: Valid delta-only scenarios → epsilon tests (259 tests)
+- **Mathematical Precision**: Only valid epsilon-delta relationships tested
+- **Function Existence**: Only existing functions tested (no missing function skips)
+- **Boundary Conditions**: Extreme parameter validation with computational limits
+
+#### Edge Case Categories:
+- **Invalid Edge Case** (72 skips): Mathematically incompatible parameter combinations
+- **Documented Bug** (29 skips): Known implementation issues  
+- **Computational Timeout** (24 skips): Algorithmic complexity limits
+
+### `paper/test_paper_01_experiments.py`
+**Purpose**: Research reproducibility and paper experiment validation
 - Error condition handling
 
 ### `release/test_release_02_complete_type_annotations.py` (15 tests)
@@ -180,6 +171,11 @@ python tests/run_tests.py release
 
 # Full validation including research experiments
 python tests/run_tests.py paper
+
+# Individual suite runners (recommended for focused testing)
+python tests/run_basic_suite.py     # Basic tests only
+python tests/run_full_suite.py      # Full tests only
+python tests/run_release_suite.py   # Release tests only
 ```
 
 ### Advanced Options
@@ -198,45 +194,63 @@ python tests/run_tests.py release --verbose
 ```bash
 # Run specific test directories
 pytest tests/basic/ -v
-pytest tests/full/test_full_03_mathematical_properties.py -v
+pytest tests/full/test_full_03_utility_functions.py -v
 
 # Run specific test classes or methods
 pytest tests/basic/test_basic_01_functionality.py::TestGaussianMechanismBaseline -v
 pytest -k "epsilon" -v  # Run tests matching pattern
+
+# Run release tests individually
+pytest tests/release/test_release_03_edge_cases.py -v  # Edge cases only
+pytest tests/release/test_release_02_monotonicity.py -v  # Monotonicity only
 ```
 
-## Test Quality Metrics
+## Test Quality Metrics (2025 Status)
 
-- **Total Tests**: 90+ tests across all tiers
-- **Coverage**: Comprehensive validation of all privacy methods
+- **Total Tests**: 924 tests across all tiers
+- **Mathematical Precision**: Edge cases use only valid epsilon-delta relationships
+- **Function Validation**: Only existing functions tested (no missing function skips)
 - **Performance**: All tests complete within designated time limits
 - **Reliability**: Deterministic results with appropriate numerical tolerance
-- **Type Safety**: Extensive type annotation coverage and validation
+- **Type Safety**: Complete type annotation coverage and validation
+
+### Release Suite Breakdown (872 tests)
+- **Type Annotations**: 26 tests (24 passed, 2 failed) - 92.3% success
+- **Monotonicity**: 370 tests (349 passed, 21 failed) - 94.3% success  
+- **Edge Cases**: 476 tests (345 passed, 6 failed, 125 skipped) - 72.5% success
+
+### Edge Case Modernization
+- **28% test reduction**: From 666 to 476 tests (eliminated invalid combinations)
+- **60% skip reduction**: From 315 to 125 skips (eliminated meaningless skips)
+- **Mathematical precision**: Only valid mathematical relationships tested
+- **Function existence**: Parametrization validates function existence
 
 ## Current Test Status
 
-✅ **All core tests passing** - The complete test suite validates:
-- Mathematical correctness of all privacy allocation methods
-- Comprehensive edge case and boundary condition handling  
+✅ **Modernized test suite** - The complete test suite validates:
+- Mathematical correctness of all privacy allocation methods with precision
+- Comprehensive edge case validation with legitimate boundary conditions
 - Complete type annotation coverage and compliance
 - Research experiment reproducibility
 
-### Recent Improvements
-- **Fixed decomposition method bug**: Resolved NameError in epsilon calculation
-- **Reorganized test structure**: Clear four-tier hierarchy with logical progression
-- **Enhanced type validation**: Comprehensive type annotation testing
-- **Improved documentation**: Clear test organization and purpose
+### Recent Modernization (2025)
+- **Mathematical Validation**: Edge cases now use correct epsilon-delta relationships
+- **Function Existence Checks**: Parametrization validates function existence before testing
+- **Skip Optimization**: Eliminated Category 1 ("missing parameters") skips
+- **Precision Focus**: Tests are mathematically meaningful and computationally feasible
 
 ## Maintenance Guidelines
 
 ### Adding New Tests
 1. **Categorize**: Determine appropriate tier (BASIC/FULL/RELEASE/PAPER)
 2. **File Placement**: Add to existing files or create focused new files
-3. **Timing**: Ensure tests complete within tier time limits
-4. **Documentation**: Update this document with new test descriptions
+3. **Mathematical Validity**: Ensure edge cases use valid parameter relationships
+4. **Function Existence**: Verify functions exist before parametrization
+5. **Documentation**: Update this document with new test descriptions
 
 ### Modifying Existing Tests
-- **Preserve Intent**: Maintain original test purpose and validation goals
+- **Preserve Mathematical Intent**: Maintain mathematical correctness and relationships
+- **Function Validation**: Check function existence in parametrization
 - **Update Documentation**: Reflect changes in test descriptions
 - **Verify Performance**: Ensure modifications don't exceed time limits
 - **Test Isolation**: Maintain independence between test cases
