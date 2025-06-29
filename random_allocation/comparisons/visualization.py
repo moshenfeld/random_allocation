@@ -9,9 +9,14 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from matplotlib.axes import Axes
+import matplotlib as mpl
+from matplotlib.ticker import NullFormatter, NullLocator, FuncFormatter
 
 # Local application imports
 from random_allocation.comparisons.definitions import *
+
+# Ensure LaTeX is not required for mathtext rendering
+mpl.rcParams['text.usetex'] = False
 
 # Type aliases
 DataDict = Dict[str, Any]
@@ -41,8 +46,8 @@ def clean_log_axis_ticks(
     ax.minorticks_off()
     
     # Disable automatic formatters and locators for the specified axis
-    axis_obj.set_major_formatter(plt.NullFormatter())
-    axis_obj.set_major_locator(plt.NullLocator())
+    axis_obj.set_major_formatter(NullFormatter())
+    axis_obj.set_major_locator(NullLocator())
     
     # Add only our desired ticks
     if axis == 'x':
@@ -203,9 +208,11 @@ def setup_plot_axes(
         title: Optional title for the plot
         title_fontsize: Font size for plot title
     """
+    print(f"DEBUG: x name before label: {data['x name']}")
+    print(f"DEBUG: y name before label: {data['y name']}")
     # Set axis labels
-    ax.set_xlabel(data['x name'], fontsize=xlabel_fontsize)
-    ax.set_ylabel(data['y name'], fontsize=ylabel_fontsize)
+    ax.set_xlabel(f"${data['x name']}$", fontsize=xlabel_fontsize)
+    ax.set_ylabel(f"${data['y name']}$", fontsize=ylabel_fontsize)
     
     # Set title if provided
     if title:
@@ -229,22 +236,22 @@ def setup_plot_axes(
     # Set axis scales and formatters
     if log_x_axis:
         ax.set_xscale('log')
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(format_x))
+        ax.xaxis.set_major_formatter(FuncFormatter(format_x))
         # Clean up x-axis log scale ticks
         clean_log_axis_ticks(ax, data['x data'], format_x, 'x')
     else:
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(format_x))
+        ax.xaxis.set_major_formatter(FuncFormatter(format_x))
     
     if log_y_axis:
         ax.set_yscale('log')
         # Use a concise formatter for log scale y-axis
         if data['y name'] == names_dict[EPSILON] or data['y name'] == names_dict[DELTA]:
             # For epsilon and delta, use scientific notation for small values
-            ax.yaxis.set_major_formatter(plt.FuncFormatter(
+            ax.yaxis.set_major_formatter(FuncFormatter(
                 lambda y, _: f'{y:.1e}' if y < 0.01 else f'{y:.2f}'
             ))
         else:
-            ax.yaxis.set_major_formatter(plt.FuncFormatter(format_y))
+            ax.yaxis.set_major_formatter(FuncFormatter(format_y))
         
         # Optionally limit number of ticks on y-axis
         if num_y_ticks is not None:
@@ -303,8 +310,12 @@ def plot_data_lines(
         # Adjust marker size based on plot type
         markersize = 10 if is_allocation_method else 12
             
+        legend_label = str(legend_value)
+        # Only prepend legend_prefix if legend_value does not already start with epsilon
+        if not legend_label.strip().startswith('$\\varepsilon'):
+            legend_label = legend_prefix + legend_label
         ax.plot(data['x data'], methods_data[method], 
-               label=legend_prefix + str(legend_value), 
+               label=legend_label, 
                marker=markers_map[method], 
                color=colors_map[method], 
                linewidth=linewidth, 
@@ -386,7 +397,7 @@ def plot_min_allocation(
         min_allocation: NumPy array containing the min allocation values
     """
     ax.plot(data['x data'], min_allocation, 
-           label='_{\\mathcal{A}}$ - (Our - Combined)', 
+           label=r'_{\mathcal{A}}$ - (Our - Combined)', 
            color=colors_dict[ALLOCATION], 
            linewidth=2, 
            alpha=1)
@@ -421,7 +432,7 @@ def prepare_plot_data(
     colors_map = get_features_for_methods(filtered_methods, 'color')
     
     # Determine legend prefix based on y-axis data
-    legend_prefix: str = '$\\varepsilon$' if data['y name'] == names_dict[EPSILON] else '$\\delta$'
+    legend_prefix: str = f"${names_dict[EPSILON]}$" if data['y name'] == names_dict[EPSILON] else f"${names_dict[DELTA]}$"
     
     return methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix
 
@@ -667,8 +678,8 @@ def plot_privacy_curves(
         for method, deltas in deltas_dict.items():
             plt.plot(epsilon_arr, deltas, label=method)
         plt.title(subplot_titles[i])
-        plt.xlabel(r"$\epsilon$")
-        plt.ylabel(r"$\delta$")
+        plt.xlabel(f"${names_dict[EPSILON]}$")
+        plt.ylabel(f"${names_dict[DELTA]}$")
         # plt.xscale("log")
         plt.yscale("log")
         

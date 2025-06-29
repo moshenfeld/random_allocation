@@ -29,12 +29,12 @@ NUM_EPOCHS: str = 'num_epochs'
 VARIABLES: List[str] = [EPSILON, DELTA, SIGMA, NUM_STEPS, NUM_SELECTED, NUM_EPOCHS]
 
 names_dict: Dict[str, str] = {
-    EPSILON: r'$\\varepsilon$',
-    DELTA: r'$\\delta$',
-    SIGMA: r'$\\sigma$',
-    NUM_STEPS: r'$t$',
-    NUM_SELECTED: r'$k$',
-    NUM_EPOCHS: r'$E$'
+    EPSILON: r'\varepsilon',
+    DELTA: r'\delta',
+    SIGMA: r'\sigma',
+    NUM_STEPS: r't',
+    NUM_SELECTED: r'k',
+    NUM_EPOCHS: r'E'
 }
 
 # ======================= Schemes =======================
@@ -76,7 +76,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=LOCAL,
         epsilon_calculator=local_epsilon,
         delta_calculator=local_delta,
-        legend='_{\\mathcal{L}}$ - ' + LOCAL,
+        legend=r'$\varepsilon_{\mathcal{L}}$ - ' + LOCAL,
         marker='*',
         color=colors_dict[LOCAL]
     ),
@@ -84,7 +84,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=POISSON_PLD,
         epsilon_calculator=Poisson_epsilon_PLD,
         delta_calculator=Poisson_delta_PLD,
-        legend='_{\\mathcal{P}}$ - ' + POISSON_PLD,
+        legend=r'$\varepsilon_{\mathcal{P}}$ - ' + POISSON_PLD,
         marker='x',
         color=colors_dict[POISSON]
     ),
@@ -92,7 +92,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=POISSON_RDP,
         epsilon_calculator=Poisson_epsilon_RDP,
         delta_calculator=Poisson_delta_RDP,
-        legend='_{\\mathcal{P}}$ - ' + POISSON_RDP,
+        legend=r'$\varepsilon_{\mathcal{P}}$ - ' + POISSON_RDP,
         marker='v',
         color=colors_dict[POISSON]
     ),
@@ -100,7 +100,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=SHUFFLE,
         epsilon_calculator=shuffle_epsilon_analytic,
         delta_calculator=shuffle_delta_analytic,
-        legend='_{\\mathcal{S}}$ - ' + SHUFFLE,
+        legend=r'$\varepsilon_{\mathcal{S}}$ - ' + SHUFFLE,
         marker='p',
         color=colors_dict[SHUFFLE]
     ),
@@ -108,7 +108,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_ANALYTIC,
         epsilon_calculator=allocation_epsilon_analytic,
         delta_calculator=allocation_delta_analytic,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_ANALYTIC,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_ANALYTIC,
         marker='P',
         color=colors_dict[ALLOCATION]
     ),
@@ -116,7 +116,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_DIRECT,
         epsilon_calculator=allocation_epsilon_direct,
         delta_calculator=allocation_delta_direct,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_DIRECT,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_DIRECT,
         marker='^',
         color=colors_dict[ALLOCATION]
     ),
@@ -124,7 +124,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_RDP_DCO,
         epsilon_calculator=allocation_epsilon_RDP_DCO,
         delta_calculator=allocation_delta_RDP_DCO,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_RDP_DCO,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_RDP_DCO,
         marker='o',
         color=colors_dict[ALLOCATION]
     ),
@@ -132,7 +132,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_DECOMPOSITION,
         epsilon_calculator=allocation_epsilon_decomposition,
         delta_calculator=allocation_delta_decomposition,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_DECOMPOSITION,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_DECOMPOSITION,
         marker='X',
         color=colors_dict[ALLOCATION]
     ),
@@ -140,7 +140,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_COMBINED,
         epsilon_calculator=allocation_epsilon_combined,
         delta_calculator=allocation_delta_combined,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_COMBINED,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_COMBINED,
         marker='s',
         color=colors_dict[ALLOCATION]
     ),
@@ -148,7 +148,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_RECURSIVE,
         epsilon_calculator=allocation_epsilon_recursive,
         delta_calculator=allocation_delta_recursive,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_RECURSIVE,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_RECURSIVE,
         marker='h',
         color=colors_dict[ALLOCATION]
     ),
@@ -156,7 +156,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_MONTE_CARLO,
         epsilon_calculator=None,
         delta_calculator=allocation_delta_MC,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_MONTE_CARLO,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_MONTE_CARLO,
         marker='D',
         color=colors_dict[ALLOCATION]
     ),
@@ -164,7 +164,7 @@ methods_dict: Dict[str, MethodFeatures] = {
         name=ALLOCATION_LOWER_BOUND,
         epsilon_calculator=allocation_epsilon_lower_bound,
         delta_calculator=allocation_delta_lower_bound,
-        legend='_{\\mathcal{A}}$ - ' + ALLOCATION_LOWER_BOUND,
+        legend=r'$\varepsilon_{\mathcal{A}}$ - ' + ALLOCATION_LOWER_BOUND,
         marker='d',
         color=colors_dict[LOWER_BOUND]
     )
