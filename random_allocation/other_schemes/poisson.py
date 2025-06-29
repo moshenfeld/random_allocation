@@ -105,8 +105,6 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
     """
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
-    if params.num_selected > 1:
-        raise ValueError("Poisson PLD method only supports num_selected=1")
     if params.sampling_probability < 1.0:
         raise ValueError("Poisson PLD method only supports sampling_probability=1.0")
 
@@ -139,8 +137,6 @@ def Poisson_delta_PLD(params: PrivacyParams,
     """
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
-    if params.num_selected > 1:
-        raise ValueError("Poisson PLD method only supports num_selected=1")
     if params.sampling_probability < 1.0:
         raise ValueError("Poisson PLD method only supports sampling_probability=1.0")
 

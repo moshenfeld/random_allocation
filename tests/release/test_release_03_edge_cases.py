@@ -143,8 +143,6 @@ def function_exists(module_path: str, function_name: str) -> bool:
 # Approved invalid settings based on actual parameter restrictions for edge cases we test
 APPROVED_INVALID = [
     # Schemes that only support num_selected=1
-    ('PoissonPLD',          'epsilon',  'equal_selection_steps'),
-    ('PoissonPLD',          'delta',    'equal_selection_steps'),
     ('Shuffle',             'epsilon',  'equal_selection_steps'),
     ('Shuffle',             'delta',    'equal_selection_steps'),
     ('Decomposition',       'epsilon',  'equal_selection_steps'),

@@ -28,8 +28,14 @@ NUM_SELECTED: str = 'num_selected'
 NUM_EPOCHS: str = 'num_epochs'
 VARIABLES: List[str] = [EPSILON, DELTA, SIGMA, NUM_STEPS, NUM_SELECTED, NUM_EPOCHS]
 
-names_dict: Dict[str, str] = {EPSILON: '$\\varepsilon$', DELTA: '$\\delta$', SIGMA: '$\\sigma$', NUM_STEPS: '$t$', NUM_SELECTED: '$k$',
-              NUM_EPOCHS: '$E$'}
+names_dict: Dict[str, str] = {
+    EPSILON: r'$\\varepsilon$',
+    DELTA: r'$\\delta$',
+    SIGMA: r'$\\sigma$',
+    NUM_STEPS: r'$t$',
+    NUM_SELECTED: r'$k$',
+    NUM_EPOCHS: r'$E$'
+}
 
 # ======================= Schemes =======================
 LOCAL: str = 'Local'

@@ -94,9 +94,6 @@ APPROVED_INVALID = [
     ('Combined',            'delta',   'sampling_probability'),
 
     # num_epochs>1 or num_selected>1 invalid for these schemes
-    ('PoissonPLD',         'epsilon', 'num_selected'),
-    ('PoissonPLD',         'delta',   'num_selected'),
-    ('PoissonRDP',         'epsilon', 'num_selected'),
     ('PoissonRDP',         'delta',   'num_selected'),
     ('Shuffle',            'epsilon', 'num_selected'),
     ('Shuffle',            'epsilon', 'num_epochs'),

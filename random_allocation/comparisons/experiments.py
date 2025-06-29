@@ -238,10 +238,10 @@ def run_experiment(
     
     # Create PrivacyParams object with initial values
     params = PrivacyParams(
-        sigma=base_params.get(SIGMA, 0),
-        num_steps=base_params.get(NUM_STEPS, 0),
-        num_selected=base_params.get(NUM_SELECTED, 0),
-        num_epochs=base_params.get(NUM_EPOCHS, 0),
+        sigma=base_params.get(SIGMA, 1.0),
+        num_steps=base_params.get(NUM_STEPS, 1),
+        num_selected=base_params.get(NUM_SELECTED, 1),
+        num_epochs=base_params.get(NUM_EPOCHS, 1),  # Changed default to 1
         epsilon=epsilon,
         delta=delta
     )
