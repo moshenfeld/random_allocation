@@ -211,12 +211,8 @@ def allocation_PLD_recursive(params: PrivacyParams, config: SchemeConfig, delta:
         epsilon=None,
         delta=delta/num_rounds
     )
-    # gamma = min(allocation_epsilon_decomposition(params=params_gamma, config=config, direction=Direction.ADD), 1.0 - 1.0/num_steps_per_round)
-    gamma = allocation_epsilon_decomposition(params=params_gamma, config=config, direction=Direction.ADD)
-    print(f"gamma: {gamma}")
-    gamma = min(gamma, 1.0 - 1.0/num_steps_per_round)
+    gamma = min(allocation_epsilon_decomposition(params=params_gamma, config=config, direction=Direction.ADD), 1.0 - 1.0/num_steps_per_round)
     eta = min(1.0, 1.0/((1-gamma)*num_steps_per_round))  # Clamp to [0, 1] to avoid numerical issues
-    print(f"eta: {eta}")
 
     PoissonPLD = Poisson_PLD(
         sigma=params.sigma,
