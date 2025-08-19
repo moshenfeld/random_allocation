@@ -10,6 +10,11 @@ You can install the package using pip:
 pip install random-allocation
 ```
 
+For PLD-based features, you'll also need:
+```bash
+pip install PLD_subsampling>=0.1.2
+```
+
 ## Usage
 
 This package implements the privacy mechanisms and analyses described in the "Privacy Amplification by Random Allocation" paper. The following example demonstrates how to compare different schemes described in the paper:
@@ -161,6 +166,7 @@ The package includes several methods for privacy analysis:
 - `ALLOCATION_DECOMPOSITION`: Decomposition method for random allocation scheme.
 - `ALLOCATION_COMBINED`: Combined approach leveraging multiple methods.
 - `ALLOCATION_RECURSIVE`: Recursive computation approach.
+- `allocation_PLD_recursive`: PLD-based recursive allocation scheme (requires PLD_subsampling package).
 - `ALLOCATION_MONTE_CARLO`: Monte Carlo simulation-based analysis (CGHKKLMSZ24).
 - `ALLOCATION_LOWER_BOUND`: Lower bound analysis (CGHKKLMSZ24).
 

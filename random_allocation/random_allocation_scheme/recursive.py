@@ -3,12 +3,14 @@ from typing import Callable
 
 # Third-party imports
 import numpy as np
+from dp_accounting.pld import privacy_loss_distribution
+from PLD_subsampling import scale_pld_infinity_mass 
 
 # Local application imports
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_delta_PLD, Poisson_PLD
-from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition_add_from_PLD, allocation_delta_decomposition
+from random_allocation.random_allocation_scheme.decomposition import allocation_delta_decomposition_add_from_PLD, allocation_delta_decomposition, allocation_epsilon_decomposition
 from random_allocation.random_allocation_scheme.direct import allocation_delta_direct
 # Type aliases
 NumericFunction = Callable[[float], float]
@@ -195,3 +197,33 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
     # Both directions, return max of the two
     assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
     return float(max(delta_add, delta_remove))
+
+
+def allocation_PLD_recursive(params: PrivacyParams, config: SchemeConfig, delta: float) -> privacy_loss_distribution.PrivacyLossDistribution:
+    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
+    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+
+    params_gamma = PrivacyParams(
+        sigma=params.sigma,
+        num_steps=num_steps_per_round,
+        num_selected=1,
+        num_epochs=1,
+        epsilon=None,
+        delta=delta/num_rounds
+    )
+    # gamma = min(allocation_epsilon_decomposition(params=params_gamma, config=config, direction=Direction.ADD), 1.0 - 1.0/num_steps_per_round)
+    gamma = allocation_epsilon_decomposition(params=params_gamma, config=config, direction=Direction.ADD)
+    print(f"gamma: {gamma}")
+    gamma = min(gamma, 1.0 - 1.0/num_steps_per_round)
+    eta = min(1.0, 1.0/((1-gamma)*num_steps_per_round))  # Clamp to [0, 1] to avoid numerical issues
+    print(f"eta: {eta}")
+
+    PoissonPLD = Poisson_PLD(
+        sigma=params.sigma,
+        num_steps=num_steps_per_round,
+        num_epochs=num_rounds*params.num_epochs,
+        sampling_prob=eta,
+        discretization=config.discretization,
+        direction=Direction.BOTH,
+    )
+    return scale_pld_infinity_mass(PoissonPLD, delta)

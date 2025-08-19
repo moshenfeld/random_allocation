@@ -85,8 +85,8 @@ class PrivacyParams:
         # Logic constraints
         if self.epsilon is not None and self.delta is not None:
             raise ValueError("Only one of epsilon or delta should be provided")
-        if self.epsilon is None and self.delta is None:
-            raise ValueError("Either epsilon or delta must be provided")
+        # if self.epsilon is None and self.delta is None:
+        #     raise ValueError("Either epsilon or delta must be provided")
     
 @dataclass
 class SchemeConfig:

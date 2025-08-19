@@ -4,15 +4,7 @@ channels:
   - defaults
 dependencies:
   - python>=3.8
-  - scipy>=1.7.0
-  - matplotlib>=3.4.0
-  - numba>=0.60.0
-  - ipykernel
-  - pytest>=6.0
-  - black>=21.0
-  - flake8>=3.9
-  - mypy>=1.0.0
   - pip
   - pip:
-    - dp_accounting>=0.4.4
-    - types-setuptools
+    # Install the package - dependencies come from pyproject.toml
+    - -e .[dev,examples]
