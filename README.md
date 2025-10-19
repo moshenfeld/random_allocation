@@ -83,10 +83,6 @@ example_params = PrivacyParams(
     num_steps           = 1_000, # The number of steps in each epoch of the scheme
     num_selected        = 1,     # The number times each element is used in an epoch in the random allocation scheme
     num_epochs          = 1,     # The number of epochs the scheme is ran
-    sampling_probability = 1.0,  # The probability that each element will be used at all (default: 1.0).
-                                 # This argument provides support for schemes which combine Poisson sampling with random allocation
-                                 # but was not discussed in the paper.
-                                 # Can be used only when num_selected = 1.
     epsilon             = None,  # The target epsilon.
     delta               = 1e-5,  # The target delta.
                                  # Exactly one value in {delta, epsilon} should be set to None

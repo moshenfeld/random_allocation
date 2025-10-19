@@ -255,8 +255,6 @@ def allocation_epsilon_direct(params: PrivacyParams, config: SchemeConfig, direc
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
 
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation direct method')
 
     return handle_directions(params=params,
                              config=config,
@@ -281,9 +279,6 @@ def allocation_delta_direct(params: PrivacyParams, config: SchemeConfig, directi
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation direct method')
-
     return handle_directions(params=params,
                              config=config,
                              direction=direction,
@@ -306,9 +301,6 @@ def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> f
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation RDP add method')
-
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
 
@@ -324,9 +316,6 @@ def allocation_epsilon_RDP_add(params: PrivacyParams, config: SchemeConfig) -> f
 def allocation_delta_RDP_add(params: PrivacyParams, config: SchemeConfig) -> float:
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
-
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation RDP add method')
 
     num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
     num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))

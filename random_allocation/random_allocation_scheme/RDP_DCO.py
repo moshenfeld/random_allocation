@@ -175,9 +175,6 @@ def allocation_epsilon_RDP_DCO(params: PrivacyParams, config: SchemeConfig, dire
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
     
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation RDP_DCO method')
-
     # Use alpha_orders directly from config or generate if not provided
     if config.allocation_RDP_DCO_alpha_orders is not None:
         alpha_orders: NDArray[np.float64] = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)
@@ -208,9 +205,6 @@ def allocation_delta_RDP_DCO(params: PrivacyParams, config: SchemeConfig, direct
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation RDP_DCO method')
-
     # Use alpha_orders directly from config or generate if not provided
     if config.allocation_RDP_DCO_alpha_orders is not None:
         alpha_orders: NDArray[np.float64] = np.array(config.allocation_RDP_DCO_alpha_orders, dtype=np.float64)

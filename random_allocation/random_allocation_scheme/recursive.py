@@ -20,7 +20,6 @@ def allocation_epsilon_recursive_inner(
     delta: float, 
     num_steps: int, 
     num_epochs: int, 
-    sampling_probability: float, 
     config: SchemeConfig, 
     optimization_func: NumericFunction, 
     direction: Direction
@@ -39,7 +38,7 @@ def allocation_epsilon_recursive_inner(
 
     # If we find a eps, we can compute the sampling probability
     if eps_result is not None:
-        sampling_prob = sampling_probability*np.exp(2 * eps_result)/num_steps
+        sampling_prob = np.exp(2 * eps_result)/num_steps
 
         # if the induced sampling probability is small enough, we can compute the corresponding Poisson epsilon
         if sampling_prob <= np.sqrt(1/num_steps):
@@ -82,7 +81,7 @@ def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, di
         sigma=params.sigma, 
         num_steps=num_steps_per_round, 
         num_epochs=1, 
-        sampling_prob=params.sampling_probability/num_steps_per_round, 
+        sampling_prob=1.0 / num_steps_per_round, 
         discretization=config.discretization, 
         direction=Direction.ADD,
     )
@@ -93,7 +92,6 @@ def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, di
         epsilon_remove = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
                                                            num_steps=num_steps_per_round,
                                                            num_epochs=num_rounds*params.num_epochs,
-                                                           sampling_probability=params.sampling_probability,
                                                            config=config,
                                                            optimization_func=optimization_func,
                                                            direction=Direction.REMOVE)
@@ -105,7 +103,6 @@ def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, di
         epsilon_add = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
                                                          num_steps=num_steps_per_round,
                                                          num_epochs=num_rounds*params.num_epochs,
-                                                         sampling_probability=params.sampling_probability,
                                                          config=config,
                                                          optimization_func=optimization_func,
                                                          direction=Direction.ADD)
@@ -163,7 +160,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
 
     if direction != Direction.ADD:
         delta_add_decomposition = allocation_delta_decomposition(params=params_gamma, config=config, direction=Direction.ADD)
-        delta_add_direct = allocation_delta_direct(params=params_gamma, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else 1.0
+        delta_add_direct = allocation_delta_direct(params=params_gamma, config=config, direction=Direction.ADD)
         delta_remove = Poisson_delta_PLD(
             params=params_Poisson, 
             config=config, 
@@ -178,7 +175,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
             delta_add = allocation_delta_decomposition(params=params, config=config, direction=Direction.ADD)
         else:
             delta_add_decomposition = allocation_delta_decomposition(params=params_gamma, config=config, direction=Direction.ADD)
-            delta_add_direct = allocation_delta_direct(params=params_gamma, config=config, direction=Direction.ADD) if params.sampling_probability == 1.0 else 1.0
+            delta_add_direct = allocation_delta_direct(params=params_gamma, config=config, direction=Direction.ADD)
             delta_add = Poisson_delta_PLD(
                 params=params_Poisson, 
                 config=config, 

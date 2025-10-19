@@ -62,41 +62,37 @@ SCHEMES = [
 # Edge case parameter sets - OPTIMIZED for fast execution (all tests should be <1 second)
 EDGE_CASES = [
     # case_name, description, base_params_epsilon, base_params_delta
-    ("minimal_steps", "num_steps=1", 
-     dict(sigma=2.0, num_steps=1, num_selected=1, num_epochs=1, sampling_probability=1.0, delta=1e-6, epsilon=None),
-     dict(sigma=2.0, num_steps=1, num_selected=1, num_epochs=1, sampling_probability=1.0, epsilon=0.4, delta=None)),
-    
-    ("equal_selection_steps", "num_selected=num_steps", 
-     dict(sigma=2.0, num_steps=3, num_selected=3, num_epochs=1, sampling_probability=1.0, delta=1e-6, epsilon=None),
-     dict(sigma=2.0, num_steps=3, num_selected=3, num_epochs=1, sampling_probability=1.0, epsilon=0.4, delta=None)),
-    
-    ("minimal_sigma", "sigma=0.01 (small)", 
-     dict(sigma=0.01, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, delta=1e-6, epsilon=None),
-     dict(sigma=0.01, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, epsilon=0.4, delta=None)),
-    
-    ("large_sigma", "sigma=100.0 (large)", 
-     dict(sigma=100.0, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, delta=1e-6, epsilon=None),
-     dict(sigma=100.0, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, epsilon=0.4, delta=None)),
-    
-    ("tiny_delta", "delta=1e-14 (small)", 
-     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, delta=1e-14, epsilon=None),
-     None),
-    
-    ("large_delta", "delta=0.99 (relatively large)", 
-     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, delta=0.99, epsilon=None),
-     None),
-    
-    ("tiny_epsilon", "epsilon=0.01 (small)", 
-     None,
-     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, epsilon=0.01, delta=None)),
+    ("minimal_steps", "num_steps=1",
+     dict(sigma=2.0, num_steps=1, num_selected=1, num_epochs=1, delta=1e-6, epsilon=None),
+     dict(sigma=2.0, num_steps=1, num_selected=1, num_epochs=1, epsilon=0.4, delta=None)),
 
-    ("large_epsilon", "epsilon=100.0 (large)", 
+    ("equal_selection_steps", "num_selected=num_steps",
+     dict(sigma=2.0, num_steps=3, num_selected=3, num_epochs=1, delta=1e-6, epsilon=None),
+     dict(sigma=2.0, num_steps=3, num_selected=3, num_epochs=1, epsilon=0.4, delta=None)),
+
+    ("minimal_sigma", "sigma=0.01 (small)",
+     dict(sigma=0.01, num_steps=5, num_selected=1, num_epochs=1, delta=1e-6, epsilon=None),
+     dict(sigma=0.01, num_steps=5, num_selected=1, num_epochs=1, epsilon=0.4, delta=None)),
+
+    ("large_sigma", "sigma=100.0 (large)",
+     dict(sigma=100.0, num_steps=5, num_selected=1, num_epochs=1, delta=1e-6, epsilon=None),
+     dict(sigma=100.0, num_steps=5, num_selected=1, num_epochs=1, epsilon=0.4, delta=None)),
+
+    ("tiny_delta", "delta=1e-14 (small)",
+     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, delta=1e-14, epsilon=None),
+     None),
+
+    ("large_delta", "delta=0.99 (relatively large)",
+     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, delta=0.99, epsilon=None),
+     None),
+
+    ("tiny_epsilon", "epsilon=0.01 (small)",
      None,
-     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, sampling_probability=1.0, epsilon=100.0, delta=None)),
-    
-    ("minimal_sampling_prob", "sampling_probability=0.01 (small)", 
-     dict(sigma=2.0, num_steps=10, num_selected=1, num_epochs=1, sampling_probability=0.01, delta=1e-6, epsilon=None),
-     dict(sigma=2.0, num_steps=10, num_selected=1, num_epochs=1, sampling_probability=0.01, epsilon=0.4, delta=None)),
+     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, epsilon=0.01, delta=None)),
+
+    ("large_epsilon", "epsilon=100.0 (large)",
+     None,
+     dict(sigma=2.0, num_steps=5, num_selected=1, num_epochs=1, epsilon=100.0, delta=None)),
 ]
 
 # Default scheme configuration - OPTIMIZED for fast edge case testing
@@ -151,26 +147,6 @@ APPROVED_INVALID = [
     ('LowerBound',          'delta',    'equal_selection_steps'),
     ('MonteCarloHighProb',  'delta',    'equal_selection_steps'),
     ('MonteCarloMean',      'delta',    'equal_selection_steps'),
-
-    # Schemes that require sampling_probability=1.0 (fail with minimal_sampling_prob)
-    ('Local',               'epsilon',  'minimal_sampling_prob'),
-    ('Local',               'delta',    'minimal_sampling_prob'),
-    ('PoissonPLD',          'epsilon',  'minimal_sampling_prob'),
-    ('PoissonPLD',          'delta',    'minimal_sampling_prob'),
-    ('PoissonRDP',          'epsilon',  'minimal_sampling_prob'),
-    ('PoissonRDP',          'delta',    'minimal_sampling_prob'),
-    ('Shuffle',             'epsilon',  'minimal_sampling_prob'),
-    ('Shuffle',             'delta',    'minimal_sampling_prob'),
-    ('Direct',              'epsilon',  'minimal_sampling_prob'),
-    ('Direct',              'delta',    'minimal_sampling_prob'),
-    ('LowerBound',          'epsilon',  'minimal_sampling_prob'),
-    ('LowerBound',          'delta',    'minimal_sampling_prob'),
-    ('MonteCarloHighProb',  'delta',    'minimal_sampling_prob'),
-    ('MonteCarloMean',      'delta',    'minimal_sampling_prob'),
-    ('RDP_DCO',             'epsilon',  'minimal_sampling_prob'),
-    ('RDP_DCO',             'delta',    'minimal_sampling_prob'),
-    ('Decomposition',       'epsilon',  'minimal_sampling_prob'),
-    ('Decomposition',       'delta',    'minimal_sampling_prob'),
 ]
 
 # These are approved timeout cases that cause excessive computation time (>10 seconds)
@@ -193,23 +169,20 @@ APPROVED_TIMEOUTS = [
 
 
 
-# Helper function to call functions with optional sampling_prob (same as monotonicity tests)
+# Helper function to call functions with direction parameter (same as monotonicity tests)
 def _call(func, params, config, direction):
     """Call function with appropriate arguments based on signature"""
     sig = inspect.signature(func)
     args = [params, config]
-    
-    # For Poisson functions, don't pass the extra sampling_prob argument
-    # because they calculate their own sampling probability from params
+
+    # For Poisson functions, pass default sampling_prob (0.0) if the function expects it
+    # Poisson functions have sampling_prob as an optional parameter with default 0.0
     func_name = getattr(func, '__name__', '')
     is_poisson_func = 'Poisson' in func_name
-    
-    if 'sampling_prob' in sig.parameters and not is_poisson_func:
-        args.append(params.sampling_probability)
-    elif is_poisson_func and 'sampling_prob' in sig.parameters:
-        # For Poisson functions, use default sampling_prob (0.0) but still pass it
+
+    if 'sampling_prob' in sig.parameters and is_poisson_func:
         args.append(0.0)
-    
+
     # only pass direction if func accepts it
     if 'direction' in sig.parameters:
         args.append(direction)

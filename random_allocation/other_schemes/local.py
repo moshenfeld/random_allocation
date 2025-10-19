@@ -70,9 +70,6 @@ def local_delta(params: PrivacyParams,
     """
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
-
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for local method')
         
     return Gaussian_delta(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
                          epsilon=params.epsilon)
@@ -91,9 +88,6 @@ def local_epsilon(params: PrivacyParams,
     """
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
-
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for local method')
     
     return Gaussian_epsilon(sigma=params.sigma/np.sqrt(params.num_selected*params.num_epochs), 
                            delta=params.delta, 

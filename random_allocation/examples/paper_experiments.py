@@ -24,7 +24,7 @@ from random_allocation.examples.utility_comparison import (
 
 
 # Configuration
-READ_DATA: bool = False  # Set to True to try reading data from existing files first
+READ_DATA: bool = True  # Set to True to try reading data from existing files first
 SAVE_DATA: bool = True  # Set to True to save computed data to CSV files
 SAVE_PLOTS: bool = True  # Set to True to save plots to files
 SHOW_PLOTS: bool = False  # Set to True to display plots interactively

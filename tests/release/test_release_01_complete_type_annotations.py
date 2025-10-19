@@ -629,7 +629,6 @@ class TestDataClassTypeAnnotationsComprehensive:
             'num_steps': int,
             'num_selected': int,
             'num_epochs': int,
-            'sampling_probability': float,
             'epsilon': Optional[float],
             'delta': Optional[float]
         }

@@ -93,7 +93,6 @@ class TestPrivacyParameterCreation:
         assert params_delta.epsilon is None
         
         # Test defaults
-        assert params_eps.sampling_probability == 1.0
         assert params_eps.num_epochs == 1
     
     def test_privacy_params_validation(self):

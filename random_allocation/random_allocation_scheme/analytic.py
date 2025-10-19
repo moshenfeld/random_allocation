@@ -68,8 +68,7 @@ def allocation_epsilon_analytic(params: PrivacyParams,
     Poisson_delta = params.delta*Poisson_delta_split
     large_sampling_prob_delta = params.delta*large_sampling_prob_delta_split/(num_rounds*params.num_epochs)
     
-    sampling_prob = params.sampling_probability * \
-                    sampling_prob_from_sigma(
+    sampling_prob = sampling_prob_from_sigma(
                         sigma=params.sigma, 
                         delta=large_sampling_prob_delta, 
                         num_steps=num_steps_per_round,
@@ -121,7 +120,6 @@ def allocation_delta_analytic(params: PrivacyParams,
             num_steps=params.num_steps,
             num_selected=params.num_selected,
             num_epochs=params.num_epochs,
-            sampling_probability=params.sampling_probability,
             epsilon=None,
             delta=delta
         ), config=config, direction=direction), 

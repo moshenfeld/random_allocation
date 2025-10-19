@@ -28,8 +28,6 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
     if params.num_epochs > 1 or params.num_selected > 1:
         raise ValueError('Shuffle method only supports num_epochs=1 and num_selected=1')
     
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for shuffle method')
 
     delta_split = 0.05    
     # Create temporary params for local_epsilon
@@ -110,10 +108,7 @@ def shuffle_delta_analytic(params: PrivacyParams,
     
     if params.num_epochs > 1 or params.num_selected > 1:
         raise ValueError('Shuffle method only supports num_epochs=1 and num_selected=1')
-    
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for shuffle method')
-    
+        
     result = search_function_with_bounds(
         func=lambda delta: shuffle_epsilon_analytic(params=PrivacyParams(
             sigma=params.sigma,

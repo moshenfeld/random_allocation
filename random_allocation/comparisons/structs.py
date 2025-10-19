@@ -31,7 +31,6 @@ class PrivacyParams:
     num_steps: int
     num_selected: int = 1
     num_epochs: int = 1
-    sampling_probability: float = 1.0
     # Either epsilon or delta must be provided, the other one will be computed
     epsilon: Optional[float] = None
     delta: Optional[float] = None
@@ -43,7 +42,6 @@ class PrivacyParams:
         self.num_steps = int(self.num_steps)
         self.num_selected = int(self.num_selected)
         self.num_epochs = int(self.num_epochs)
-        self.sampling_probability = float(self.sampling_probability)
         
         if self.epsilon is not None:
             self.epsilon = float(self.epsilon)
@@ -64,12 +62,8 @@ class PrivacyParams:
             raise ValueError(f"num_selected must be positive, got {self.num_selected}")
         if self.num_epochs <= 0:
             raise ValueError(f"num_epochs must be positive, got {self.num_epochs}")
-        if self.sampling_probability <= 0:
-            raise ValueError(f"sampling_probability must be positive, got {self.sampling_probability}")
         
         # Upper bound constraints
-        if self.sampling_probability > 1.0:
-            raise ValueError(f"sampling_probability must not exceed 1.0, got {self.sampling_probability}")
         if self.num_selected > self.num_steps:
             raise ValueError(f"num_selected must not exceed num_steps, got {self.num_selected} > {self.num_steps}")
         
@@ -85,8 +79,8 @@ class PrivacyParams:
         # Logic constraints
         if self.epsilon is not None and self.delta is not None:
             raise ValueError("Only one of epsilon or delta should be provided")
-        # if self.epsilon is None and self.delta is None:
-        #     raise ValueError("Either epsilon or delta must be provided")
+        if self.epsilon is None and self.delta is None:
+            raise ValueError("Either epsilon or delta must be provided")
     
 @dataclass
 class SchemeConfig:

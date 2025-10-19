@@ -105,8 +105,6 @@ def Poisson_epsilon_PLD(params: PrivacyParams,
     """
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
-    if params.sampling_probability < 1.0:
-        raise ValueError("Poisson PLD method only supports sampling_probability=1.0")
 
     if sampling_prob == 0.0:
         sampling_prob = params.num_selected / params.num_steps
@@ -137,8 +135,6 @@ def Poisson_delta_PLD(params: PrivacyParams,
     """
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
-    if params.sampling_probability < 1.0:
-        raise ValueError("Poisson PLD method only supports sampling_probability=1.0")
 
     if sampling_prob == 0.0:
         sampling_prob = params.num_selected / params.num_steps
@@ -190,8 +186,6 @@ def Poisson_delta_RDP(params: PrivacyParams,
     """
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
-    if params.sampling_probability < 1.0:
-        raise ValueError("Poisson RDP method only supports sampling_probability=1.0")
     if direction != Direction.BOTH:
         raise ValueError("Poisson RDP only supports Direction.BOTH")
     
@@ -229,8 +223,6 @@ def Poisson_epsilon_RDP(params: PrivacyParams,
     """
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
-    if params.sampling_probability < 1.0:
-        raise ValueError("Poisson RDP method only supports sampling_probability=1.0")
     if direction != Direction.BOTH:
         raise ValueError("Poisson RDP only supports Direction.BOTH")
 

@@ -53,9 +53,9 @@ SCHEMES = [
     ("Recursive", Direction.BOTH, "allocation_epsilon_recursive", "allocation_delta_recursive", "random_allocation.random_allocation_scheme.recursive"),
 ]
 
-# Default parameter sets for epsilon and delta tests (num_selected=1, sampling_probability=1.0)
-default_eps = dict(sigma=4.0, num_steps=10_000, num_selected=1, num_epochs=1, sampling_probability=1.0, delta=1e-10, epsilon=None)
-default_delta = dict(sigma=4.0, num_steps=100, num_selected=1, num_epochs=1, sampling_probability=1.0, epsilon=0.4, delta=None)
+# Default parameter sets for epsilon and delta tests (num_selected=1)
+default_eps = dict(sigma=4.0, num_steps=10_000, num_selected=1, num_epochs=1, delta=1e-10, epsilon=None)
+default_delta = dict(sigma=4.0, num_steps=100, num_selected=1, num_epochs=1, epsilon=0.4, delta=None)
 
 # Default scheme configuration
 config = SchemeConfig()
@@ -68,31 +68,10 @@ enumerated_changes = [
     ("num_steps", 100, 10_000, False),
     ("num_selected", 3, 10, True),
     ("num_epochs", 1, 5, True),
-    ("sampling_probability", 0.2, 0.8, True),
 ]
 
 # Approved invalid settings will be collected here for review
 APPROVED_INVALID = [
-    # sampling_probability < 1.0 invalid for these schemes
-    ('Local',               'epsilon', 'sampling_probability'),
-    ('Local',               'delta',   'sampling_probability'),
-    ('PoissonPLD',          'epsilon', 'sampling_probability'),
-    ('PoissonPLD',          'delta',   'sampling_probability'),
-    ('PoissonRDP',          'epsilon', 'sampling_probability'),
-    ('PoissonRDP',          'delta',   'sampling_probability'),
-    ('Shuffle',             'epsilon', 'sampling_probability'),
-    ('Shuffle',             'delta',   'sampling_probability'),
-    ('Direct',              'epsilon', 'sampling_probability'),
-    ('Direct',              'delta',   'sampling_probability'),
-    ('LowerBound',          'epsilon', 'sampling_probability'),
-    ('LowerBound',          'delta',   'sampling_probability'),
-    ('MonteCarloHighProb',  'delta',   'sampling_probability'),
-    ('MonteCarloMean',      'delta',   'sampling_probability'),
-    ('RDP_DCO',             'epsilon', 'sampling_probability'),
-    ('RDP_DCO',             'delta',   'sampling_probability'),
-    ('Combined',            'epsilon', 'sampling_probability'),
-    ('Combined',            'delta',   'sampling_probability'),
-
     # num_epochs>1 or num_selected>1 invalid for these schemes
     ('PoissonRDP',         'delta',   'num_selected'),
     ('Shuffle',            'epsilon', 'num_selected'),
@@ -119,26 +98,21 @@ APPROVED_FAILED = [
     # Local scheme doesn't depend on num_steps - always returns same value
     ('Local',        'epsilon', 'num_steps'),
     ('Local',        'delta',   'num_steps'),
-    ('Local',        'epsilon', 'sampling_probability'),
-    ('Local',        'delta',   'sampling_probability'),
 ]
 
-# helper to call functions with optional sampling_prob
+# helper to call functions with direction parameter
 def _call(func, params, config, direction):
     sig = inspect.signature(func)
     args = [params, config]
-    
-    # For Poisson functions, don't pass the extra sampling_prob argument
-    # because they calculate their own sampling probability from params
+
+    # For Poisson functions, pass default sampling_prob (0.0) if the function expects it
+    # Poisson functions have sampling_prob as an optional parameter with default 0.0
     func_name = getattr(func, '__name__', '')
     is_poisson_func = 'Poisson' in func_name
-    
-    if 'sampling_prob' in sig.parameters and not is_poisson_func:
-        args.append(params.sampling_probability)
-    elif is_poisson_func and 'sampling_prob' in sig.parameters:
-        # For Poisson functions, use default sampling_prob (0.0) but still pass it
+
+    if 'sampling_prob' in sig.parameters and is_poisson_func:
         args.append(0.0)
-    
+
     # only pass direction if func accepts it
     if 'direction' in sig.parameters:
         args.append(direction)

@@ -212,7 +212,7 @@ def setup_plot_axes(
     print(f"DEBUG: y name before label: {data['y name']}")
     # Set axis labels
     ax.set_xlabel(f"${data['x name']}$", fontsize=xlabel_fontsize)
-    ax.set_ylabel(f"${data['y name']}$", fontsize=ylabel_fontsize)
+    ax.set_ylabel(f"${data['y name']}$", fontsize=ylabel_fontsize, rotation=0)
     
     # Set title if provided
     if title:

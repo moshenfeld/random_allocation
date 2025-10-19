@@ -28,9 +28,6 @@ def allocation_epsilon_lower_bound(params: PrivacyParams, config: SchemeConfig, 
     if params.num_epochs > 1 or params.num_selected > 1:
         raise ValueError('Allocation lower bound only supports num_epochs=1 and num_selected=1')
 
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation lower bound')
-
     #find the epsilon that gives the delta using binary search    
     optimization_func = lambda eps: allocation_delta_lower_bound(
         PrivacyParams(
@@ -70,9 +67,6 @@ def allocation_delta_lower_bound(params: PrivacyParams, config: SchemeConfig, di
     
     if params.num_epochs > 1 or params.num_selected > 1:
         raise ValueError('Allocation lower bound only supports num_epochs=1 and num_selected=1')
-
-    if params.sampling_probability < 1.0:
-        raise ValueError('Sampling probability must be 1.0 for allocation lower bound')
 
     bnb_accountant = BnBAccountant()
     
