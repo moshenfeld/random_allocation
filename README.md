@@ -162,7 +162,6 @@ The package includes several methods for privacy analysis:
 - `ALLOCATION_DECOMPOSITION`: Decomposition method for random allocation scheme.
 - `ALLOCATION_COMBINED`: Combined approach leveraging multiple methods.
 - `ALLOCATION_RECURSIVE`: Recursive computation approach.
-- `allocation_PLD_recursive`: PLD-based recursive allocation scheme (requires PLD_subsampling package).
 - `ALLOCATION_MONTE_CARLO`: Monte Carlo simulation-based analysis (CGHKKLMSZ24).
 - `ALLOCATION_LOWER_BOUND`: Lower bound analysis (CGHKKLMSZ24).
 

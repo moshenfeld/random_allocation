@@ -245,9 +245,9 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
     allocation_color = 'tab:orange'
     
     # Plot lines for experimental data (means)
-    ax.plot(x_data, data['Poisson accuracy'], 'o', color=Poisson_color,
+    ax.plot(x_data, data['Poisson accuracy'], 'o', color=Poisson_color, markersize=8,
             label=f"Poisson (σ_scaled = {data['Poisson sigma']:.2f})")
-    ax.plot(x_data, data['Allocation accuracy'], 's', color=allocation_color,
+    ax.plot(x_data, data['Allocation accuracy'], 's', color=allocation_color, markersize=8,
             label=f"Random allocation (σ_scaled = {data['Allocation sigma']:.2f})")
     
     # Calculate standard error from standard deviation
@@ -290,11 +290,12 @@ def plot_subplot_with_ci(ax, x_data, data, title, xlabel, ylabel, num_experiment
             label="Random allocation (analytic)")
     
     # Finalize plot formatting
-    ax.set_title(title)
-    ax.set_xlabel(xlabel, labelpad=3)  # Small padding to keep label close to axis
-    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize=27)
+    ax.set_xlabel(xlabel, labelpad=3, fontsize=20)  # Small padding to keep label close to axis
+    ax.set_ylabel(ylabel, fontsize=20)
     ax.set_xscale("log")
     ax.set_yscale("log")
+    ax.tick_params(axis='both', which='major', labelsize=16)
     # Remove individual legends for each subplot - we'll add one common legend
     # ax.legend()
     ax.grid(True, alpha=0.3)
@@ -332,15 +333,15 @@ def plot_utility_comparison(sample_size_arr, experiment_data_list, titles, num_s
     handles, labels = axs[0].get_legend_handles_labels()
     
     # First reserve space for legend at the bottom
-    plt.subplots_adjust(bottom=0.20)
-    
+    plt.subplots_adjust(bottom=0.22)
+
     # Add a single legend below all subplots
-    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.01), 
-               ncol=3, fontsize=16, frameon=True, framealpha=0.9)
-    
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.04),
+               ncol=3, fontsize=20, frameon=True, framealpha=0.9)
+
     # Apply tight_layout with rect parameter to respect the space we reserved for the legend
     # The rect parameter specifies (left, bottom, right, top) fractions of the figure
-    plt.tight_layout(rect=(0, 0.14, 1, 0.95))
+    plt.tight_layout(rect=(0, 0.16, 1, 0.95))
     
     return fig
 

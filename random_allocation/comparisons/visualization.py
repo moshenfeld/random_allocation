@@ -189,7 +189,8 @@ def setup_plot_axes(
     ylabel_fontsize: int = 14,
     title: Optional[str] = None,
     title_fontsize: int = 16,
-    num_y_ticks: Optional[int] = None
+    num_y_ticks: Optional[int] = None,
+    tick_labelsize: int = 14
 ) -> None:
     """
     Set up common axis properties for plots.
@@ -208,8 +209,6 @@ def setup_plot_axes(
         title: Optional title for the plot
         title_fontsize: Font size for plot title
     """
-    print(f"DEBUG: x name before label: {data['x name']}")
-    print(f"DEBUG: y name before label: {data['y name']}")
     # Set axis labels
     ax.set_xlabel(f"${data['x name']}$", fontsize=xlabel_fontsize)
     ax.set_ylabel(f"${data['y name']}$", fontsize=ylabel_fontsize, rotation=0)
@@ -259,7 +258,7 @@ def setup_plot_axes(
             ax.yaxis.set_major_locator(MaxNLocator(nbins=num_y_ticks))
     
     # Set tick parameters
-    ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.tick_params(axis='both', which='major', labelsize=tick_labelsize)
     ax.set_xticks(data['x data'])
 
 def plot_data_lines(
@@ -608,32 +607,35 @@ def plot_multiple_data(data_list: List[DataDict],
     
     # Create figure and a grid of subplots
     fig: Figure = plt.figure(figsize=figsize)
-    
+
+    # Store handles and labels from the first subplot for shared legend
+    handles, labels = None, None
+
     # For each data dict in the list
     for idx, data in enumerate(data_list):
         if idx >= n_rows * n_cols:
             print(f"Warning: Only displaying {n_rows * n_cols} of {n_plots} plots due to grid layout limitations.")
             break
-        
+
         methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix = prepare_plot_data(data)
-        
+
         # Create subplot
         ax: Axes = fig.add_subplot(n_rows, n_cols, idx + 1)
-        
+
         if plot_type == 'combined':
             # Special handling for combined plot type
             min_allocation = calculate_min_allocation(data, filtered_methods, methods_data)
-            
+
             # Plot data lines
             plot_data_lines(ax, data, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix, is_allocation_method=True)
-            
+
             # Plot combined allocation
             plot_min_allocation(ax, data, min_allocation)
         else:
             # Standard comparison plot
             plot_data_lines(ax, data, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix)
             plot_error_bars(ax, data, filtered_methods, methods_data, colors_map)
-        
+
         # Set axis labels and scales using the common function
         setup_plot_axes(
             ax=ax,
@@ -644,35 +646,46 @@ def plot_multiple_data(data_list: List[DataDict],
             log_y_axis=log_y_axis,
             format_x=format_x,
             format_y=format_y,
-            xlabel_fontsize=14,
-            ylabel_fontsize=14,
+            xlabel_fontsize=21,
+            ylabel_fontsize=21,
             title=titles[idx] if titles and idx < len(titles) else data.get('title'),
-            title_fontsize=16,
+            title_fontsize=24,
             num_y_ticks=None
         )
-        
-        # Set legend
-        optimal_legend_position = find_optimal_legend_position(ax, data, filtered_methods, methods_data, legend_position)
-        ax.legend(fontsize=12, loc=optimal_legend_position, frameon=False)
-    
-    # Adjust layout to prevent clipping and overlap
-    fig.tight_layout()
-    
+
+        # Get legend handles from the first subplot
+        if handles is None:
+            handles, labels = ax.get_legend_handles_labels()
+
+    # Add shared legend below all subplots
+    if handles and labels:
+        fig.legend(
+            handles, labels,
+            loc='lower center',
+            bbox_to_anchor=(0.5, 0.0),
+            ncol=2,
+            fontsize=18,
+            frameon=False
+        )
+
+    # Adjust layout to prevent clipping and overlap, leaving room for legend
+    fig.tight_layout(rect=(0, 0.12, 1, 0.98))
+
     return fig
 
 def plot_privacy_curves(
-    deltas_dict_arr: List[Dict[str, np.ndarray]], 
-    epsilon_mat: List[np.ndarray], 
+    deltas_dict_arr: List[Dict[str, np.ndarray]],
+    epsilon_mat: List[np.ndarray],
     subplot_titles: List[str]
 ) -> Figure:
     num_plots = len(deltas_dict_arr)
     n_rows = (num_plots + 1) // 2
     n_cols = 2
     fig, axs = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(15, 5 * n_rows))
-    
+
     # Store handles and labels from the first subplot that has data
     handles, labels = None, None
-    
+
     for i, (deltas_dict, epsilon_arr) in enumerate(zip(deltas_dict_arr, epsilon_mat)):
         plt.subplot(n_rows, n_cols, i + 1)
         for method, deltas in deltas_dict.items():
@@ -682,25 +695,262 @@ def plot_privacy_curves(
         plt.ylabel(f"${names_dict[DELTA]}$")
         # plt.xscale("log")
         plt.yscale("log")
-        
+
         # Get legend handles from the first subplot with data
         if handles is None:
             current_ax = plt.gca()
             handles, labels = current_ax.get_legend_handles_labels()
-    
+
     # Add the legend below all the subplots if we have handles
     if handles and labels:
         # First adjust the spacing to make room for the legend
         plt.subplots_adjust(bottom=0.18, hspace=0.5)
-        
+
         # Now add the legend in the space we created - use a positive y value
-        fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.04), 
-                   ncol=3, fontsize=16, frameon=True, framealpha=0.9)
-        
+        fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.04),
+                   ncol=3, fontsize=24, frameon=True, framealpha=0.9)
+
         # Final tight layout to ensure proper spacing, leaving room at bottom
         plt.tight_layout(rect=(0, 0.12, 1, 0.95))
     else:
         # If no legend data, just use standard tight layout
         plt.tight_layout()
-    
+
+    return fig
+
+def plot_chau_et_al_epsilon_comparison(
+    data_list: List[DataDict],
+    titles: List[str],
+    visualization_config: Dict[str, Any],
+    save_plots: bool = False,
+    show_plots: bool = False,
+    plots_dir: Optional[str] = None,
+    filename: str = 'Chau_et_al_epsilon_plot.png'
+) -> Figure:
+    """
+    Create a single figure with 4 subplots (2x2 grid) for Chau et al. epsilon comparison
+    Uses standard colors and markers from methods_dict for consistency
+    Matches main plot styling with dotted lines for allocation methods
+
+    Args:
+        data_list: List of data dictionaries to plot
+        titles: List of subplot titles
+        visualization_config: Dictionary with visualization settings
+        save_plots: Whether to save the plot
+        show_plots: Whether to display the plot
+        plots_dir: Directory to save plots (required if save_plots=True)
+        filename: Filename for the saved plot
+
+    Returns:
+        The created matplotlib figure
+    """
+    fig, axs = plt.subplots(2, 2, figsize=(16, 12))
+    axs = axs.flatten()
+
+    # Store handles and labels from the first subplot
+    handles, labels = None, None
+
+    for idx, (data, title) in enumerate(zip(data_list, titles)):
+        ax = axs[idx]
+
+        # Use prepare_plot_data to get the correct color/marker mappings
+        methods, filtered_methods, methods_data, legend_map, markers_map, colors_map, legend_prefix = prepare_plot_data(data)
+
+        # Extract plot data
+        x_data = data['x data']
+
+        # Plot each method using the same approach as plot_data_lines
+        for method in filtered_methods:
+            y_data = methods_data[method]
+
+            # Get color and marker from the maps (same as main plot)
+            color = colors_map[method]
+            marker = markers_map[method]
+            legend_label = legend_map.get(method, method)
+
+            # Apply line styling matching main plot behavior
+            # Allocation methods (DIRECT, DECOMPOSITION, RECURSIVE, ANALYTIC) get dotted lines and thinner width
+            if method in [ALLOCATION_DECOMPOSITION, ALLOCATION_DIRECT, ALLOCATION_ANALYTIC, ALLOCATION_RECURSIVE]:
+                linewidth = 1
+                linestyle = 'dotted'
+                markersize = 10
+            else:
+                # Non-allocation methods (LOCAL, POISSON, LOWER_BOUND) get solid lines and thicker width
+                linewidth = 2
+                linestyle = 'solid'
+                markersize = 10
+
+            ax.plot(
+                x_data,
+                y_data,
+                label=legend_label,
+                color=color,
+                marker=marker,
+                linewidth=linewidth,
+                linestyle=linestyle,
+                markersize=markersize,
+                alpha=0.8
+            )
+
+        # Axis formatting
+        ax.set_xlabel(f"${data['x name']}$", fontsize=21)
+        ax.set_ylabel(f"${data['y name']}$", fontsize=21, rotation=0, labelpad=20)
+        ax.set_title(title, fontsize=24, pad=10)
+
+        # Apply log scale if specified
+        if visualization_config.get('log_y_axis', False):
+            ax.set_yscale('log')
+        if visualization_config.get('log_x_axis', False):
+            ax.set_xscale('log')
+
+        # Format x-axis
+        format_x = visualization_config.get('format_x', lambda x, _: f'{x:.2f}')
+        ax.set_xticks(x_data)
+        ax.set_xticklabels([format_x(x, 0) for x in x_data])
+
+        ax.tick_params(axis='both', which='major', labelsize=17)
+        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+
+        # Get legend handles from the first subplot
+        if handles is None:
+            handles, labels = ax.get_legend_handles_labels()
+
+    # Add shared legend below all subplots
+    if handles and labels:
+        fig.legend(
+            handles, labels,
+            loc='lower center',
+            bbox_to_anchor=(0.5, -0.02),
+            ncol=3,
+            fontsize=20,
+            frameon=False
+        )
+
+    plt.tight_layout(rect=(0, 0.05, 1, 0.98))
+
+    # Save plot if requested
+    if save_plots and plots_dir:
+        import os
+        os.makedirs(plots_dir, exist_ok=True)
+        fig.savefig(os.path.join(plots_dir, filename), dpi=300, bbox_inches='tight')
+
+    if show_plots:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return fig
+
+def plot_mc_comparison(
+    deltas_dict_arr,
+    epsilon_mat,
+    subplot_titles: List[str],
+    save_plots: bool = False,
+    show_plots: bool = False,
+    plots_dir: Optional[str] = None,
+    filename: str = 'MC_comparison_plot.png'
+) -> Figure:
+    """
+    Create Monte Carlo comparison plot with distinct colors for each method
+    Uses standard colors and markers for consistency with other plots
+
+    Args:
+        deltas_dict_arr: List of dictionaries mapping method names to delta arrays
+        epsilon_mat: List of epsilon arrays
+        subplot_titles: List of subplot titles
+        save_plots: Whether to save the plot
+        show_plots: Whether to display the plot
+        plots_dir: Directory to save plots (required if save_plots=True)
+        filename: Filename for the saved plot
+
+    Returns:
+        The created matplotlib figure
+    """
+    # Distinct colors for each method in experiment 2
+    method_colors = {
+        'Poisson': '#27AE60',           # Green (same as POISSON_PLD)
+        'allocation - Our': '#157DED',  # Blue (same as allocation methods)
+        'allocation - MC HP': '#E74C3C',    # Red
+        'allocation - MC mean': '#9B59B6'   # Purple
+    }
+
+    # Distinct markers for each method
+    method_markers = {
+        'Poisson': 'x',      # x marker (same as POISSON_PLD)
+        'allocation - Our': 's',  # Square (same as ALLOCATION_COMBINED)
+        'allocation - MC HP': 'D',    # Diamond
+        'allocation - MC mean': 'o'   # Circle
+    }
+
+    # Custom labels
+    custom_labels = {
+        'Poisson': r'$\varepsilon_{\mathcal{P}}$ - Poisson (PLD)',
+        'allocation - Our': r'$\varepsilon_{\mathcal{A}}$ - Allocation (Our - Combined)',
+        'allocation - MC HP': r'$\varepsilon_{\mathcal{A}}$ - Allocation (CGHKKLMSZ24 - Monte Carlo HP)',
+        'allocation - MC mean': r'$\varepsilon_{\mathcal{A}}$ - Allocation (CGHKKLMSZ24 - Monte Carlo mean)'
+    }
+
+    fig, axs = plt.subplots(2, 2, figsize=(16, 12))
+    axs = axs.flatten()
+
+    # Store handles and labels from the first subplot that has data
+    handles, labels = None, None
+
+    for i, (deltas_dict, epsilon_arr) in enumerate(zip(deltas_dict_arr, epsilon_mat)):
+        ax = axs[i]
+
+        for method, deltas in deltas_dict.items():
+            # Get distinct color and marker for this method
+            color = method_colors.get(method, '#95A5A6')  # Fallback to gray
+            marker = method_markers.get(method, 'o')  # Fallback to circle
+            legend_label = custom_labels.get(method, method)  # Fallback to method name
+
+            ax.plot(
+                epsilon_arr,
+                deltas,
+                label=legend_label,
+                color=color,
+                marker=marker,
+                linewidth=2.5,
+                markersize=8,
+                alpha=0.9
+            )
+
+        ax.set_title(subplot_titles[i], fontsize=24, pad=10)
+        ax.set_xlabel(f"${names_dict[EPSILON]}$", fontsize=21)
+        ax.set_ylabel(f"${names_dict[DELTA]}$", fontsize=21, rotation=0, labelpad=20)
+        ax.set_yscale("log")
+        ax.tick_params(axis='both', which='major', labelsize=17)
+        ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
+
+        # Get legend handles from the first subplot with data
+        if handles is None:
+            handles, labels = ax.get_legend_handles_labels()
+
+    # Add the legend below all the subplots if we have handles
+    if handles and labels:
+        fig.legend(
+            handles, labels,
+            loc='lower center',
+            bbox_to_anchor=(0.5, -0.02),
+            ncol=2,
+            fontsize=20,
+            frameon=False
+        )
+
+        plt.tight_layout(rect=(0, 0.05, 1, 0.98))
+    else:
+        plt.tight_layout()
+
+    # Save plot if requested
+    if save_plots and plots_dir:
+        import os
+        os.makedirs(plots_dir, exist_ok=True)
+        fig.savefig(os.path.join(plots_dir, filename), dpi=300, bbox_inches='tight')
+
+    if show_plots:
+        plt.show()
+    else:
+        plt.close(fig)
+
     return fig

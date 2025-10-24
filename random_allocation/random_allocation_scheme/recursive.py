@@ -139,8 +139,8 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
     delta_add: float  # type annotation without initialization
     delta_remove: float  # type annotation without initialization
 
-    gamma = min(params.epsilon/2, np.log(max(2.0, params.num_steps))/4)
-    eta = min(np.exp(2*gamma)/params.num_steps, 1.0)
+    gamma = min(params.epsilon/2, np.log(max(2.0, num_steps_per_round))/4)
+    eta = min(np.exp(2*gamma)/num_steps_per_round, 1.0)
     params_gamma = PrivacyParams(
         sigma=params.sigma,
         num_steps=num_steps_per_round,
@@ -166,7 +166,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
             config=config, 
             sampling_prob=eta, 
             direction=Direction.REMOVE
-        ) + 1/(np.exp(2*gamma)-np.exp(gamma)) * min(delta_add_decomposition, delta_add_direct)
+        ) + num_rounds/(np.exp(2*gamma)-np.exp(gamma)) * min(delta_add_decomposition, delta_add_direct)
         # Protected conversion: ensure delta doesn't exceed 1.0
         delta_remove = min(delta_remove, 1.0)
     
@@ -181,7 +181,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
                 config=config, 
                 sampling_prob=eta, 
                 direction=Direction.ADD
-            ) + np.exp(gamma)/(np.exp(gamma)-1) * min(delta_add_decomposition, delta_add_direct)
+            ) + num_rounds*np.exp(gamma)/(np.exp(gamma)-1) * min(delta_add_decomposition, delta_add_direct)
             # Protected conversion: ensure delta doesn't exceed 1.0
             delta_add = min(delta_add, 1.0)
 
@@ -194,29 +194,3 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
     # Both directions, return max of the two
     assert 'delta_add' in locals() and 'delta_remove' in locals(), "Failed to compute either delta_add or delta_remove"
     return float(max(delta_add, delta_remove))
-
-
-def allocation_PLD_recursive(params: PrivacyParams, config: SchemeConfig, delta: float) -> privacy_loss_distribution.PrivacyLossDistribution:
-    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
-    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
-
-    params_gamma = PrivacyParams(
-        sigma=params.sigma,
-        num_steps=num_steps_per_round,
-        num_selected=1,
-        num_epochs=1,
-        epsilon=None,
-        delta=delta/num_rounds
-    )
-    gamma = min(allocation_epsilon_decomposition(params=params_gamma, config=config, direction=Direction.ADD), 1.0 - 1.0/num_steps_per_round)
-    eta = min(1.0, 1.0/((1-gamma)*num_steps_per_round))  # Clamp to [0, 1] to avoid numerical issues
-
-    PoissonPLD = Poisson_PLD(
-        sigma=params.sigma,
-        num_steps=num_steps_per_round,
-        num_epochs=num_rounds*params.num_epochs,
-        sampling_prob=eta,
-        discretization=config.discretization,
-        direction=Direction.BOTH,
-    )
-    return scale_pld_infinity_mass(PoissonPLD, delta)

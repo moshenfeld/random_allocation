@@ -16,7 +16,11 @@ import matplotlib.pyplot as plt
 # Local application imports
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.experiments import *
-from random_allocation.comparisons.visualization import *
+from random_allocation.comparisons.visualization import (
+    plot_multiple_data,
+    plot_mc_comparison,
+    plot_chau_et_al_epsilon_comparison
+)
 from random_allocation.examples.utility_comparison import (
     run_utility_experiments, plot_utility_comparison,
     save_utility_experiment_data, load_utility_experiment_data
@@ -344,7 +348,7 @@ def run_experiment_5():
         log_y_axis=False,
         format_x=lambda x, _: f'{x:.2f}',
         plot_type='epsilon_vs_sigma_combined', 
-        figsize=(20, 6),  # Width, height in inches
+        figsize=(20, 8),  # Width, height in inches
         grid_layout=(1, 3)  # 1 row, 3 columns
     )
 
@@ -417,19 +421,20 @@ def run_experiment_6():
         if SAVE_DATA:
             save_privacy_curves_data(deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr, data_file)
 
-    # Create plot titles and figure
+    # Create plot titles and figure with improved styling
     subplot_titles = [f"$t$ = {num_steps:,}, $\\sigma$ = {sigma}" for num_steps, sigma in zip(num_steps_arr, sigma_arr)]
-    fig = plot_privacy_curves(deltas_dict_arr, epsilon_mat, subplot_titles)
 
-    if SAVE_PLOTS:
-        plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        fig.savefig(os.path.join(plots_dir, 'MC_comparison_plot.png'))
-    if SHOW_PLOTS:
-        plt.show()
-    else:
-        plt.close(fig)
-        
+    plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
+    fig = plot_mc_comparison(
+        deltas_dict_arr=deltas_dict_arr,
+        epsilon_mat=epsilon_mat,
+        subplot_titles=subplot_titles,
+        save_plots=SAVE_PLOTS,
+        show_plots=SHOW_PLOTS,
+        plots_dir=plots_dir,
+        filename='MC_comparison_plot.png'
+    )
+
     return fig
 
 
@@ -561,6 +566,221 @@ def run_experiment_7():
         plt.close()
 
 
+def run_experiment_8():
+    """
+    Eighth experiment - Compare different schemes for the same parameters as the Chau et al. experiments
+    Creates a single figure with 4 subplots (2x2 grid)
+    """
+    SCL_8192_params_dict = {
+        'x_var': SIGMA,
+        'y_var': EPSILON,
+        SIGMA: np.linspace(0.1, 0.5, 5),
+        DELTA: 1e-7,
+        NUM_STEPS: 1_563,
+        NUM_SELECTED: 1,
+        NUM_EPOCHS: 1
+    }
+
+    pCTR_8192_params_dict = {
+        'x_var': SIGMA,
+        'y_var': EPSILON,
+        SIGMA: np.linspace(0.1, 0.5, 5),
+        DELTA: 1e-7,
+        NUM_STEPS: 4_492,
+        NUM_SELECTED: 1,
+        NUM_EPOCHS: 1
+    }
+
+    SCL_1024_params_dict = {
+        'x_var': SIGMA,
+        'y_var': EPSILON,
+        SIGMA: np.linspace(0.1, 0.5, 5),
+        DELTA: 1e-7,
+        NUM_STEPS: 12_500,
+        NUM_SELECTED: 1,
+        NUM_EPOCHS: 1
+    }
+
+    pCTR_1024_params_dict = {
+        'x_var': SIGMA,
+        'y_var': EPSILON,
+        SIGMA: np.linspace(0.1, 0.5, 5),
+        DELTA: 1e-7,
+        NUM_STEPS: 35_938,
+        NUM_SELECTED: 1,
+        NUM_EPOCHS: 1
+    }
+
+    config = SchemeConfig(allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)])
+
+    # Include lower bound in all experiments
+    methods_all = [LOCAL, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION, ALLOCATION_LOWER_BOUND]
+
+    visualization_config = {
+        'log_x_axis': False,
+        'log_y_axis': True,
+        'format_x': lambda x, _: f'{x:.1f}'
+    }
+
+    print("Running experiment 8.1: Compare different schemes for varying sigma using the Criteo Sponsored Search Conversion Log dataset with expected batch size of 8192")
+    SCL_8192_data = run_experiment(
+        params_dict=SCL_8192_params_dict,
+        config=config,
+        methods=methods_all,
+        visualization_config=visualization_config,
+        experiment_name='Criteo SCL - 8192',
+        plot_type=PlotType.COMBINED,
+        read_data=READ_DATA,
+        save_data=SAVE_DATA,
+        save_plots=False,  # Don't save individual plots
+        show_plots=False,  # Don't show individual plots
+        direction=Direction.BOTH
+    )
+
+    print("Running experiment 8.2: Compare different schemes for varying sigma using the Criteo Display Ads pCTR dataset with expected batch size of 8192")
+    pCTR_8192_data = run_experiment(
+        params_dict=pCTR_8192_params_dict,
+        config=config,
+        methods=methods_all,
+        visualization_config=visualization_config,
+        experiment_name='Criteo pCTR - 8192',
+        plot_type=PlotType.COMBINED,
+        read_data=READ_DATA,
+        save_data=SAVE_DATA,
+        save_plots=False,  # Don't save individual plots
+        show_plots=False,  # Don't show individual plots
+        direction=Direction.BOTH
+    )
+
+    print("Running experiment 8.3: Compare different schemes for varying sigma using the Criteo Sponsored Search Conversion Log dataset with expected batch size of 1024")
+    SCL_1024_data = run_experiment(
+        params_dict=SCL_1024_params_dict,
+        config=config,
+        methods=methods_all,
+        visualization_config=visualization_config,
+        experiment_name='Criteo SCL - 1024',
+        plot_type=PlotType.COMBINED,
+        read_data=READ_DATA,
+        save_data=SAVE_DATA,
+        save_plots=False,  # Don't save individual plots
+        show_plots=False,  # Don't show individual plots
+        direction=Direction.BOTH
+    )
+
+    print("Running experiment 8.4: Compare different schemes for varying sigma using the Criteo Display Ads pCTR dataset with expected batch size of 1024")
+    pCTR_1024_data = run_experiment(
+        params_dict=pCTR_1024_params_dict,
+        config=config,
+        methods=methods_all,
+        visualization_config=visualization_config,
+        experiment_name='Criteo pCTR - 1024',
+        plot_type=PlotType.COMBINED,
+        read_data=READ_DATA,
+        save_data=SAVE_DATA,
+        save_plots=False,  # Don't save individual plots
+        show_plots=False,  # Don't show individual plots
+        direction=Direction.BOTH
+    )
+
+    # Create combined plot with 4 subplots
+    plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
+    plot_chau_et_al_epsilon_comparison(
+        data_list=[pCTR_1024_data, SCL_1024_data, pCTR_8192_data, SCL_8192_data],
+        titles=[
+            f'pCTR - 1024: $t$ = {pCTR_1024_params_dict[NUM_STEPS]:,}',
+            f'SCL - 1024: $t$ = {SCL_1024_params_dict[NUM_STEPS]:,}',
+            f'pCTR - 8192: $t$ = {pCTR_8192_params_dict[NUM_STEPS]:,}',
+            f'SCL - 8192: $t$ = {SCL_8192_params_dict[NUM_STEPS]:,}'
+        ],
+        visualization_config=visualization_config,
+        save_plots=SAVE_PLOTS,
+        show_plots=SHOW_PLOTS,
+        plots_dir=plots_dir,
+        filename='Chau_et_al_epsilon_plot.png'
+    )
+
+
+def run_experiment_9():
+    """
+    Ninth experiment - Monte Carlo comparison experiment for the same parameters as the Chau et al. experiments
+    Creates a single figure with 4 subplots (2x2 grid)
+    """
+    print("Running experiment 9: Monte Carlo comparison experiment for the same parameters as the Chau et al. experiments")
+
+    config = SchemeConfig(
+        discretization=1e-4,
+        allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)],
+        delta_tolerance=1e-15,
+        epsilon_tolerance=1e-3,
+        MC_use_order_stats=True,
+        MC_use_mean=False,
+        MC_conf_level=0.99,
+        MC_sample_size=500_000,
+        verbosity=Verbosity.NONE,
+    )
+
+    num_steps_arr = [35_938, 4_492, 12_500, 1_563]
+    sigma_arr = [0.3, 0.4, 0.3, 0.4]
+    epsilon_arr = [np.linspace(1, 10, 10),
+                   np.linspace(1, 10, 10),
+                   np.linspace(1, 10, 10),
+                   np.linspace(1, 10, 10)]
+    num_selected = 1
+    num_epochs = 1
+    experiment_name = 'MC_comparison_Chau_et_al'
+
+    # Data handling logic for experiment 9
+    data_dir = os.path.join(os.path.dirname(__file__), 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    data_file = os.path.join(data_dir, experiment_name)
+
+    # Try to load existing data if requested
+    deltas_dict_arr = None
+    epsilon_mat = None
+    should_compute_data = True
+
+    if READ_DATA:
+        loaded_data = load_privacy_curves_data(data_file)
+        if loaded_data is not None:
+            deltas_dict_arr, epsilon_mat, _, _ = loaded_data
+            should_compute_data = False
+
+    # Compute data if needed (either we're not reading or loading failed)
+    if should_compute_data:
+        params_mat = [[PrivacyParams(num_steps=num_steps, sigma=sigma, epsilon=epsilon,
+                                   num_selected=num_selected, num_epochs=num_epochs)
+                     for epsilon in epsilon_arr]
+                    for num_steps, sigma, epsilon_arr in zip(num_steps_arr, sigma_arr, epsilon_arr)]
+
+        # Calculate deltas for all methods
+        deltas_dict_arr = [calc_all_methods_delta(params_arr, config) for params_arr in params_mat]
+        epsilon_mat = epsilon_arr
+
+        # Save data if requested
+        if SAVE_DATA:
+            save_privacy_curves_data(deltas_dict_arr, epsilon_mat, num_steps_arr, sigma_arr, data_file)
+
+    # Create plot titles and figure with improved styling
+    subplot_titles = [f"$t$ = {num_steps:,}, $\\sigma$ = {sigma}" for num_steps, sigma in zip(num_steps_arr, sigma_arr)]
+
+    # Ensure data is not None before plotting
+    if deltas_dict_arr is not None and epsilon_mat is not None:
+        plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
+        fig = plot_mc_comparison(
+            deltas_dict_arr=deltas_dict_arr,
+            epsilon_mat=epsilon_mat,
+            subplot_titles=subplot_titles,
+            save_plots=SAVE_PLOTS,
+            show_plots=SHOW_PLOTS,
+            plots_dir=plots_dir,
+            filename='MC_comparison_Chau_et_al_plot.png'
+        )
+        return fig
+    else:
+        print("Error: No data available for plotting")
+        return None
+
+
 def main():
     """
     Run all experiments in sequence
@@ -570,9 +790,11 @@ def main():
     run_experiment_2()
     run_experiment_3()
     run_experiment_4()
-    run_experiment_5()    
-    run_experiment_6()    
-    run_experiment_7()    
+    run_experiment_5()
+    run_experiment_6()
+    run_experiment_7()
+    run_experiment_8()
+    run_experiment_9()
     print("All experiments completed successfully.")
 
 
