@@ -842,8 +842,8 @@ def plot_chau_et_al_epsilon_comparison(
     return fig
 
 def plot_mc_comparison(
-    deltas_dict_arr,
-    epsilon_mat,
+    deltas_dict_arr: List[Dict[str, np.ndarray]],
+    epsilon_mat: List[np.ndarray],
     subplot_titles: List[str],
     save_plots: bool = False,
     show_plots: bool = False,
