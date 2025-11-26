@@ -71,8 +71,7 @@ def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, di
     if params.delta is None:
         raise ValueError("Delta must be provided to compute epsilon")
         
-    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
-    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+    num_steps_per_round = int(np.floor(params.num_steps/params.num_selected))
     
     # We use the decomposition method to compute the tail bound, and we have to optimize over epsilon'.
     # Since recomputing the Poisson PLD is expensive, we re-implement the decomposition method for the add direction,
@@ -88,10 +87,10 @@ def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, di
     if direction != Direction.ADD:
         optimization_func = lambda eps: allocation_delta_decomposition_add_from_PLD(epsilon=eps, 
                                                                                     num_steps=num_steps_per_round, Poisson_PLD_obj=tail_Poisson_PLD) \
-                                        * (np.exp(-eps)/(np.exp(eps) -1)) * num_rounds*params.num_epochs
+                                        * (np.exp(-eps)/(np.exp(eps) -1)) * params.num_selected*params.num_epochs
         epsilon_remove = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
                                                            num_steps=num_steps_per_round,
-                                                           num_epochs=num_rounds*params.num_epochs,
+                                                           num_epochs=params.num_selected*params.num_epochs,
                                                            config=config,
                                                            optimization_func=optimization_func,
                                                            direction=Direction.REMOVE)
@@ -99,10 +98,10 @@ def allocation_epsilon_recursive(params: PrivacyParams, config: SchemeConfig, di
     if direction != Direction.REMOVE:
         optimization_func = lambda eps: allocation_delta_decomposition_add_from_PLD(epsilon=eps, 
                                                                                     num_steps=num_steps_per_round, Poisson_PLD_obj=tail_Poisson_PLD) \
-                                        * (np.exp(eps)/(np.exp(eps) -1)) * num_rounds*params.num_epochs
+                                        * (np.exp(eps)/(np.exp(eps) -1)) * params.num_selected*params.num_epochs
         epsilon_add = allocation_epsilon_recursive_inner(sigma=params.sigma, delta=params.delta,
                                                          num_steps=num_steps_per_round,
-                                                         num_epochs=num_rounds*params.num_epochs,
+                                                         num_epochs=params.num_selected*params.num_epochs,
                                                          config=config,
                                                          optimization_func=optimization_func,
                                                          direction=Direction.ADD)
@@ -133,8 +132,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
     if params.epsilon is None:
         raise ValueError("Epsilon must be provided to compute delta")
     
-    num_steps_per_round = int(np.ceil(params.num_steps/params.num_selected))
-    num_rounds = int(np.ceil(params.num_steps/num_steps_per_round))
+    num_steps_per_round = int(np.floor(params.num_steps/params.num_selected))
 
     delta_add: float  # type annotation without initialization
     delta_remove: float  # type annotation without initialization
@@ -153,7 +151,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
         sigma=params.sigma,
         num_steps=num_steps_per_round,
         num_selected=1,
-        num_epochs=num_rounds*params.num_epochs,
+        num_epochs=params.num_selected*params.num_epochs,
         epsilon=params.epsilon,  
         delta=None, 
     )
@@ -166,7 +164,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
             config=config, 
             sampling_prob=eta, 
             direction=Direction.REMOVE
-        ) + num_rounds/(np.exp(2*gamma)-np.exp(gamma)) * min(delta_add_decomposition, delta_add_direct)
+        ) + params.num_selected/(np.exp(2*gamma)-np.exp(gamma)) * min(delta_add_decomposition, delta_add_direct)
         # Protected conversion: ensure delta doesn't exceed 1.0
         delta_remove = min(delta_remove, 1.0)
     
@@ -181,7 +179,7 @@ def allocation_delta_recursive(params: PrivacyParams, config: SchemeConfig, dire
                 config=config, 
                 sampling_prob=eta, 
                 direction=Direction.ADD
-            ) + num_rounds*np.exp(gamma)/(np.exp(gamma)-1) * min(delta_add_decomposition, delta_add_direct)
+            ) + params.num_selected*np.exp(gamma)/(np.exp(gamma)-1) * min(delta_add_decomposition, delta_add_direct)
             # Protected conversion: ensure delta doesn't exceed 1.0
             delta_add = min(delta_add, 1.0)
 
