@@ -346,7 +346,33 @@ class TestShuffleScheme:
 
         assert epsilon > 0
         assert recorded_steps
-        assert set(recorded_steps) == {1}
+        assert set(recorded_steps) == {2}
+
+    def test_shuffle_returns_det_eps_before_refinement(self, monkeypatch):
+        """Test that refinement is skipped when the first bound is already no better than local."""
+        local_eps_values = iter([0.3, 0.1])
+        recorded_steps = []
+
+        monkeypatch.setattr(shuffle_module, "local_epsilon", lambda *args, **kwargs: next(local_eps_values))
+
+        def fake_numericalanalysis(*, n, epsorig, delta, num_iterations, step, upperbound):
+            recorded_steps.append(step)
+            return 0.3
+
+        monkeypatch.setattr(shuffle_module, "numericalanalysis", fake_numericalanalysis)
+
+        params = PrivacyParams(
+            sigma=2.0,
+            num_steps=10,
+            num_selected=1,
+            num_epochs=1,
+            delta=1e-5,
+        )
+
+        epsilon = shuffle_epsilon_analytic(params, SchemeConfig(), Direction.BOTH)
+
+        assert epsilon == pytest.approx(0.3)
+        assert recorded_steps == [2]
 
     def test_shuffle_nudges_zero_local_epsilon(self, monkeypatch):
         """Test that the wrapper never passes epsorig=0 into the external routine."""

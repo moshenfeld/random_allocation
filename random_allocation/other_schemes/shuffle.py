@@ -14,7 +14,7 @@ from random_allocation.other_schemes.local import local_epsilon
 
 def _effective_shuffle_step(num_steps: int, configured_step: float) -> int:
     if configured_step < 0:
-        return max(1, int(np.floor(np.log(np.sqrt(num_steps / 2.0)))))
+        return max(1, int(np.floor(np.sqrt(num_steps / 2.0))))
     if configured_step == 0:
         raise ValueError("shuffle_step must be positive, or negative to use the default heuristic")
     return max(1, int(np.floor(configured_step)))
@@ -84,6 +84,8 @@ def shuffle_epsilon_analytic(params: PrivacyParams,
         step=shuffle_step,
         upperbound=True
     )
+    if det_eps is not None and epsilon >= det_eps:
+        return float(det_eps)
     
     for _ in range(5):
         local_delta = params.delta/(2*params.num_steps*(np.exp(epsilon)+1)*(1+np.exp(local_epsilon_val)/2))
