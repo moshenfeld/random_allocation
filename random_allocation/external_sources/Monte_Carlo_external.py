@@ -727,6 +727,7 @@ class ShuffleAccountant:
         verbose=False)[0]
     return inverse_decreasing_function(delta_from_sigma, delta)
 
+
 # coding=utf-8
 # Copyright 2024 The Google Research Authors.
 #

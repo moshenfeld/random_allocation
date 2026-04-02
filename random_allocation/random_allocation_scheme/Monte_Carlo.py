@@ -5,8 +5,8 @@ from typing import Optional, Union, Callable, Dict, Any, List, Tuple, cast, Lite
 import numpy as np
 
 # Local application imports
-from random_allocation.random_allocation_scheme.Monte_Carlo_external import *
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
+from random_allocation.external_sources.Monte_Carlo_external import *
 from random_allocation.random_allocation_scheme.random_allocation_utils import handle_directions
 
 def Monte_Carlo_estimation(params: PrivacyParams, config: SchemeConfig, adjacency_type: AdjacencyType) -> Dict[str, float]:

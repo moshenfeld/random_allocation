@@ -12,7 +12,14 @@ import os
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.other_schemes.local import local_epsilon, local_delta, Gaussian_epsilon, Gaussian_delta
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD, Poisson_delta_PLD, Poisson_epsilon_RDP, Poisson_delta_RDP
-from random_allocation.other_schemes.shuffle import shuffle_epsilon_analytic, shuffle_delta_analytic
+from random_allocation.other_schemes.shuffle import (
+    shuffle_epsilon_analytic,
+    shuffle_delta_analytic,
+    shuffle_epsilon_lower_bound,
+    shuffle_delta_lower_bound,
+)
+import random_allocation.other_schemes.shuffle as shuffle_module
+import random_allocation.external_sources.shuffle_external as shuffle_external_module
 
 from tests.test_utils import ResultsReporter
 
@@ -222,6 +229,150 @@ class TestShuffleScheme:
             assert np.isfinite(delta), f"Shuffle delta ({direction.value}) returned {delta}"
             assert 0 < delta <= 1, f"Shuffle delta ({direction.value}) should be in (0,1]: {delta}"
 
+    def test_shuffle_lower_bound_basic(self):
+        """Test shuffle lower-bound epsilon and delta calculations."""
+        config = SchemeConfig()
+
+        epsilon_params = PrivacyParams(
+            sigma=2.0,
+            num_steps=10,
+            num_selected=1,
+            num_epochs=1,
+            delta=1e-5,
+        )
+        epsilon = shuffle_epsilon_lower_bound(epsilon_params, config, Direction.BOTH)
+        assert np.isfinite(epsilon)
+        assert epsilon > 0
+
+        delta_params = PrivacyParams(
+            sigma=2.0,
+            num_steps=10,
+            num_selected=1,
+            num_epochs=1,
+            epsilon=1.0,
+        )
+        delta = shuffle_delta_lower_bound(delta_params, config, Direction.BOTH)
+        assert np.isfinite(delta)
+        assert 0 < delta <= 1
+
+    def test_shuffle_lower_bound_rejects_directional_queries(self):
+        """Test that the shuffle lower bound is only exposed for Direction.BOTH."""
+        config = SchemeConfig()
+        params = PrivacyParams(
+            sigma=2.0,
+            num_steps=10,
+            num_selected=1,
+            num_epochs=1,
+            delta=1e-5,
+        )
+
+        with pytest.raises(ValueError, match="Direction.BOTH"):
+            shuffle_epsilon_lower_bound(params, config, Direction.ADD)
+
+    def test_shuffle_uses_configured_search_iterations(self, monkeypatch):
+        """Test that shuffle epsilon uses dedicated binary-search iterations."""
+        recorded_iterations = []
+
+        monkeypatch.setattr(shuffle_module, "local_epsilon", lambda *args, **kwargs: 0.1)
+
+        def fake_numericalanalysis(*, n, epsorig, delta, num_iterations, step, upperbound):
+            recorded_iterations.append(num_iterations)
+            return 0.2
+
+        monkeypatch.setattr(shuffle_module, "numericalanalysis", fake_numericalanalysis)
+
+        params = PrivacyParams(
+            sigma=2.0,
+            num_steps=10,
+            num_selected=1,
+            num_epochs=1,
+            delta=1e-5,
+        )
+        config = SchemeConfig(shuffle_search_iterations=37)
+
+        epsilon = shuffle_epsilon_analytic(params, config, Direction.BOTH)
+
+        assert epsilon > 0
+        assert recorded_iterations
+        assert set(recorded_iterations) == {37}
+
+    def test_shuffle_upper_bound_uses_both_interval_endpoints(self, monkeypatch):
+        """Test the regression for the deltaq upper-bound endpoint typo."""
+        monkeypatch.setattr(shuffle_external_module.stats.binom, "cdf", lambda k, n, p: float(k))
+        monkeypatch.setattr(shuffle_external_module.stats.binom, "pmf", lambda k, n, p: 0.0)
+        monkeypatch.setattr(
+            shuffle_external_module,
+            "onestep",
+            lambda c, eps, eps0, pminusq: {
+                (1, True): 0.2,
+                (0, True): 0.1,
+                (1, False): 0.1,
+                (0, False): 0.9,
+            }[(c, pminusq)],
+        )
+
+        result = shuffle_external_module.deltacomp(
+            n=2,
+            eps0=1000.0,
+            eps=0.0,
+            deltaupper=10.0,
+            step=1,
+            upperbound=True,
+        )
+
+        assert result == pytest.approx(0.9)
+
+    def test_shuffle_uses_default_step_heuristic(self, monkeypatch):
+        """Test that the default negative shuffle_step selects the heuristic step."""
+        recorded_steps = []
+
+        monkeypatch.setattr(shuffle_module, "local_epsilon", lambda *args, **kwargs: 0.1)
+
+        def fake_numericalanalysis(*, n, epsorig, delta, num_iterations, step, upperbound):
+            recorded_steps.append(step)
+            return 0.2
+
+        monkeypatch.setattr(shuffle_module, "numericalanalysis", fake_numericalanalysis)
+
+        params = PrivacyParams(
+            sigma=2.0,
+            num_steps=10,
+            num_selected=1,
+            num_epochs=1,
+            delta=1e-5,
+        )
+
+        epsilon = shuffle_epsilon_analytic(params, SchemeConfig(), Direction.BOTH)
+
+        assert epsilon > 0
+        assert recorded_steps
+        assert set(recorded_steps) == {1}
+
+    def test_shuffle_nudges_zero_local_epsilon(self, monkeypatch):
+        """Test that the wrapper never passes epsorig=0 into the external routine."""
+        recorded_epsorig = []
+
+        monkeypatch.setattr(shuffle_module, "local_epsilon", lambda *args, **kwargs: 0.0)
+
+        def fake_numericalanalysis(*, n, epsorig, delta, num_iterations, step, upperbound):
+            recorded_epsorig.append(epsorig)
+            return 0.2
+
+        monkeypatch.setattr(shuffle_module, "numericalanalysis", fake_numericalanalysis)
+
+        params = PrivacyParams(
+            sigma=100.0,
+            num_steps=5,
+            num_selected=1,
+            num_epochs=1,
+            delta=1e-5,
+        )
+
+        epsilon = shuffle_epsilon_analytic(params, SchemeConfig(), Direction.BOTH)
+
+        assert epsilon >= 0
+        assert recorded_epsorig
+        assert all(epsorig > 0 for epsorig in recorded_epsorig)
 
 class TestInterSchemeComparison:
     """Compare results across different schemes"""

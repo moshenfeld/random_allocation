@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "random-allocation"
-version = "1.0.0"
+version = "1.0.3"
 authors = [
     {name = "Moshe Shenfeld", email = "mosheshenfeld@gmail.com"},
 ]
@@ -51,7 +51,7 @@ examples = [
 "Bug Tracker" = "https://github.com/moshenfeld/random_allocation/issues"
 
 [tool.setuptools]
-packages = ["random_allocation", "random_allocation.comparisons", "random_allocation.examples", "random_allocation.other_schemes", "random_allocation.random_allocation_scheme"]
+packages = ["random_allocation", "random_allocation.comparisons", "random_allocation.examples", "random_allocation.external_sources", "random_allocation.other_schemes", "random_allocation.random_allocation_scheme"]
 
 [tool.mypy]
 python_version = "3.8"
@@ -68,11 +68,11 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
-module = "random_allocation.random_allocation_scheme.Monte_Carlo_external"
+module = "random_allocation.external_sources.Monte_Carlo_external"
 ignore_errors = true
 
 [[tool.mypy.overrides]]
-module = "random_allocation.other_schemes.shuffle_external"
+module = "random_allocation.external_sources.shuffle_external"
 ignore_errors = true
 
 [[tool.mypy.overrides]]

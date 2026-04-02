@@ -9,6 +9,7 @@ from random_allocation.other_schemes.local import local_epsilon, Direction
 from random_allocation.other_schemes.poisson import Poisson_epsilon_PLD
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig
 
+
 def sampling_prob_from_sigma(sigma: float,
                              delta: float,
                              num_steps: int,
@@ -34,9 +35,19 @@ def sampling_prob_from_sigma(sigma: float,
     local_epsilon_val = local_epsilon(params=params, config=SchemeConfig(), direction=direction)
     if local_epsilon_val is None:
         return 1.0
-    gamma = np.cosh(local_epsilon_val)*np.sqrt(2*num_selected*np.log(num_selected/delta)/num_steps)
-    if gamma > 1 - num_selected/num_steps:
+    threshold = 1 - num_selected / num_steps
+    if threshold <= 0:
         return 1.0
+    log_gamma = (
+        local_epsilon_val
+        + np.log1p(np.exp(-2 * local_epsilon_val))
+        - np.log(2.0)
+    ) + 0.5 * np.log(
+        2 * num_selected * np.log(num_selected / delta) / num_steps
+    )
+    if log_gamma >= np.log(threshold):
+        return 1.0
+    gamma = float(np.exp(log_gamma))
     return float(np.clip(num_selected/(num_steps*(1.0-gamma)), 0, 1))
 
 def allocation_epsilon_analytic(params: PrivacyParams,

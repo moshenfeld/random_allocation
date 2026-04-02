@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from random_allocation.comparisons.definitions import *
 from random_allocation.comparisons.experiments import *
 from random_allocation.comparisons.visualization import (
+    plot_combined_data,
     plot_multiple_data,
     plot_mc_comparison,
     plot_chau_et_al_epsilon_comparison
@@ -28,10 +29,41 @@ from random_allocation.examples.utility_comparison import (
 
 
 # Configuration
-READ_DATA: bool = True  # Set to True to try reading data from existing files first
+READ_DATA: bool = False  # Set to True to try reading data from existing files first
 SAVE_DATA: bool = True  # Set to True to save computed data to CSV files
 SAVE_PLOTS: bool = True  # Set to True to save plots to files
 SHOW_PLOTS: bool = False  # Set to True to display plots interactively
+
+
+def _filter_experiment_data(data: Dict[str, Any], methods: List[str]) -> Dict[str, Any]:
+    """Return a view of the experiment data restricted to the requested methods."""
+    filtered_data = dict(data)
+    filtered_data['y data'] = {}
+
+    for method in methods:
+        if method in data['y data']:
+            filtered_data['y data'][method] = data['y data'][method]
+
+        std_key = f'{method}- std'
+        if std_key in data['y data']:
+            filtered_data['y data'][std_key] = data['y data'][std_key]
+
+    return filtered_data
+
+
+def _save_combined_plot(data: Dict[str, Any], visualization_config: Dict[str, Any], experiment_name: str) -> None:
+    """Create and optionally save/show a combined plot for precomputed experiment data."""
+    fig = plot_combined_data(data, **visualization_config)
+
+    if SAVE_PLOTS:
+        plots_dir = os.path.join(os.path.dirname(__file__), 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        fig.savefig(os.path.join(plots_dir, f'{experiment_name}_plot.png'))
+
+    if SHOW_PLOTS:
+        plt.show()
+    else:
+        plt.close(fig)
 
 
 def run_experiment_1():
@@ -52,7 +84,7 @@ def run_experiment_1():
 
     config = SchemeConfig(allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)])
 
-    methods_all = [LOCAL, SHUFFLE, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
+    methods_main = [LOCAL, SHUFFLE, SHUFFLE_LOWER_BOUND, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
     methods_add_rem = [LOCAL, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION]
     methods_several_select = [LOCAL, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE]
 
@@ -62,18 +94,34 @@ def run_experiment_1():
         'format_x': lambda x, _: f'{x:.2f}'
     }
 
+    # Cache the shared main sweep under the superset of methods so the lower-bound
+    # curve can be reused for both output plots without rerunning the experiment.
     data_both = run_experiment(
         params_dict=params_dict, 
         config=config, 
-        methods=methods_all, 
+        methods=methods_main, 
         visualization_config=visualization_config, 
-        experiment_name='main', 
+        experiment_name='main_with_shuffle_lower_bound', 
         plot_type=PlotType.COMBINED,
         read_data=READ_DATA,
         save_data=SAVE_DATA,
-        save_plots=SAVE_PLOTS,
-        show_plots=SHOW_PLOTS,
+        save_plots=False,
+        show_plots=False,
         direction=Direction.BOTH
+    )
+
+    _save_combined_plot(
+        data=_filter_experiment_data(
+            data_both,
+            [method for method in methods_main if method != SHUFFLE_LOWER_BOUND],
+        ),
+        visualization_config=visualization_config,
+        experiment_name='main',
+    )
+    _save_combined_plot(
+        data=data_both,
+        visualization_config=visualization_config,
+        experiment_name='main_with_shuffle_lower_bound',
     )
 
     data_add = run_experiment(
@@ -141,6 +189,7 @@ def run_experiment_1():
         show_plots=SHOW_PLOTS,
         direction=Direction.REMOVE
     )
+
 
 def run_experiment_2():
     """
@@ -613,7 +662,7 @@ def run_experiment_8():
 
     config = SchemeConfig(allocation_direct_alpha_orders=[int(i) for i in np.arange(2, 61, dtype=int)])
 
-    # Include lower bound in all experiments
+    # Include the allocation lower bound in all experiments.
     methods_all = [LOCAL, POISSON_PLD, ALLOCATION_DIRECT, ALLOCATION_RECURSIVE, ALLOCATION_DECOMPOSITION, ALLOCATION_LOWER_BOUND]
 
     visualization_config = {

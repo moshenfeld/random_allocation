@@ -12,6 +12,10 @@ import os
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.random_allocation_scheme.direct import allocation_epsilon_direct, allocation_delta_direct
 from random_allocation.random_allocation_scheme.RDP_DCO import allocation_epsilon_RDP_DCO, allocation_delta_RDP_DCO
+from random_allocation.random_allocation_scheme.lower_bound import (
+    allocation_epsilon_lower_bound,
+    allocation_delta_lower_bound,
+)
 
 from tests.test_utils import ResultsReporter
 
@@ -233,7 +237,6 @@ class TestDirectionConsistency:
             assert np.isfinite(result) or np.isinf(result), f"Direction {direction} gave invalid result: {result}"
             if np.isfinite(result):
                 assert result > 0, f"Direction {direction} gave non-positive epsilon: {result}"
-
 
 class TestSchemeConfigRequirements:
     """Test SchemeConfig requirements for different methods"""

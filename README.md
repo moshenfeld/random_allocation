@@ -119,8 +119,10 @@ example_config = SchemeConfig(
                                                        # Default value = 0.99.
     MC_sample_size = 500_000,                          # The sample size used in the Monte Carlo estimation.
                                                        # Default value = 500_000.
-    shuffle_step = 100.0                               # Number of steps in the binary search performed in the shuffle code.
-                                                       # Default value = 100.
+    shuffle_step = -1.0,                               # If negative, the analytic shuffle wrapper uses max(1, log(sqrt(num_steps / 2))).
+                                                       # Default value = -1.
+    shuffle_search_iterations = 10                     # Binary-search iterations used by the analytic shuffle helper.
+                                                       # Default value = 10.
 )
 ```
 
@@ -153,6 +155,7 @@ The package includes several methods for privacy analysis:
 ### Shuffle Methods
 
 - `SHUFFLE`: Shuffle model of differential privacy.
+- `SHUFFLE_LOWER_BOUND`: Lower bound for the shuffle scheme.
 
 ### Random Allocation Methods
 
@@ -163,7 +166,7 @@ The package includes several methods for privacy analysis:
 - `ALLOCATION_COMBINED`: Combined approach leveraging multiple methods.
 - `ALLOCATION_RECURSIVE`: Recursive computation approach.
 - `ALLOCATION_MONTE_CARLO`: Monte Carlo simulation-based analysis (CGHKKLMSZ24).
-- `ALLOCATION_LOWER_BOUND`: Lower bound analysis (CGHKKLMSZ24).
+- `ALLOCATION_LOWER_BOUND`: Lower bound for the random allocation scheme (CGHKKLMSZ24).
 
 ## Data Handling
 
@@ -327,13 +330,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 This project includes code from external sources for comparison purposes:
 
 1. **Shuffle Model Implementation**: 
-   - Located in `random_allocation/other_schemes/shuffle_external.py`
+   - Located in `random_allocation/external_sources/shuffle_external.py`
    - Source: [ml-shuffling-amplification](https://github.com/apple/ml-shuffling-amplification)
    - Used to compare shuffle model performance with other privacy mechanisms
    - Original license: See accompanying LICENSE file from Apple Inc.
 
 2. **Monte Carlo Estimator**:
-   - Located in `random_allocation/random_allocation_scheme/Monte_Carlo_external.py`
+   - Located in `random_allocation/external_sources/Monte_Carlo_external.py`
    - Source: [google-research/dpsgd_batch_sampler_accounting](https://github.com/google-research/google-research/tree/master/dpsgd_batch_sampler_accounting)
    - Includes code from files: dpsgd_bounds, monte_carlo_estimator, and balls_and_bins
    - Used for comparison in our privacy analysis plots

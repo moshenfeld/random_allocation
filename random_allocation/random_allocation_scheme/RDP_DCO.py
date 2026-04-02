@@ -32,9 +32,21 @@ def allocation_RDP_DCO_add(sigma: float,
     Returns:
         Upper bound on RDP
     """
-    return float(alpha*num_selected**2/(2*sigma**2*num_steps) \
-        + (alpha*num_selected*(num_steps-num_selected))/(2*sigma**2*num_steps*(alpha-1)) \
-        - num_steps*np.log1p(alpha*(np.exp(num_selected*(num_steps-num_selected)/(sigma**2*num_steps**2))-1))/(2*(alpha-1)))
+    exponent = (num_selected * (num_steps - num_selected)) / (sigma**2 * num_steps**2)
+
+    # log(1 + a(exp(x) - 1)) = log(exp(log(a)+x) - exp(log(a-1)))
+    exp_p_log_alpha = np.log(alpha) + exponent
+    log_alpha_m_1 = np.log(alpha - 1.0)
+
+    # Stable computation of log(exp(a) - exp(b)) by extracting the larger term
+    if exp_p_log_alpha > log_alpha_m_1:
+        log_stable = exp_p_log_alpha + np.log1p(-np.exp(log_alpha_m_1 - exp_p_log_alpha))
+    else:
+        log_stable = log_alpha_m_1 + np.log1p(-np.exp(exp_p_log_alpha - log_alpha_m_1))
+
+    return (alpha * num_selected**2 / (2 * sigma**2 * num_steps)
+            + (alpha * num_selected * (num_steps - num_selected)) / (2 * sigma**2 * num_steps * (alpha - 1))
+            - num_steps * log_stable / (2 * (alpha - 1)))
 
 def allocation_epsilon_RDP_DCO_add(params: PrivacyParams, config: SchemeConfig) -> float:
     """
@@ -79,11 +91,12 @@ def allocation_delta_RDP_DCO_add(params: PrivacyParams, config: SchemeConfig) ->
     
     # Find the minimum delta and corresponding alpha directly in log space
     min_log_delta_idx = np.argmin(log_alpha_deltas)
+    min_log_delta = float(log_alpha_deltas[min_log_delta_idx])
     used_alpha = float(alpha_orders[min_log_delta_idx])
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "add", params)
     
     # Protected conversion: ensure delta doesn't exceed 1.0
-    return float(np.minimum(1.0, np.exp(log_alpha_deltas[min_log_delta_idx])))
+    return 1.0 if min_log_delta >= 0 else float(np.exp(min_log_delta))
 
 # ==================== Remove ====================
 
@@ -153,11 +166,12 @@ def allocation_delta_RDP_DCO_remove(params: PrivacyParams, config: SchemeConfig)
     
     # Find the minimum delta and corresponding alpha directly in log space
     min_log_delta_idx = np.argmin(log_alpha_deltas)
+    min_log_delta = float(log_alpha_deltas[min_log_delta_idx])
     used_alpha = float(alpha_orders[min_log_delta_idx])
     print_alpha(used_alpha, alpha_orders[0], alpha_orders[-1], config.verbosity, "remove", params)
     
     # Protected conversion: ensure delta doesn't exceed 1.0
-    return float(np.minimum(1.0, np.exp(log_alpha_deltas[min_log_delta_idx])))
+    return 1.0 if min_log_delta >= 0 else float(np.exp(min_log_delta))
     
 # ==================== Both ====================
 def allocation_epsilon_RDP_DCO(params: PrivacyParams, config: SchemeConfig, direction: Direction = Direction.BOTH) -> float:

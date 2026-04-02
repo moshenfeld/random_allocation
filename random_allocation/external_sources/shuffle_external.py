@@ -125,7 +125,7 @@ def deltacomp(n, eps0, eps, deltaupper, step, upperbound = True):
                         # compute the maximum contribution to delta in the segment.
                         # The max occurs at the end points of the interval due to monotonicity
                         deltapadd = max(deltap_upperc, deltap_lowerc)
-                        deltaqadd = max(deltaq_upperc, deltaq_upperc)
+                        deltaqadd = max(deltaq_upperc, deltaq_lowerc)
                     else:
                         deltapadd = min(deltap_upperc, deltap_lowerc)
                         deltaqadd = min(deltaq_upperc, deltaq_lowerc)

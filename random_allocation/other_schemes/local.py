@@ -46,8 +46,17 @@ def Gaussian_epsilon(sigma: float,
     assert sigma > 0, f"sigma must be positive, got {sigma}"
     assert 0 < delta < 1, f"delta must be between 0 and 1, got {delta}"
     
-    # Compute the analytic upper bound for epsilon
-    epsilon_upper_bound = 1/(2*sigma**2) + np.sqrt(2*np.log(sigma/(delta*np.sqrt(2/np.pi))))/sigma
+    # If delta already dominates the Gaussian profile at epsilon=0, the
+    # mechanism satisfies (0, delta)-DP and no search is needed.
+    if Gaussian_delta(sigma=sigma, epsilon=0.0) <= delta:
+        return 0.0
+
+    # Theoretical upper bound for eps <= 1
+    epsilon_upper_bound = np.sqrt(2 * np.log(1.25 / delta)) / sigma
+
+    # Increase range for larger epsilon
+    while Gaussian_delta(sigma=sigma, epsilon=epsilon_upper_bound) > delta:
+        epsilon_upper_bound *= 2
 
     # Find the epsilon value using binary search
     optimization_func = lambda eps: Gaussian_delta(sigma=sigma, epsilon=eps)

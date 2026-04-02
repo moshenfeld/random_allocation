@@ -59,6 +59,7 @@ RECURSIVE: str = 'Recursive'
 # ======================= Methods =======================
 POISSON_PLD: str                 = f'{POISSON} ({PLD})'
 POISSON_RDP: str                 = f'{POISSON} ({RDP})'
+SHUFFLE_LOWER_BOUND: str         = f'{SHUFFLE} ({LOWER_BOUND})'
 ALLOCATION_ANALYTIC: str         = f'{ALLOCATION} (Our - {ANALYTIC})'
 ALLOCATION_DIRECT: str           = f'{ALLOCATION} (Our - Direct)'
 ALLOCATION_RDP_DCO: str          = f'{ALLOCATION} (DCO25 - {RDP})'
@@ -103,6 +104,14 @@ methods_dict: Dict[str, MethodFeatures] = {
         legend=r'$\varepsilon_{\mathcal{S}}$ - ' + SHUFFLE,
         marker='p',
         color=colors_dict[SHUFFLE]
+    ),
+    SHUFFLE_LOWER_BOUND: MethodFeatures(
+        name=SHUFFLE_LOWER_BOUND,
+        epsilon_calculator=shuffle_epsilon_lower_bound,
+        delta_calculator=shuffle_delta_lower_bound,
+        legend=r'$\varepsilon_{\mathcal{S}}$ - ' + SHUFFLE_LOWER_BOUND,
+        marker='d',
+        color=colors_dict[LOWER_BOUND]
     ),
     ALLOCATION_ANALYTIC: MethodFeatures(
         name=ALLOCATION_ANALYTIC,

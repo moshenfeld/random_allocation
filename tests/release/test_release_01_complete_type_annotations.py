@@ -377,7 +377,7 @@ class TestFunctionSignatureCompletenessComprehensive:
         """Test ALL other schemes functions have complete type annotations (excluding external/test files)"""
         from random_allocation.other_schemes import local, poisson, shuffle
         
-        # Exclude shuffle_external as it's copied from external project
+        # Exclude vendored external-source modules from annotation checks
         modules_to_check = [local, poisson, shuffle]
         
         for module in modules_to_check:
