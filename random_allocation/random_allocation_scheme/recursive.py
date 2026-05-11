@@ -4,8 +4,6 @@ from typing import Callable
 # Third-party imports
 import numpy as np
 from dp_accounting.pld import privacy_loss_distribution
-from PLD_subsampling import scale_pld_infinity_mass 
-
 # Local application imports
 from random_allocation.comparisons.definitions import PrivacyParams, SchemeConfig, Direction
 from random_allocation.comparisons.utils import search_function_with_bounds, FunctionType
